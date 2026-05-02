@@ -12,6 +12,7 @@ class ArticleBase(SQLModel):
     source: str = Field(max_length=64)
 
     excerpt: str | None = None
+    image_url: str | None = None
     author: str | None = Field(default=None, max_length=128)
 
     category: Category
@@ -21,8 +22,7 @@ class ArticleBase(SQLModel):
 
 
 class ArticleCreate(ArticleBase):
-    id: uuid.UUID
-    fetched_at: datetime
+    pass
 
 
 class ArticleUpdate(SQLModel):
@@ -30,6 +30,7 @@ class ArticleUpdate(SQLModel):
     title: str | None = None
     source: str | None = Field(default=None, max_length=64)
     excerpt: str | None = None
+    image_url: str | None = None
     author: str | None = Field(default=None, max_length=128)
     category: Category | None = None
     tags: list[str] | None = None

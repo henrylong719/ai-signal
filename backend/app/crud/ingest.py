@@ -13,6 +13,7 @@ from app.models import Article
 from app.models.base import get_datetime_utc
 from app.schemas.source import SOURCES, Source
 from app.services.article_tagging import normalize_excerpt, tag_article
+from app.services.rss_images import extract_image_url
 
 IngestResult = dict[str, int | list[str]]
 
@@ -62,6 +63,7 @@ async def ingest_all() -> IngestResult:
                     continue
 
                 excerpt = normalize_excerpt(entry.get("summary")) or None
+                image_url = extract_image_url(entry, feed_url=source.rss_url)
                 author = entry.get("author") or None
                 published_at = _published_at(entry)
 
@@ -76,6 +78,7 @@ async def ingest_all() -> IngestResult:
                         title=title,
                         source=source.name,
                         excerpt=excerpt,
+                        image_url=image_url,
                         author=author,
                         category=category,
                         tags=tags,

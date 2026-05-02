@@ -22,6 +22,7 @@ class Article(ArticleBase, table=True):
     source: str = Field(sa_column=Column(String(64), nullable=False, index=True))
 
     excerpt: str | None = Field(default=None, sa_type=Text, nullable=True)
+    image_url: str | None = Field(default=None, sa_type=Text, nullable=True)
     author: str | None = Field(
         default=None, sa_column=Column(String(128), nullable=True)
     )

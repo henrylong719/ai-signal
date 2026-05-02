@@ -31,7 +31,8 @@ def test_read_articles_by_category(client: TestClient, db: Session) -> None:
 
 
 def test_read_article(client: TestClient, db: Session) -> None:
-    article = create_random_article(db)
+    image_url = "https://example.com/article-image.png"
+    article = create_random_article(db, image_url=image_url)
     response = client.get(f"{settings.API_V1_STR}/articles/{article.id}")
     assert response.status_code == 200
     content = response.json()
@@ -39,6 +40,7 @@ def test_read_article(client: TestClient, db: Session) -> None:
     assert content["url"] == article.url
     assert content["title"] == article.title
     assert content["source"] == article.source
+    assert content["image_url"] == image_url
 
 
 def test_read_article_not_found(client: TestClient) -> None:

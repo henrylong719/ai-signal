@@ -44,4 +44,34 @@ def test_tag_article_matches_against_normalized_excerpt() -> None:
     )
 
     assert category == "rag"
-    assert tags == ["rag"]
+    assert tags == ["rag", "retrieval", "vector-db"]
+
+
+def test_tag_article_identifies_infrastructure_topics() -> None:
+    category, tags = tag_article(
+        title="Serving Llama models with lower GPU latency",
+        excerpt="Batching and KV cache tuning improve inference throughput.",
+        fallback="other",
+    )
+
+    assert category == "infrastructure"
+    assert tags == [
+        "hardware",
+        "inference",
+        "infrastructure",
+        "llms",
+        "models",
+        "optimization",
+        "performance",
+    ]
+
+
+def test_tag_article_identifies_agent_subtopic_tags() -> None:
+    category, tags = tag_article(
+        title="Agent workflows with MCP tool calling",
+        excerpt="A model context protocol server coordinates multi-agent workflows.",
+        fallback="other",
+    )
+
+    assert category == "agents"
+    assert tags == ["agents", "mcp", "tool-use", "workflows"]

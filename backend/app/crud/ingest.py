@@ -5,13 +5,14 @@ from typing import Any
 import feedparser  # type: ignore[import-untyped]
 import httpx
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.engine.result import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import async_engine
 from app.models import Article
 from app.models.base import get_datetime_utc
 from app.schemas.source import SOURCES, Source
-from app.services.article_tagging import tag_article
+from app.services.article_tagging import normalize_excerpt, tag_article
 
 IngestResult = dict[str, int | list[str]]
 
@@ -60,7 +61,7 @@ async def ingest_all() -> IngestResult:
                 if not url or not title:
                     continue
 
-                excerpt = entry.get("summary") or None
+                excerpt = normalize_excerpt(entry.get("summary")) or None
                 author = entry.get("author") or None
                 published_at = _published_at(entry)
 
@@ -85,7 +86,7 @@ async def ingest_all() -> IngestResult:
                     .returning(article_table.c.id)
                 )
 
-                result = await session.execute(stmt)
+                result: Result[tuple[Any]] = await session.execute(stmt)
                 if result.scalar_one_or_none() is not None:
                     inserted += 1
                 else:

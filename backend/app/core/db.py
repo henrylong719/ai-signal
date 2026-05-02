@@ -1,3 +1,4 @@
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import Session, create_engine, select
 
 from app import crud
@@ -6,6 +7,7 @@ from app.models import User
 from app.schemas import UserCreate
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
+async_engine = create_async_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 
 
 # make sure all SQLModel table models are imported (app.models) before initializing DB

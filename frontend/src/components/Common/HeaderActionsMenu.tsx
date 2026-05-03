@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import useAuth from '@/hooks/useAuth';
-import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '@/utils';
 
 interface UserInfoProps {
@@ -47,7 +47,11 @@ export const HeaderActionsMenu = () => {
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
-          <UserCircle2Icon className="w-10 h-10 stroke-[1.5]" />
+          {/* <UserCircle2Icon className="w-10 h-10 stroke-[1.5]" /> */}
+
+          <Avatar className="bg-zinc-600 text-white">
+            {getInitials(user?.full_name || 'User')}
+          </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

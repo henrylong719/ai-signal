@@ -3,8 +3,8 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import AuthFlow from '@/components/Auth/AuthFlow';
 import { isLoggedIn } from '@/hooks/useAuth';
 
-export const Route = createFileRoute('/signup')({
-  component: SignUp,
+export const Route = createFileRoute('/login')({
+  component: Login,
   beforeLoad: async () => {
     if (isLoggedIn()) {
       throw redirect({
@@ -15,16 +15,16 @@ export const Route = createFileRoute('/signup')({
   head: () => ({
     meta: [
       {
-        title: 'Sign Up - AI Signal',
+        title: 'Log In - AI Signal',
       },
     ],
   }),
 });
 
-function SignUp() {
+function Login() {
   return (
     <main className="min-h-svh bg-white text-zinc-900">
-      <AuthFlow initialMode="sign-up" className="mx-auto min-h-svh max-w-230" />
+      <AuthFlow initialMode="sign-in" className="mx-auto min-h-svh max-w-230" />
     </main>
   );
 }

@@ -39,7 +39,7 @@ const useAuth = () => {
     mutationFn: (data: UserRegister) =>
       UsersService.registerUser({ requestBody: data }),
     onSuccess: () => {
-      navigate({ to: '/' });
+      navigate({ to: '/login' });
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
@@ -64,6 +64,8 @@ const useAuth = () => {
 
   const logout = () => {
     clearAccessToken();
+    queryClient.setQueryData(['currentUser'], null);
+    queryClient.clear();
     navigate({ to: '/' });
   };
 

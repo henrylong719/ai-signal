@@ -1,8 +1,12 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { type ArticlesPublic, ArticlesService } from '@/client';
 import { ArticleCard } from '@/components/Articles/ArticleCard';
+import {
+  ArticleFeedHeader,
+  type TopicFilter,
+} from '@/components/Articles/ArticleFeedHeader';
 
 const ARTICLES_PAGE_SIZE = 20;
 
@@ -51,6 +55,8 @@ function Dashboard() {
     isFetchingNextPage,
   } = useInfiniteQuery(getArticlesQueryOptions());
 
+  const [activeTopic, setActiveTopic] = useState<TopicFilter>('all');
+
   const articles = data?.pages.flatMap((page) => page.data) ?? [];
   const feedStatus = isFetchingNextPage
     ? 'Loading more...'
@@ -96,7 +102,22 @@ function Dashboard() {
   }
 
   return (
-    <div>
+    <>
+      {/* <ArticleFeedHeader
+        activeTopic={activeTopic}
+        onTopicChange={setActiveTopic}
+      /> */}
+
+      {/* <div className="block overflow-hidden aspect-2/1 mb-2 h-95">
+        <img
+          src={
+            'https://lh3.googleusercontent.com/drETVsTirbeUEMYbkKlOssaKPyMv1goC8jHCO1FbldZNQCpZX5gdNgYsKD5PK7cy5L4u_apXtqyW0a5PhCul7Xoh3CUoY9wnXBs=e365-pa-nu-w1200'
+          }
+          alt={'ai'}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+        />
+      </div> */}
+
       <div>
         {articles.map((article) => (
           <ArticleCard article={article} key={article.id} />
@@ -108,6 +129,6 @@ function Dashboard() {
       >
         {feedStatus}
       </div>
-    </div>
+    </>
   );
 }

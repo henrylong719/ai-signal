@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 
 import {
   type Body_login_login_access_token as AccessToken,
@@ -7,64 +7,73 @@ import {
   type UserPublic,
   type UserRegister,
   UsersService,
-} from "@/client"
-import { handleError } from "@/utils"
-import useCustomToast from "./useCustomToast"
+} from '@/client';
+import {
+  clearAccessToken,
+  getAccessToken,
+  setAccessToken,
+} from '@/lib/auth-token';
+import { handleError } from '@/utils';
+import useCustomToast from './useCustomToast';
 
 const isLoggedIn = () => {
-  return localStorage.getItem("access_token") !== null
-}
+  return getAccessToken() !== '';
+};
+
+type LoginCredentials = AccessToken & {
+  remember?: boolean;
+};
 
 const useAuth = () => {
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const { showErrorToast } = useCustomToast()
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { showErrorToast } = useCustomToast();
 
   const { data: user } = useQuery<UserPublic | null, Error>({
-    queryKey: ["currentUser"],
+    queryKey: ['currentUser'],
     queryFn: UsersService.readUserMe,
     enabled: isLoggedIn(),
-  })
+  });
 
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegister) =>
       UsersService.registerUser({ requestBody: data }),
     onSuccess: () => {
-      navigate({ to: "/login" })
+      navigate({ to: '/' });
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
-  })
+  });
 
-  const login = async (data: AccessToken) => {
+  const login = async ({ remember = true, ...data }: LoginCredentials) => {
     const response = await LoginService.loginAccessToken({
       formData: data,
-    })
-    localStorage.setItem("access_token", response.access_token)
-  }
+    });
+    setAccessToken(response.access_token, remember);
+  };
 
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: () => {
-      navigate({ to: "/" })
+      navigate({ to: '/' });
     },
     onError: handleError.bind(showErrorToast),
-  })
+  });
 
   const logout = () => {
-    localStorage.removeItem("access_token")
-    navigate({ to: "/login" })
-  }
+    clearAccessToken();
+    navigate({ to: '/' });
+  };
 
   return {
     signUpMutation,
     loginMutation,
     logout,
     user,
-  }
-}
+  };
+};
 
-export { isLoggedIn }
-export default useAuth
+export { isLoggedIn };
+export default useAuth;

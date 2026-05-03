@@ -2,7 +2,7 @@ import type { ArticlePublic } from '@/client';
 import { Badge } from '../ui/badge';
 import { BookmarkIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
-import { cn } from '@/lib/utils';
+import { capitalized, cn } from '@/lib/utils';
 
 interface ArticleCardProps {
   article: ArticlePublic;
@@ -67,7 +67,7 @@ export function ArticleCard({
                     variant="secondary"
                     className="font-sans font-normal text-xs text-slate-500 bg-slate-50 border-transparent hover:bg-slate-100 px-2 py-0.5"
                   >
-                    {tag}
+                    {capitalized(tag)}
                   </Badge>
                 ))}
               </div>

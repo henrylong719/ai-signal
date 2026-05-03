@@ -1,0 +1,51 @@
+import { XIcon } from "lucide-react"
+import { useState } from "react"
+
+import AuthFlow from "@/components/Auth/AuthFlow"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+
+function AuthModal() {
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="hidden font-normal sm:inline-flex"
+        >
+          Sign In
+        </Button>
+      </DialogTrigger>
+      <DialogContent
+        showCloseButton={false}
+        overlayClassName="z-[70] bg-black/35"
+        className="z-[80] max-h-[calc(100svh-1.5rem)] overflow-y-auto border-0 bg-white p-0 text-slate-950 shadow-xl dark:bg-white dark:text-slate-950 sm:max-w-[520px] sm:rounded-[4px]"
+      >
+        <DialogTitle className="sr-only">AI Signal authentication</DialogTitle>
+        <DialogDescription className="sr-only">
+          Sign in or create an AI Signal account.
+        </DialogDescription>
+        <AuthFlow
+          closeControl={
+            <DialogClose className="absolute right-5 top-5 z-10 rounded-sm p-1.5 text-zinc-500 transition hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400">
+              <XIcon className="size-5 stroke-[1.6]" />
+              <span className="sr-only">Close</span>
+            </DialogClose>
+          }
+        />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export default AuthModal

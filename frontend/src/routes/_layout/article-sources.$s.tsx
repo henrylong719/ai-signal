@@ -1,16 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeftIcon } from 'lucide-react';
-import { ArticlesService } from '@/client';
-import { ArticleCardSkeleton } from '@/components/Articles/ArticleCardSkeleton';
-import { ArticleList } from '@/components/Articles/ArticleList';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useArticleFeed } from '@/hooks/useArticleFeed';
-import { capitalize } from '@/lib/utils';
+import { useQuery } from "@tanstack/react-query"
+import { createFileRoute, Link } from "@tanstack/react-router"
+import { AlertCircleIcon, ArrowLeftIcon } from "lucide-react"
+import { ArticlesService } from "@/client"
+import { ArticleCardSkeleton } from "@/components/Articles/ArticleCardSkeleton"
+import {
+  ArticleList,
+  ArticleListState,
+} from "@/components/Articles/ArticleList"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useArticleFeed } from "@/hooks/useArticleFeed"
+import { capitalize } from "@/lib/utils"
 
-export const Route = createFileRoute('/_layout/article-sources/$s')({
+export const Route = createFileRoute("/_layout/article-sources/$s")({
   component: ArticlesSources,
-});
+})
 
 function ArticleSourceSkeleton() {
   return (
@@ -37,39 +40,64 @@ function ArticleSourceSkeleton() {
         <ArticleCardSkeleton />
       </div>
     </div>
-  );
+  )
 }
 
 function ArticlesSources() {
-  const { s } = Route.useParams();
+  const { s } = Route.useParams()
 
-  const feed = useArticleFeed({ source: s });
+  const feed = useArticleFeed({ source: s })
 
   const sourcesQuery = useQuery({
-    queryKey: ['articleSources'],
+    queryKey: ["articleSources"],
     queryFn: () => ArticlesService.readSources(),
-  });
+  })
 
-  const source = sourcesQuery.data?.data.find((source) => source.name === s);
+  const source = sourcesQuery.data?.data.find((source) => source.name === s)
 
   if (sourcesQuery.isLoading) {
-    return <ArticleSourceSkeleton />;
+    return <ArticleSourceSkeleton />
+  }
+
+  if (sourcesQuery.isError) {
+    return (
+      <div className="px-4 sm:px-6 lg:px-8 flex-auto md:flex-5">
+        <ArticleListState
+          title="Could not load source"
+          description="Please refresh the page or try again in a moment."
+          icon={<AlertCircleIcon className="h-5 w-5 stroke-[1.5]" />}
+          action={
+            <Link
+              to="/all-article-sources"
+              className="inline-flex h-9 items-center rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+            >
+              <ArrowLeftIcon className="mr-2 h-4 w-4" />
+              Back to sources
+            </Link>
+          }
+        />
+      </div>
+    )
   }
 
   if (!source) {
     return (
-      <div className="w-full bg-white pb-24 pt-20 text-center">
-        <h1 className="text-2xl font-serif text-slate-900 mb-4">
-          Source not found
-        </h1>
-        <Link
-          to="/all-article-sources"
-          className="text-sm text-slate-500 hover:text-slate-900 inline-flex items-center"
-        >
-          <ArrowLeftIcon className="w-4 h-4 mr-2" /> Back to sources
-        </Link>
+      <div className="px-4 sm:px-6 lg:px-8 flex-auto md:flex-5">
+        <ArticleListState
+          title="Source not found"
+          description="This source may have been removed or renamed."
+          action={
+            <Link
+              to="/all-article-sources"
+              className="inline-flex h-9 items-center rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+            >
+              <ArrowLeftIcon className="mr-2 h-4 w-4" />
+              Back to sources
+            </Link>
+          }
+        />
       </div>
-    );
+    )
   }
 
   return (
@@ -89,13 +117,18 @@ function ArticlesSources() {
               </span>
             </div>
             <p className="text-lg text-slate-500 leading-relaxed font-serif">
-              {capitalize(source.description)}
+              {source.description}
             </p>
           </div>
         </div>
       </header>
 
-      <ArticleList {...feed} />
+      <ArticleList
+        {...feed}
+        emptyTitle={`No articles from ${source.name} yet`}
+        emptyDescription="New articles from this source will appear here when they are available."
+        errorTitle={`Could not load articles from ${source.name}`}
+      />
     </div>
-  );
+  )
 }

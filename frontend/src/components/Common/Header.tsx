@@ -31,7 +31,10 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
       <div className="mx-auto h-20 flex items-center justify-between px-10 sm:px-12 md:px-14 lg:px-16">
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link
+            to="/"
+            className="flex items-center gap-2 rounded-sm group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+          >
             <span className="font-serif font-semibold text-3xl tracking-tight">
               AI Signal
             </span>
@@ -51,7 +54,7 @@ const Header = () => {
                           <input
                             type="text"
                             placeholder="Search..."
-                            className="h-10 w-60 rounded-full bg-slate-50 border-transparent focus:bg-white focus:border-slate-200 pl-9 pr-4 text-sm outline-none transition-all placeholder:text-slate-400"
+                            className="h-10 w-60 rounded-full border border-transparent bg-slate-50 focus:bg-white focus:border-slate-200 focus:ring-2 focus:ring-slate-900/10 pl-9 pr-4 text-sm outline-none transition-all placeholder:text-slate-400"
                             {...field}
                           />
                         </div>

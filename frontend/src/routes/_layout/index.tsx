@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { SparklesIcon } from "lucide-react"
 import { useState } from "react"
-import { ArticleList } from "@/components/Articles/ArticleList"
+import {
+  ArticleList,
+  ArticleListState,
+} from "@/components/Articles/ArticleList"
 import { Sidebar } from "@/components/Landing/Sidebar"
 import { useArticleFeed } from "@/hooks/useArticleFeed"
 
@@ -36,7 +40,7 @@ function Dashboard() {
                 key={tab.value}
                 type="button"
                 onClick={() => setActiveTab(tab.value)}
-                className={`pb-5 text-sm font-medium transition-colors relative ${
+                className={`relative rounded-sm pb-5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${
                   activeTab === tab.value
                     ? "text-slate-900"
                     : "text-slate-400 hover:text-slate-600"
@@ -51,7 +55,13 @@ function Dashboard() {
           </div>
         </div>
 
-        {activeTab === "for-you" && <div />}
+        {activeTab === "for-you" && (
+          <ArticleListState
+            title="Personalized signals are not available yet"
+            description="Use Latest for the full feed while personalized recommendations are being prepared."
+            icon={<SparklesIcon className="h-5 w-5 stroke-[1.5]" />}
+          />
+        )}
         {activeTab === "latest" && <ArticleList {...feed} />}
       </div>
       <Sidebar />

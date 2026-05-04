@@ -15,14 +15,15 @@ function CategoryFeed() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 flex-auto md:flex-5">
-      <div className="border-b border-slate-200 pt-6 sticky top-20 bg-white z-40">
-        <div className="flex gap-10">
+      <div className="sticky top-20 z-40 -mx-4 overflow-x-auto border-b border-slate-200 bg-white px-4 pt-6 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex w-max min-w-full gap-8">
           {CATEGORIES.map((tab) => (
             <Link
               key={tab}
               to="/category-feed/$cat"
               params={{ cat: tab }}
-              className={`pb-5 text-sm font-medium transition-colors relative ${
+              aria-current={cat === tab ? "page" : undefined}
+              className={`relative shrink-0 rounded-sm pb-5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${
                 cat === tab
                   ? "text-slate-900"
                   : "text-slate-400 hover:text-slate-600"
@@ -37,7 +38,12 @@ function CategoryFeed() {
         </div>
       </div>
 
-      <ArticleList {...feed} />
+      <ArticleList
+        {...feed}
+        emptyTitle={`No ${capitalize(cat)} articles yet`}
+        emptyDescription="New articles for this topic will appear here when they are available."
+        errorTitle={`Could not load ${capitalize(cat)} articles`}
+      />
     </div>
   )
 }

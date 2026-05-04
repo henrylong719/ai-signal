@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_layout")({
 
 function Layout() {
   return (
-    <>
+    <div className="min-h-screen bg-white text-slate-900">
       {/* <AppSidebar /> */}
 
       {/* <SidebarInset> */}
@@ -26,7 +26,7 @@ function Layout() {
       </main>
       {/* <Footer /> */}
       {/* </SidebarInset> */}
-    </>
+    </div>
   )
 }
 

@@ -8,7 +8,7 @@ import { isLoggedIn } from "@/hooks/useAuth"
 const RecentBookmarks = () => {
   const loggedIn = isLoggedIn()
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["savedArticles"],
     queryFn: () => ArticlesService.readSavedArticles({}),
     enabled: loggedIn,
@@ -27,38 +27,53 @@ const RecentBookmarks = () => {
         </span>
       </div>
       <div className="space-y-5 mt-2">
-        {isLoading
-          ? ["a", "b", "c"].map((key) => (
-              <div key={key} className="flex gap-4 items-start">
-                <Skeleton className="h-8 w-6 rounded" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-full rounded" />
-                  <Skeleton className="h-3 w-24 rounded" />
+        {isLoading ? (
+          ["a", "b", "c"].map((key) => (
+            <div key={key} className="flex gap-4 items-start">
+              <Skeleton className="h-8 w-6 rounded" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-full rounded" />
+                <Skeleton className="h-3 w-24 rounded" />
+              </div>
+            </div>
+          ))
+        ) : isError ? (
+          <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-500">
+            Could not load saved articles.
+          </p>
+        ) : articles.length === 0 ? (
+          <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-500">
+            Saved articles will appear here.
+          </p>
+        ) : (
+          articles.map((article, index) => (
+            <div key={article.id} className="group flex gap-4 items-start">
+              <span className="font-serif text-2xl font-medium text-slate-200 group-hover:text-slate-300 transition-colors leading-none mt-1">
+                0{index + 1}
+              </span>
+              <div>
+                <Link
+                  to={article.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                >
+                  <h4 className="font-serif font-medium text-slate-900 group-hover:text-slate-600 leading-snug mb-1.5">
+                    {article.title}
+                  </h4>
+                </Link>
+                <div className="text-xs text-slate-400 flex items-center gap-1.5 font-sans">
+                  <span className="text-slate-600">{article.source}</span>
                 </div>
               </div>
-            ))
-          : articles.map((article, index) => (
-              <div key={article.id} className="group flex gap-4 items-start">
-                <span className="font-serif text-2xl font-medium text-slate-200 group-hover:text-slate-300 transition-colors leading-none mt-1">
-                  0{index + 1}
-                </span>
-                <div>
-                  <Link to={`/`}>
-                    <h4 className="font-serif font-medium text-slate-900 group-hover:text-slate-600 leading-snug mb-1.5">
-                      {article.title}
-                    </h4>
-                  </Link>
-                  <div className="text-xs text-slate-400 flex items-center gap-1.5 font-sans">
-                    <span className="text-slate-600">{article.source}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+            </div>
+          ))
+        )}
       </div>
 
       <Link
         to="/saved-articles"
-        className="mt-4 inline-flex items-center text-xs font-sans font-medium text-slate-400 hover:text-slate-900 transition-colors"
+        className="mt-4 inline-flex items-center rounded-sm text-xs font-sans font-medium text-slate-400 hover:text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
       >
         See all saved articles{" "}
         <ChevronRightIcon className="w-3 h-3 ml-0.5 stroke-2" />

@@ -1,28 +1,29 @@
-import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, Link, Outlet } from '@tanstack/react-router';
+import { useQuery } from "@tanstack/react-query"
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router"
 
-import { ArrowRightIcon } from 'lucide-react';
-import { useState } from 'react';
-import { ArticlesService, type source_type } from '@/client';
-import { Skeleton } from '@/components/ui/skeleton';
-import { capitalize, cn } from '@/lib/utils';
+import { AlertCircleIcon, ArrowRightIcon } from "lucide-react"
+import { useState } from "react"
+import { ArticlesService, type source_type } from "@/client"
+import { ArticleListState } from "@/components/Articles/ArticleList"
+import { Skeleton } from "@/components/ui/skeleton"
+import { capitalize, cn } from "@/lib/utils"
 
-export const Route = createFileRoute('/_layout/all-article-sources')({
+export const Route = createFileRoute("/_layout/all-article-sources")({
   component: AllArticleSources,
-});
+})
 
-export type source_types = 'all' | source_type;
+export type source_types = "all" | source_type
 
 const SOURCE_TYPES: source_types[] = [
-  'all',
-  'official',
-  'independent',
-  'research',
-  'community',
-];
+  "all",
+  "official",
+  "independent",
+  "research",
+  "community",
+]
 
-const SOURCE_SKELETON_GROUPS = ['official', 'independent', 'research'];
-const SOURCE_SKELETON_ITEMS = ['first', 'second', 'third', 'fourth'];
+const SOURCE_SKELETON_GROUPS = ["official", "independent", "research"]
+const SOURCE_SKELETON_ITEMS = ["first", "second", "third", "fourth"]
 
 function SourceGroupSkeleton() {
   return (
@@ -36,7 +37,7 @@ function SourceGroupSkeleton() {
             {SOURCE_SKELETON_ITEMS.map((item) => (
               <div
                 key={`${group}-${item}`}
-                className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 p-4 rounded-xl border border-slate-100"
+                className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 p-4 rounded-lg border border-slate-100 bg-white"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -53,40 +54,40 @@ function SourceGroupSkeleton() {
         </section>
       ))}
     </>
-  );
+  )
 }
 
 function AllArticleSources() {
-  const [sourceFilter, setSourceFilter] = useState<source_types>('all');
+  const [sourceFilter, setSourceFilter] = useState<source_types>("all")
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['articleSources'],
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["articleSources"],
     queryFn: () => ArticlesService.readSources(),
-  });
+  })
 
   const filteredSources =
-    sourceFilter === 'all'
+    sourceFilter === "all"
       ? data?.data
-      : data?.data.filter((s) => s.source_type === sourceFilter);
+      : data?.data.filter((s) => s.source_type === sourceFilter)
 
-  const groups = SOURCE_TYPES.filter((type) => type !== 'all')
+  const groups = SOURCE_TYPES.filter((type) => type !== "all")
     .map((type) => {
       return {
         type,
         items: filteredSources?.filter((s) => s.source_type === type),
-      };
+      }
     })
-    .filter((group) => (group?.items || []).length > 0);
+    .filter((group) => (group?.items || []).length > 0)
 
   const handleFilterClick = (type: source_types) => {
-    setSourceFilter(type);
-  };
+    setSourceFilter(type)
+  }
 
   return (
     <div className="w-full bg-white pb-24">
       {/* Compact Page Header */}
       <header className="px-4 sm:px-6 lg:px-8 pt-12 pb-8">
-        <div>
+        <div className="max-w-3xl">
           <h1 className="font-serif text-3xl sm:text-4xl font-medium text-slate-900 mb-3 tracking-tight">
             Sources
           </h1>
@@ -104,10 +105,10 @@ function AllArticleSources() {
               key={type}
               onClick={() => handleFilterClick(type)}
               className={cn(
-                'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
+                "px-3 py-1.5 rounded-full text-sm font-medium transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2",
                 sourceFilter === type
-                  ? 'bg-slate-900 text-white border-slate-900'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50',
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50",
               )}
             >
               {capitalize(type)}
@@ -121,13 +122,39 @@ function AllArticleSources() {
         <div className="space-y-16">
           {isLoading ? (
             <SourceGroupSkeleton />
+          ) : isError ? (
+            <ArticleListState
+              title="Could not load sources"
+              description="Please refresh the page or try again in a moment."
+              icon={<AlertCircleIcon className="h-5 w-5 stroke-[1.5]" />}
+            />
+          ) : groups.length === 0 ? (
+            <ArticleListState
+              title={
+                sourceFilter === "all"
+                  ? "No sources yet"
+                  : `No ${capitalize(sourceFilter)} sources yet`
+              }
+              description="Sources will appear here as soon as they are available."
+              action={
+                sourceFilter !== "all" && (
+                  <button
+                    type="button"
+                    onClick={() => setSourceFilter("all")}
+                    className="inline-flex h-9 items-center rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                  >
+                    Show all sources
+                  </button>
+                )
+              }
+            />
           ) : (
             groups.map(
               (group) =>
                 group.items && (
                   <section key={group.type}>
                     <h2 className="font-sans text-sm font-semibold uppercase tracking-widest text-slate-400 mb-6 pb-2 border-b border-slate-100">
-                      {group.type}
+                      {capitalize(group.type)}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {group?.items.map((source) => (
@@ -135,10 +162,11 @@ function AllArticleSources() {
                           key={source.name}
                           to="/article-sources/$s"
                           params={{ s: source.name }}
+                          className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
                         >
                           <div
                             key={source.name}
-                            className="group flex flex-col sm:flex-row sm:items-start justify-between gap-4 p-4 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 hover:shadow-sm transition-all cursor-pointer"
+                            className="group flex flex-col sm:flex-row sm:items-start justify-between gap-4 p-4 rounded-lg border border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50 hover:shadow-sm transition-all cursor-pointer"
                           >
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -171,5 +199,5 @@ function AllArticleSources() {
       </div>
       <Outlet />
     </div>
-  );
+  )
 }

@@ -17,7 +17,12 @@ const RecommendedTopics = () => {
       </div>
       <div className="flex flex-wrap gap-2">
         {CATEGORIES.map((cat) => (
-          <Link key={cat} to={`/category-feed/$cat`} params={{ cat: cat }}>
+          <Link
+            key={cat}
+            to="/category-feed/$cat"
+            params={{ cat }}
+            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+          >
             <Badge
               variant="secondary"
               className="font-sans font-normal text-sm text-slate-900 bg-slate-100 border-transparent hover:bg-slate-200 px-6 py-2 cursor-pointer"

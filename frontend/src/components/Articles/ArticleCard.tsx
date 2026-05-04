@@ -45,7 +45,12 @@ export function ArticleCard({
 
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="flex flex-col justify-between md:h-40 md:flex-3">
-            <Link to={article.url} target="_blank">
+            <Link
+              to={article.url}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+            >
               <div>
                 <h3
                   className={cn(
@@ -82,8 +87,11 @@ export function ArticleCard({
                 <button
                   type="button"
                   onClick={onBookmark}
-                  className="text-slate-300 hover:text-slate-900 transition-colors"
-                  aria-label="Save article"
+                  className="shrink-0 rounded-full p-1 text-slate-300 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                  aria-label={
+                    isBookmarked ? "Remove saved article" : "Save article"
+                  }
+                  aria-pressed={isBookmarked}
                 >
                   <BookmarkIcon
                     className={cn(
@@ -98,7 +106,12 @@ export function ArticleCard({
 
           {article.image_url && (
             <div className="aspect-16/10 w-full shrink-0 overflow-hidden rounded-sm md:flex-1">
-              <Link to={article.url} target="_blank" className="block h-full">
+              <Link
+                to={article.url}
+                target="_blank"
+                rel="noreferrer"
+                className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+              >
                 <img
                   src={article.image_url}
                   alt={article.title}

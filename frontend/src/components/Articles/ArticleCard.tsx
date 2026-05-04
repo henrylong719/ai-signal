@@ -3,6 +3,7 @@ import { Badge } from '../ui/badge';
 import { BookmarkIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { capitalized, cn } from '@/lib/utils';
+import { DateTime } from 'luxon';
 
 interface ArticleCardProps {
   article: ArticlePublic;
@@ -31,13 +32,18 @@ export function ArticleCard({
           <div className="flex items-center gap-2 text-xs text-slate-500 font-sans">
             <span className="text-slate-900">{article.source}</span>
             <span className="text-slate-300">&bull;</span>
-            <span>{article.published_at}</span>
-            <span className="text-slate-300">&bull;</span>
+            <span>
+              {article.published_at
+                ? DateTime.fromISO(article.published_at).toLocaleString(
+                    DateTime.DATE_MED,
+                  )
+                : ''}
+            </span>
           </div>
         </div>
 
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-          <div className="flex flex-col justify-between md:h-50 md:flex-3">
+          <div className="flex flex-col justify-between md:h-40 md:flex-3">
             <Link to={article.url} target="_blank">
               <div>
                 <h3
@@ -65,7 +71,7 @@ export function ArticleCard({
                   <Badge
                     key={tag}
                     variant="secondary"
-                    className="font-sans font-normal text-xs text-slate-500 bg-slate-50 border-transparent hover:bg-slate-100 px-2 py-0.5"
+                    className="font-sans font-normal text-xs text-slate-600 bg-slate-100 border-transparent hover:bg-slate-200 px-2 py-0.5 cursor-pointer"
                   >
                     {capitalized(tag)}
                   </Badge>

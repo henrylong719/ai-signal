@@ -1,0 +1,9 @@
+import { createFileRoute } from '@tanstack/react-router';
+
+export const Route = createFileRoute('/_layout/category-feed/$cat')({
+  component: CategoryFeed,
+});
+
+function CategoryFeed() {
+  return <div>Hello "/_layout/CategoryFeed"!</div>;
+}

@@ -28,7 +28,7 @@ function Layout() {
           <Outlet />
         </div>
       </main>
-      <Footer />
+      {/* <Footer /> */}
       {/* </SidebarInset> */}
     </>
   );

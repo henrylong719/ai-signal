@@ -18,6 +18,7 @@ import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutCategoryFeedCatRouteImport } from './routes/_layout/category-feed.$cat'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -63,6 +64,11 @@ const LayoutAdminRoute = LayoutAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutCategoryFeedCatRoute = LayoutCategoryFeedCatRouteImport.update({
+  id: '/category-feed/$cat',
+  path: '/category-feed/$cat',
+  getParentRoute: () => LayoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/category-feed/$cat': typeof LayoutCategoryFeedCatRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
+  '/category-feed/$cat': typeof LayoutCategoryFeedCatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/category-feed/$cat': typeof LayoutCategoryFeedCatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/items'
     | '/settings'
+    | '/category-feed/$cat'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/items'
     | '/settings'
     | '/'
+    | '/category-feed/$cat'
   id:
     | '__root__'
     | '/_layout'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/_layout/items'
     | '/_layout/settings'
     | '/_layout/'
+    | '/_layout/category-feed/$cat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -203,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/category-feed/$cat': {
+      id: '/_layout/category-feed/$cat'
+      path: '/category-feed/$cat'
+      fullPath: '/category-feed/$cat'
+      preLoaderRoute: typeof LayoutCategoryFeedCatRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
@@ -211,6 +230,7 @@ interface LayoutRouteChildren {
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutCategoryFeedCatRoute: typeof LayoutCategoryFeedCatRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
@@ -218,6 +238,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutCategoryFeedCatRoute: LayoutCategoryFeedCatRoute,
 }
 
 const LayoutRouteWithChildren =

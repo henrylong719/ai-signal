@@ -21,10 +21,11 @@ function Layout() {
   return (
     <>
       {/* <AppSidebar /> */}
+
       {/* <SidebarInset> */}
       <Header />
       <main className="px-6 md:px-8">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto">
           <Outlet />
         </div>
       </main>

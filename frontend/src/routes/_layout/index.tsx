@@ -51,10 +51,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {activeTab === 'for-you' && (
-          <div className="py-8 text-sm text-slate-500">Nothing here yet.</div>
-        )}
-
+        {activeTab === 'for-you' && <div></div>}
         {activeTab === 'latest' && <ArticleList {...feed} />}
       </div>
       <Sidebar />

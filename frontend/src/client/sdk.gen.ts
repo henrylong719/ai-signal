@@ -19,6 +19,13 @@ import type {
   ItemsUpdateItemResponse,
   ItemsDeleteItemData,
   ItemsDeleteItemResponse,
+  SavedArticlesReadSavedArticlesData,
+  SavedArticlesReadSavedArticlesResponse,
+  SavedArticlesReadSavedArticleIdsResponse,
+  SavedArticlesSaveArticleData,
+  SavedArticlesSaveArticleResponse,
+  SavedArticlesUnsaveArticleData,
+  SavedArticlesUnsaveArticleResponse,
   LoginLoginAccessTokenData,
   LoginLoginAccessTokenResponse,
   LoginTestTokenResponse,
@@ -72,6 +79,7 @@ export class ArticlesService {
       url: '/api/v1/articles/',
       query: {
         category: data.category,
+        search: data.search,
         skip: data.skip,
         limit: data.limit,
       },
@@ -97,6 +105,61 @@ export class ArticlesService {
       url: '/api/v1/articles/{id}',
       path: {
         id: data.id,
+      },
+      errors: {
+        422: 'Validation Error',
+      },
+    });
+  }
+}
+
+export class SavedArticlesService {
+  public static readSavedArticles(
+    data: SavedArticlesReadSavedArticlesData = {},
+  ): CancelablePromise<SavedArticlesReadSavedArticlesResponse> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/api/v1/articles/saved/',
+      query: {
+        skip: data.skip,
+        limit: data.limit,
+      },
+      errors: {
+        422: 'Validation Error',
+      },
+    });
+  }
+
+  public static readSavedArticleIds(): CancelablePromise<SavedArticlesReadSavedArticleIdsResponse> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/api/v1/articles/saved/ids',
+    });
+  }
+
+  public static saveArticle(
+    data: SavedArticlesSaveArticleData,
+  ): CancelablePromise<SavedArticlesSaveArticleResponse> {
+    return __request(OpenAPI, {
+      method: 'POST',
+      url: '/api/v1/articles/{article_id}/save',
+      path: {
+        article_id: data.articleId,
+      },
+      errors: {
+        422: 'Validation Error',
+      },
+    });
+  }
+
+  public static unsaveArticle(
+    data: SavedArticlesUnsaveArticleData,
+  ): CancelablePromise<SavedArticlesUnsaveArticleResponse> {
+    return __request(OpenAPI, {
+      method: 'DELETE',
+      url: '/api/v1/articles/{article_id}/save',
+      path: {
+        article_id: data.articleId,
       },
       errors: {
         422: 'Validation Error',

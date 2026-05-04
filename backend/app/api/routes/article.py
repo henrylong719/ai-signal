@@ -2,9 +2,10 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
+from sqlmodel import SQLModel
 
 from app import crud
-from app.api.deps import SessionDep
+from app.api.deps import CurrentUser, SessionDep
 from app.schemas import ArticlePublic, ArticlesPublic
 from app.schemas.source import Category
 
@@ -15,15 +16,16 @@ router = APIRouter(prefix="/articles", tags=["articles"])
 def read_articles(
     session: SessionDep,
     category: Category | None = Query(default=None),
+    search: str | None = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> Any:
     """
     Retrieve articles.
     """
-    count = crud.count_articles(session=session, category=category)
+    count = crud.count_articles(session=session, category=category, search=search)
     articles = crud.get_articles(
-        session=session, category=category, skip=skip, limit=limit
+        session=session, category=category, search=search, skip=skip, limit=limit
     )
     articles_public = [ArticlePublic.model_validate(article) for article in articles]
     return ArticlesPublic(data=articles_public, count=count)
@@ -38,3 +40,82 @@ def read_article(session: SessionDep, id: uuid.UUID) -> Any:
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
     return article
+
+
+# --- Saved articles ---
+
+
+class SavedArticlesPublic(SQLModel):
+    data: list[ArticlePublic]
+    count: int
+
+
+class SavedArticleIdsPublic(SQLModel):
+    article_ids: list[uuid.UUID]
+
+
+@router.get("/saved/", response_model=SavedArticlesPublic)
+def read_saved_articles(
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+) -> Any:
+    """Get current user's saved articles."""
+    count = crud.count_saved_articles(session=session, user_id=current_user.id)
+    saved = crud.get_saved_articles(
+        session=session, user_id=current_user.id, skip=skip, limit=limit
+    )
+    articles = []
+    for s in saved:
+        article = crud.get_article(session=session, article_id=s.article_id)
+        if article:
+            articles.append(ArticlePublic.model_validate(article))
+    return SavedArticlesPublic(data=articles, count=count)
+
+
+@router.get("/saved/ids", response_model=SavedArticleIdsPublic)
+def read_saved_article_ids(
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> Any:
+    """Get IDs of all articles saved by current user (for UI state)."""
+    ids = crud.get_saved_article_ids(session=session, user_id=current_user.id)
+    return SavedArticleIdsPublic(article_ids=ids)
+
+
+@router.post("/{article_id}/save", status_code=201)
+def save_article(
+    session: SessionDep,
+    current_user: CurrentUser,
+    article_id: uuid.UUID,
+) -> Any:
+    """Save an article for the current user."""
+    article = crud.get_article(session=session, article_id=article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    existing = crud.get_saved_article(
+        session=session, user_id=current_user.id, article_id=article_id
+    )
+    if existing:
+        raise HTTPException(status_code=409, detail="Article already saved")
+    crud.save_article(
+        session=session, user_id=current_user.id, article_id=article_id
+    )
+    return {"message": "Article saved"}
+
+
+@router.delete("/{article_id}/save")
+def unsave_article(
+    session: SessionDep,
+    current_user: CurrentUser,
+    article_id: uuid.UUID,
+) -> Any:
+    """Remove article from saved list."""
+    existing = crud.get_saved_article(
+        session=session, user_id=current_user.id, article_id=article_id
+    )
+    if not existing:
+        raise HTTPException(status_code=404, detail="Saved article not found")
+    crud.unsave_article(session=session, saved_article=existing)
+    return {"message": "Article unsaved"}

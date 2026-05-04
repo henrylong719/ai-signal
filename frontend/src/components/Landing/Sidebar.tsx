@@ -3,8 +3,12 @@ import { Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { capitalized } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/constants';
+import { isLoggedIn } from '@/hooks/useAuth';
+import RecentBookmarks from './RecentBookmarks';
 
 export function Sidebar() {
+  const loggedIn = isLoggedIn();
+
   return (
     <aside className="pt-8 hidden lg:block lg:col-span-4 space-y-10 border-l border-slate-100 flex-0 lg:pl-10 md:flex-2">
       {/* Today's Digest Card */}
@@ -31,24 +35,6 @@ export function Sidebar() {
         </Link>
       </div> */}
 
-      {/* Saved Articles Shortcut */}
-      {/* <div>
-        <Link
-          to="/"
-          className="group flex items-center justify-between py-3 border-b border-slate-100 hover:border-slate-200 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="text-slate-400 group-hover:text-slate-900 transition-colors">
-              <BookmarkIcon className="w-5 h-5 stroke-[1.5]" />
-            </div>
-            <span className="font-medium text-slate-900 font-sans text-sm">
-              Your Saved Articles
-            </span>
-          </div>
-          <ChevronRightIcon className="w-4 h-4 text-slate-300 group-hover:text-slate-900 transition-colors" />
-        </Link>
-      </div> */}
-
       {/* Trending Topics */}
       <div>
         <h3 className="font-sans text-xs font-medium uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
@@ -68,12 +54,8 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Popular Signals */}
-      {/* <div className="pt-4">
-        <h3 className="font-sans text-xs font-medium uppercase tracking-wider text-slate-400 mb-5">
-          Popular This Week
-        </h3>
-      </div> */}
+      {/* Saved Articles Shortcut */}
+      {loggedIn && <RecentBookmarks />}
     </aside>
   );
 }

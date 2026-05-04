@@ -5,21 +5,21 @@ import { ARTICLES_PAGE_SIZE } from '@/lib/constants';
 
 interface UseArticleFeedOptions {
   category?: category;
+  search?: string;
 }
 
 export function useArticleFeed(options: UseArticleFeedOptions = {}) {
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   const queryOptions = {
-    queryKey: options.category
-      ? ['articles', options.category]
-      : ['articles'],
+    queryKey: ['articles', options.category ?? null, options.search ?? null],
     initialPageParam: 0,
     queryFn: ({ pageParam }: { pageParam: number }) =>
       ArticlesService.readArticles({
         skip: pageParam,
         limit: ARTICLES_PAGE_SIZE,
         ...(options.category && { category: options.category }),
+        ...(options.search && { search: options.search }),
       }),
     getNextPageParam: (
       lastPage: ArticlesPublic,

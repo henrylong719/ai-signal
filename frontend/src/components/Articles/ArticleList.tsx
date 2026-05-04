@@ -1,6 +1,9 @@
 import type { ArticlePublic } from '@/client';
 import { ArticleCard } from './ArticleCard';
 import { ArticleCardSkeleton } from './ArticleCardSkeleton';
+import { useSavedArticles } from '@/hooks/useSavedArticles';
+import { isLoggedIn } from '@/hooks/useAuth';
+import useCustomToast from '@/hooks/useCustomToast';
 
 interface ArticleListProps {
   articles: ArticlePublic[];
@@ -17,6 +20,18 @@ export function ArticleList({
   isPending,
   isError,
 }: ArticleListProps) {
+  const { savedArticleIds, toggleSave } = useSavedArticles();
+  const { showErrorToast } = useCustomToast();
+
+  const handleBookmark = (articleId: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!isLoggedIn()) {
+      showErrorToast('Please login to save articles!');
+      return;
+    }
+    toggleSave(articleId);
+  };
+
   if (isPending) {
     return (
       <div className="py-8">
@@ -39,7 +54,12 @@ export function ArticleList({
   return (
     <div>
       {articles.map((article) => (
-        <ArticleCard article={article} key={article.id} />
+        <ArticleCard
+          article={article}
+          key={article.id}
+          onBookmark={handleBookmark(article.id)}
+          isBookmarked={savedArticleIds.has(article.id)}
+        />
       ))}
       <div
         ref={loadMoreRef}

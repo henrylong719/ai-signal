@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel
 
-from app.models.article import Article
+from app.models.article import Article, SavedArticle
 from app.models.item import Item
 from app.models.user import User
 from app.schemas import (
@@ -32,6 +32,7 @@ from app.schemas import (
 
 __all__ = [
     "Article",
+    "SavedArticle",
     "ArticleBase",
     "ArticleCreate",
     "ArticlePublic",

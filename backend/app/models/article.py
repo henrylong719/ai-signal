@@ -1,9 +1,9 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Index, String, Text
-from sqlalchemy.dialects.postgresql import ARRAY
-from sqlmodel import Field
+from sqlalchemy import Column, DateTime, ForeignKey, Index, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlmodel import Field, SQLModel
 
 from app.models.base import get_datetime_utc
 from app.schemas.article import ArticleBase
@@ -44,4 +44,27 @@ class Article(ArticleBase, table=True):
 
     __table_args__ = (
         Index("ix_articles_published_at_desc", _published_at_column.desc()),
+    )
+
+
+class SavedArticle(SQLModel, table=True):
+    __tablename__ = "saved_articles"
+
+    user_id: uuid.UUID = Field(
+        sa_column=Column(
+            UUID(as_uuid=True),
+            ForeignKey("user.id", ondelete="CASCADE"),
+            primary_key=True,
+        )
+    )
+    article_id: uuid.UUID = Field(
+        sa_column=Column(
+            UUID(as_uuid=True),
+            ForeignKey("articles.id", ondelete="CASCADE"),
+            primary_key=True,
+        )
+    )
+    saved_at: datetime = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
     )

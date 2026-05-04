@@ -136,6 +136,7 @@ export type ValidationError = {
 
 export type ArticlesReadArticlesData = {
     category?: ('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other' | null);
+    search?: string | null;
     limit?: number;
     skip?: number;
 };
@@ -275,3 +276,33 @@ export type UtilsTestEmailData = {
 export type UtilsTestEmailResponse = (Message);
 
 export type UtilsHealthCheckResponse = (boolean);
+
+export type SavedArticlesPublic = {
+    data: Array<ArticlePublic>;
+    count: number;
+};
+
+export type SavedArticleIdsPublic = {
+    article_ids: Array<string>;
+};
+
+export type SavedArticlesReadSavedArticlesData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type SavedArticlesReadSavedArticlesResponse = (SavedArticlesPublic);
+
+export type SavedArticlesReadSavedArticleIdsResponse = (SavedArticleIdsPublic);
+
+export type SavedArticlesSaveArticleData = {
+    articleId: string;
+};
+
+export type SavedArticlesSaveArticleResponse = (Message);
+
+export type SavedArticlesUnsaveArticleData = {
+    articleId: string;
+};
+
+export type SavedArticlesUnsaveArticleResponse = (Message);

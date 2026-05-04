@@ -16,8 +16,10 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutSavedArticlesRouteImport } from './routes/_layout/saved-articles'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutSearchFeedQRouteImport } from './routes/_layout/search-feed.$q'
 import { Route as LayoutCategoryFeedCatRouteImport } from './routes/_layout/category-feed.$cat'
 
 const SignupRoute = SignupRouteImport.update({
@@ -54,6 +56,11 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutSavedArticlesRoute = LayoutSavedArticlesRouteImport.update({
+  id: '/saved-articles',
+  path: '/saved-articles',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutItemsRoute = LayoutItemsRouteImport.update({
   id: '/items',
   path: '/items',
@@ -62,6 +69,11 @@ const LayoutItemsRoute = LayoutItemsRouteImport.update({
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutSearchFeedQRoute = LayoutSearchFeedQRouteImport.update({
+  id: '/search-feed/$q',
+  path: '/search-feed/$q',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutCategoryFeedCatRoute = LayoutCategoryFeedCatRouteImport.update({
@@ -78,8 +90,10 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/items': typeof LayoutItemsRoute
+  '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
   '/category-feed/$cat': typeof LayoutCategoryFeedCatRoute
+  '/search-feed/$q': typeof LayoutSearchFeedQRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -88,9 +102,11 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/items': typeof LayoutItemsRoute
+  '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
   '/category-feed/$cat': typeof LayoutCategoryFeedCatRoute
+  '/search-feed/$q': typeof LayoutSearchFeedQRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -101,9 +117,11 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/items': typeof LayoutItemsRoute
+  '/_layout/saved-articles': typeof LayoutSavedArticlesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/category-feed/$cat': typeof LayoutCategoryFeedCatRoute
+  '/_layout/search-feed/$q': typeof LayoutSearchFeedQRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -115,8 +133,10 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/items'
+    | '/saved-articles'
     | '/settings'
     | '/category-feed/$cat'
+    | '/search-feed/$q'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -125,9 +145,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/items'
+    | '/saved-articles'
     | '/settings'
     | '/'
     | '/category-feed/$cat'
+    | '/search-feed/$q'
   id:
     | '__root__'
     | '/_layout'
@@ -137,9 +159,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_layout/admin'
     | '/_layout/items'
+    | '/_layout/saved-articles'
     | '/_layout/settings'
     | '/_layout/'
     | '/_layout/category-feed/$cat'
+    | '/_layout/search-feed/$q'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -201,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/saved-articles': {
+      id: '/_layout/saved-articles'
+      path: '/saved-articles'
+      fullPath: '/saved-articles'
+      preLoaderRoute: typeof LayoutSavedArticlesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/items': {
       id: '/_layout/items'
       path: '/items'
@@ -213,6 +244,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof LayoutAdminRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/search-feed/$q': {
+      id: '/_layout/search-feed/$q'
+      path: '/search-feed/$q'
+      fullPath: '/search-feed/$q'
+      preLoaderRoute: typeof LayoutSearchFeedQRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/category-feed/$cat': {
@@ -228,17 +266,21 @@ declare module '@tanstack/react-router' {
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
+  LayoutSavedArticlesRoute: typeof LayoutSavedArticlesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
   LayoutCategoryFeedCatRoute: typeof LayoutCategoryFeedCatRoute
+  LayoutSearchFeedQRoute: typeof LayoutSearchFeedQRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutItemsRoute: LayoutItemsRoute,
+  LayoutSavedArticlesRoute: LayoutSavedArticlesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
   LayoutCategoryFeedCatRoute: LayoutCategoryFeedCatRoute,
+  LayoutSearchFeedQRoute: LayoutSearchFeedQRoute,
 }
 
 const LayoutRouteWithChildren =

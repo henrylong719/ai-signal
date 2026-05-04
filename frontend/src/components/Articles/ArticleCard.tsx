@@ -4,6 +4,7 @@ import { BookmarkIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { capitalized, cn } from '@/lib/utils';
 import { DateTime } from 'luxon';
+import { isLoggedIn } from '@/hooks/useAuth';
 
 interface ArticleCardProps {
   article: ArticlePublic;
@@ -77,19 +78,21 @@ export function ArticleCard({
                   </Badge>
                 ))}
               </div>
-              <button
-                type="button"
-                onClick={onBookmark}
-                className="text-slate-300 hover:text-slate-900 transition-colors"
-                aria-label="Save article"
-              >
-                <BookmarkIcon
-                  className={cn(
-                    'w-5 h-5 stroke-[1.5]',
-                    isBookmarked && 'fill-slate-900 text-slate-900',
-                  )}
-                />
-              </button>
+              {isLoggedIn() && (
+                <button
+                  type="button"
+                  onClick={onBookmark}
+                  className="text-slate-300 hover:text-slate-900 transition-colors"
+                  aria-label="Save article"
+                >
+                  <BookmarkIcon
+                    className={cn(
+                      'w-5 h-5 stroke-[1.5]',
+                      isBookmarked && 'fill-slate-900 text-slate-900',
+                    )}
+                  />
+                </button>
+              )}
             </div>
           </div>
 

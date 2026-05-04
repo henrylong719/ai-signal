@@ -1,4 +1,4 @@
-import { LogOut, Settings, UserCircle2Icon } from 'lucide-react';
+import { LogOut, Bookmark } from 'lucide-react';
 import { useState } from 'react';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import useAuth from '@/hooks/useAuth';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 import { getInitials } from '@/utils';
 
 interface UserInfoProps {
@@ -60,14 +60,16 @@ export const HeaderActionsMenu = () => {
         align="end"
         sideOffset={4}
       >
-        <DropdownMenuLabel className="py-4">
-          <UserInfo fullName={user?.full_name || ''} email={user?.email} />
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
         <RouterLink to="/settings">
+          <DropdownMenuLabel className="py-4">
+            <UserInfo fullName={user?.full_name || ''} email={user?.email} />
+          </DropdownMenuLabel>
+        </RouterLink>
+        <DropdownMenuSeparator />
+        <RouterLink to="/saved-articles">
           <DropdownMenuItem>
-            <Settings />
-            User Settings
+            <Bookmark />
+            Your library
           </DropdownMenuItem>
         </RouterLink>
         <DropdownMenuItem onClick={handleLogout}>

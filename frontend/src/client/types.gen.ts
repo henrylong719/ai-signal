@@ -73,6 +73,32 @@ export type PrivateUserCreate = {
     is_verified?: boolean;
 };
 
+export type SavedArticleIdsPublic = {
+    article_ids: Array<(string)>;
+};
+
+export type SavedArticlesPublic = {
+    data: Array<ArticlePublic>;
+    count: number;
+};
+
+export type SourcePublic = {
+    name: string;
+    default_category: 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other';
+    source_type: 'official' | 'independent' | 'community' | 'research';
+    topic: string;
+    description: string;
+};
+
+export type default_category = 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other';
+
+export type source_type = 'official' | 'independent' | 'community' | 'research';
+
+export type SourcesPublic = {
+    data: Array<SourcePublic>;
+    count: number;
+};
+
 export type Token = {
     access_token: string;
     token_type?: string;
@@ -136,18 +162,46 @@ export type ValidationError = {
 
 export type ArticlesReadArticlesData = {
     category?: ('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other' | null);
-    search?: string | null;
     limit?: number;
+    search?: (string | null);
     skip?: number;
+    source?: (string | null);
 };
 
 export type ArticlesReadArticlesResponse = (ArticlesPublic);
+
+export type ArticlesReadSourcesData = {
+    sourceType?: ('official' | 'independent' | 'community' | 'research' | null);
+};
+
+export type ArticlesReadSourcesResponse = (SourcesPublic);
 
 export type ArticlesReadArticleData = {
     id: string;
 };
 
 export type ArticlesReadArticleResponse = (ArticlePublic);
+
+export type ArticlesReadSavedArticlesData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type ArticlesReadSavedArticlesResponse = (SavedArticlesPublic);
+
+export type ArticlesReadSavedArticleIdsResponse = (SavedArticleIdsPublic);
+
+export type ArticlesSaveArticleData = {
+    articleId: string;
+};
+
+export type ArticlesSaveArticleResponse = (unknown);
+
+export type ArticlesUnsaveArticleData = {
+    articleId: string;
+};
+
+export type ArticlesUnsaveArticleResponse = (unknown);
 
 export type IngestTriggerIngestResponse = (unknown);
 
@@ -276,33 +330,3 @@ export type UtilsTestEmailData = {
 export type UtilsTestEmailResponse = (Message);
 
 export type UtilsHealthCheckResponse = (boolean);
-
-export type SavedArticlesPublic = {
-    data: Array<ArticlePublic>;
-    count: number;
-};
-
-export type SavedArticleIdsPublic = {
-    article_ids: Array<string>;
-};
-
-export type SavedArticlesReadSavedArticlesData = {
-    limit?: number;
-    skip?: number;
-};
-
-export type SavedArticlesReadSavedArticlesResponse = (SavedArticlesPublic);
-
-export type SavedArticlesReadSavedArticleIdsResponse = (SavedArticleIdsPublic);
-
-export type SavedArticlesSaveArticleData = {
-    articleId: string;
-};
-
-export type SavedArticlesSaveArticleResponse = (Message);
-
-export type SavedArticlesUnsaveArticleData = {
-    articleId: string;
-};
-
-export type SavedArticlesUnsaveArticleResponse = (Message);

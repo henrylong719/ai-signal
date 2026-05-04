@@ -2,8 +2,8 @@ export function AuthIntro({
   description,
   title,
 }: {
-  description: string;
-  title: string;
+  description: string
+  title: string
 }) {
   return (
     <div className="w-full text-center">
@@ -14,5 +14,5 @@ export function AuthIntro({
         {description}
       </p>
     </div>
-  );
+  )
 }

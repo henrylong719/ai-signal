@@ -1,17 +1,17 @@
-import type { ArticlePublic } from '@/client';
-import { Badge } from '../ui/badge';
-import { BookmarkIcon } from 'lucide-react';
-import { Link } from '@tanstack/react-router';
-import { capitalized, cn } from '@/lib/utils';
-import { DateTime } from 'luxon';
-import { isLoggedIn } from '@/hooks/useAuth';
+import { Link } from "@tanstack/react-router"
+import { BookmarkIcon } from "lucide-react"
+import { DateTime } from "luxon"
+import type { ArticlePublic } from "@/client"
+import { isLoggedIn } from "@/hooks/useAuth"
+import { capitalize, cn } from "@/lib/utils"
+import { Badge } from "../ui/badge"
 
 interface ArticleCardProps {
-  article: ArticlePublic;
-  featured?: boolean;
-  className?: string;
-  onBookmark?: (e: React.MouseEvent) => void;
-  isBookmarked?: boolean;
+  article: ArticlePublic
+  featured?: boolean
+  className?: string
+  onBookmark?: (e: React.MouseEvent) => void
+  isBookmarked?: boolean
 }
 
 export function ArticleCard({
@@ -24,7 +24,7 @@ export function ArticleCard({
   return (
     <div
       className={cn(
-        'group flex flex-col gap-4 py-8 border-b border-slate-100 last:border-0',
+        "group flex flex-col gap-4 py-8 border-b border-slate-100 last:border-0",
         className,
       )}
     >
@@ -38,7 +38,7 @@ export function ArticleCard({
                 ? DateTime.fromISO(article.published_at).toLocaleString(
                     DateTime.DATE_MED,
                   )
-                : ''}
+                : ""}
             </span>
           </div>
         </div>
@@ -49,16 +49,16 @@ export function ArticleCard({
               <div>
                 <h3
                   className={cn(
-                    'font-serif font-medium text-slate-900 group-hover:text-slate-600 transition-colors leading-snug',
-                    featured ? 'text-3xl' : 'text-xl',
+                    "font-serif font-medium text-slate-900 group-hover:text-slate-600 transition-colors leading-snug",
+                    featured ? "text-3xl" : "text-xl",
                   )}
                 >
                   {article.title}
                 </h3>
                 <p
                   className={cn(
-                    'min-w-0 flex-1 text-slate-500 font-serif leading-relaxed',
-                    featured ? 'text-lg mt-1' : 'text-base line-clamp-3',
+                    "min-w-0 flex-1 text-slate-500 font-serif leading-relaxed",
+                    featured ? "text-lg mt-1" : "text-base line-clamp-3",
                   )}
                 >
                   {article.excerpt}
@@ -74,7 +74,7 @@ export function ArticleCard({
                     variant="secondary"
                     className="font-sans font-normal text-xs text-slate-600 bg-slate-100 border-transparent hover:bg-slate-200 px-2 py-0.5 cursor-pointer"
                   >
-                    {capitalized(tag)}
+                    {capitalize(tag)}
                   </Badge>
                 ))}
               </div>
@@ -87,8 +87,8 @@ export function ArticleCard({
                 >
                   <BookmarkIcon
                     className={cn(
-                      'w-5 h-5 stroke-[1.5]',
-                      isBookmarked && 'fill-slate-900 text-slate-900',
+                      "w-5 h-5 stroke-[1.5]",
+                      isBookmarked && "fill-slate-900 text-slate-900",
                     )}
                   />
                 </button>
@@ -110,5 +110,5 @@ export function ArticleCard({
         </div>
       </div>
     </div>
-  );
+  )
 }

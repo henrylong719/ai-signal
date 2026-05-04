@@ -1,40 +1,34 @@
-import { SavedArticlesService } from '@/client';
-import { isLoggedIn } from '@/hooks/useAuth';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
-import { BookmarkIcon, ChevronRightIcon } from 'lucide-react';
+import { useQuery } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
+import { BookmarkIcon, ChevronRightIcon } from "lucide-react"
+import { ArticlesService } from "@/client"
+import { Skeleton } from "@/components/ui/skeleton"
+import { isLoggedIn } from "@/hooks/useAuth"
 
 const RecentBookmarks = () => {
-  const loggedIn = isLoggedIn();
+  const loggedIn = isLoggedIn()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['savedArticles'],
-    queryFn: () => SavedArticlesService.readSavedArticles({}),
+    queryKey: ["savedArticles"],
+    queryFn: () => ArticlesService.readSavedArticles({}),
     enabled: loggedIn,
-  });
+  })
 
-  const articles = data?.data.slice(0, 5) ?? [];
+  const articles = data?.data.slice(0, 3) ?? []
 
   return (
-    <div className="pt-4">
-      <Link
-        to="/saved-articles"
-        className="group flex items-center justify-between py-3 border-b border-slate-100 hover:border-slate-200 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <div className="text-slate-400 group-hover:text-slate-900 transition-colors">
-            <BookmarkIcon className="w-5 h-5 stroke-[1.5]" />
-          </div>
-          <span className="font-medium text-slate-400 font-sans text-sm">
-            Your Saved Articles
-          </span>
+    <div>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="text-slate-400 group-hover:text-slate-900 transition-colors ">
+          <BookmarkIcon className="w-5 h-5 stroke-[1.5]" />
         </div>
-        <ChevronRightIcon className="w-4 h-4 text-slate-300 group-hover:text-slate-900 transition-colors" />
-      </Link>
+        <span className="font-medium text-slate-400 font-sans text-sm">
+          Your saved articles
+        </span>
+      </div>
       <div className="space-y-5 mt-2">
         {isLoading
-          ? ['a', 'b', 'c'].map((key) => (
+          ? ["a", "b", "c"].map((key) => (
               <div key={key} className="flex gap-4 items-start">
                 <Skeleton className="h-8 w-6 rounded" />
                 <div className="flex-1 space-y-2">
@@ -61,8 +55,16 @@ const RecentBookmarks = () => {
               </div>
             ))}
       </div>
-    </div>
-  );
-};
 
-export default RecentBookmarks;
+      <Link
+        to="/saved-articles"
+        className="mt-4 inline-flex items-center text-xs font-sans font-medium text-slate-400 hover:text-slate-900 transition-colors"
+      >
+        See all saved articles{" "}
+        <ChevronRightIcon className="w-3 h-3 ml-0.5 stroke-2" />
+      </Link>
+    </div>
+  )
+}
+
+export default RecentBookmarks

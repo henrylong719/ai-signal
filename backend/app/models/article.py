@@ -23,9 +23,7 @@ class Article(ArticleBase, table=True):
 
     excerpt: str | None = Field(default=None, sa_type=Text, nullable=True)
     image_url: str | None = Field(default=None, sa_type=Text, nullable=True)
-    author: str | None = Field(
-        default=None, sa_column=Column(String(128), nullable=True)
-    )
+    author: str | None = Field(default=None, sa_type=Text, nullable=True)
 
     category: Category = Field(sa_column=Column(String(32), nullable=False, index=True))
     tags: list[str] = Field(

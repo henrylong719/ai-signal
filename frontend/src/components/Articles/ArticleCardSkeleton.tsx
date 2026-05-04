@@ -23,5 +23,5 @@ export function ArticleCardSkeleton() {
         <div className="aspect-16/10 w-full shrink-0 rounded-sm bg-slate-200 md:flex-1" />
       </div>
     </div>
-  );
+  )
 }

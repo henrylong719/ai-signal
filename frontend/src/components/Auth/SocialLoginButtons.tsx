@@ -1,27 +1,27 @@
-import { FaGithub } from 'react-icons/fa';
-import { FaXTwitter } from 'react-icons/fa6';
-import { FcGoogle } from 'react-icons/fc';
-import { ProviderButton } from './AuthShared';
+import { FaGithub } from "react-icons/fa"
+import { FaXTwitter } from "react-icons/fa6"
+import { FcGoogle } from "react-icons/fc"
+import { ProviderButton } from "./AuthShared"
 
 const socialProviders = [
   {
-    label: 'Google',
+    label: "Google",
     icon: <FcGoogle className="size-5" />,
   },
   {
-    label: 'X',
+    label: "X",
     icon: <FaXTwitter className="size-4 text-slate-950" />,
   },
   {
-    label: 'GitHub',
+    label: "GitHub",
     icon: <FaGithub className="size-5 text-[#24292f]" />,
   },
-];
+]
 
 export function SocialLoginButtons({
   onProviderClick,
 }: {
-  onProviderClick: () => void;
+  onProviderClick: () => void
 }) {
   return (
     <div className="mt-4 grid w-full gap-2">
@@ -36,5 +36,5 @@ export function SocialLoginButtons({
         </ProviderButton>
       ))}
     </div>
-  );
+  )
 }

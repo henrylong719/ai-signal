@@ -16,7 +16,7 @@ interface ProviderButtonProps {
 }
 
 export const primaryButtonClass =
-  'h-10 w-full rounded-[5px] bg-[#0f172a] text-sm font-semibold text-white shadow-none hover:bg-[#111827] sm:h-11 sm:text-base'
+  "h-10 w-full rounded-[5px] bg-[#0f172a] text-sm font-semibold text-white shadow-none hover:bg-[#111827] sm:h-11 sm:text-base"
 
 export function ProviderButton({
   children,

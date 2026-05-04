@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.core.config import settings
+from app.schemas.source import SOURCES
 from tests.utils.article import create_random_article
 
 
@@ -28,6 +29,50 @@ def test_read_articles_by_category(client: TestClient, db: Session) -> None:
     content = response.json()
     assert content["count"] >= 1
     assert all(article["category"] == "engineering" for article in content["data"])
+
+
+def test_read_articles_by_source(client: TestClient, db: Session) -> None:
+    source = f"Example {uuid.uuid4()}"
+    create_random_article(db, source=source)
+    create_random_article(db, source="Different Source")
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/",
+        params={"source": source},
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["count"] == 1
+    assert all(article["source"] == source for article in content["data"])
+
+
+def test_read_sources(client: TestClient) -> None:
+    response = client.get(f"{settings.API_V1_STR}/articles/sources/")
+    assert response.status_code == 200
+    content = response.json()
+    assert content["count"] == len(content["data"])
+    assert content["count"] == len(SOURCES)
+    assert all(source["topic"] != "AI source" for source in content["data"])
+    assert all(source["description"] != "Curated source for AI Signal." for source in content["data"])
+
+    openai = next(source for source in content["data"] if source["name"] == "OpenAI")
+    assert openai == {
+        "name": "OpenAI",
+        "default_category": "models",
+        "source_type": "official",
+        "topic": "AI Research Lab",
+        "description": "Official research, product, safety, and engineering updates from OpenAI.",
+    }
+
+
+def test_read_sources_by_source_type(client: TestClient) -> None:
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/sources/",
+        params={"source_type": "community"},
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["count"] >= 1
+    assert all(source["source_type"] == "community" for source in content["data"])
 
 
 def test_read_article(client: TestClient, db: Session) -> None:

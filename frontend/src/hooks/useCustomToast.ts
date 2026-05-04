@@ -1,15 +1,15 @@
-import { toast } from 'sonner';
+import { toast } from "sonner"
 
 const useCustomToast = () => {
   const showSuccessToast = (description: string) => {
-    toast.success(description);
-  };
+    toast.success(description)
+  }
 
   const showErrorToast = (description: string) => {
-    toast.error(description);
-  };
+    toast.error(description)
+  }
 
-  return { showSuccessToast, showErrorToast };
-};
+  return { showSuccessToast, showErrorToast }
+}
 
-export default useCustomToast;
+export default useCustomToast

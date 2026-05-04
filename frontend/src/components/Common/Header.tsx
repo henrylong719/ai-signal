@@ -1,38 +1,38 @@
-import { Link, useNavigate } from '@tanstack/react-router';
-import { SearchIcon } from 'lucide-react';
-import AuthModal from '../Auth/AuthModal';
-import { HeaderActionsMenu } from './HeaderActionsMenu';
-import { Form, FormControl, FormField, FormItem } from '../ui/form';
-import { useForm } from 'react-hook-form';
-import useAuth from '@/hooks/useAuth';
+import { Link, useNavigate } from "@tanstack/react-router"
+import { SearchIcon } from "lucide-react"
+import { useForm } from "react-hook-form"
+import useAuth from "@/hooks/useAuth"
+import AuthModal from "../Auth/AuthModal"
+import { Form, FormControl, FormField, FormItem } from "../ui/form"
+import { HeaderActionsMenu } from "./HeaderActionsMenu"
 
 interface SearchFormInputs {
-  query: string;
+  query: string
 }
 
 const Header = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
-  const { user } = useAuth();
+  const { user } = useAuth()
 
   const searchForm = useForm<SearchFormInputs>({
     defaultValues: {
-      query: '',
+      query: "",
     },
-  });
+  })
 
   const onSubmit = (data: SearchFormInputs) => {
     if (data.query.trim()) {
-      navigate({ to: '/search-feed/$q', params: { q: data.query.trim() } });
+      navigate({ to: "/search-feed/$q", params: { q: data.query.trim() } })
     }
-  };
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
-      <div className="mx-auto h-20 flex items-center justify-between">
+      <div className="mx-auto h-20 flex items-center justify-between px-10 sm:px-12 md:px-14 lg:px-16">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2 group">
-            <span className="font-serif font-medium text-3xl tracking-tight">
+            <span className="font-serif font-semibold text-3xl tracking-tight">
               AI Signal
             </span>
           </Link>
@@ -69,7 +69,7 @@ const Header = () => {
         </div>
       </div>
     </header>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

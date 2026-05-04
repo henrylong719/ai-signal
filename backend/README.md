@@ -9,6 +9,73 @@
 
 Start the local development environment with Docker Compose following the guide in [../development.md](../development.md).
 
+### Run only the database locally
+
+If you run the frontend and backend directly on your machine, you can run only PostgreSQL in Docker from the repository root:
+
+```console
+$ docker compose up -d db
+```
+
+Check that the database is running and healthy:
+
+```console
+$ docker compose ps db
+```
+
+The local Compose override exposes PostgreSQL on `localhost:5432`, so the backend can use the database settings from the root `.env` file:
+
+```env
+POSTGRES_SERVER=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=<value from POSTGRES_DB in .env>
+POSTGRES_USER=<value from POSTGRES_USER in .env>
+```
+
+After starting the database for the first time, or after adding migrations, run the backend prestart script from `./backend/`:
+
+```console
+$ uv run bash scripts/prestart.sh
+```
+
+This waits for the database, runs Alembic migrations, and creates the initial data.
+
+Running only `docker compose up -d db` does not create application users. It only starts PostgreSQL and creates the database role from `POSTGRES_USER` / `POSTGRES_PASSWORD`. The app's first login user is created by the prestart script from `FIRST_SUPERUSER` / `FIRST_SUPERUSER_PASSWORD` in the root `.env` file. After the prestart script finishes, use those `FIRST_SUPERUSER` credentials to log in.
+
+If you change `FIRST_SUPERUSER` or `FIRST_SUPERUSER_PASSWORD` after the user already exists, the existing database row is not updated automatically. Update the user in the database, or reset local database data with:
+
+```console
+$ docker compose down -v
+```
+
+To also run Adminer for inspecting the database:
+
+```console
+$ docker compose up -d db adminer
+```
+
+Then open `http://localhost:8080` and connect with:
+
+```text
+System: PostgreSQL
+Server: db
+Database: <value from POSTGRES_DB in .env>
+Username: <value from POSTGRES_USER in .env>
+Password: <value from POSTGRES_PASSWORD in .env>
+```
+
+To stop the database without deleting its data:
+
+```console
+$ docker compose stop db
+```
+
+To reset the database data completely:
+
+```console
+$ docker compose down -v
+```
+
 ## General Workflow
 
 By default, the dependencies are managed with [uv](https://docs.astral.sh/uv/), go there and install it.

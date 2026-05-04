@@ -1,22 +1,22 @@
-import type { category } from "@/client"
-import { capitalized, cn } from "@/lib/utils"
+import type { category } from '@/client';
+import { capitalize, cn } from '@/lib/utils';
 
-export type TopicFilter = "all" | category
+export type TopicFilter = 'all' | category;
 
 const FILTER_TOPICS = [
-  "all",
-  "agents",
-  "rag",
-  "models",
-  "infrastructure",
-  "engineering",
-  "research",
-  "other",
-] satisfies TopicFilter[]
+  'all',
+  'agents',
+  'rag',
+  'models',
+  'infrastructure',
+  'engineering',
+  'research',
+  'other',
+] satisfies TopicFilter[];
 
 interface ArticleFeedHeaderProps {
-  activeTopic: TopicFilter
-  onTopicChange: (topic: TopicFilter) => void
+  activeTopic: TopicFilter;
+  onTopicChange: (topic: TopicFilter) => void;
 }
 
 export function ArticleFeedHeader({
@@ -25,7 +25,7 @@ export function ArticleFeedHeader({
 }: ArticleFeedHeaderProps) {
   return (
     <header className="max-w-7xl pb-6">
-      <div className="max-w-3xl">
+      <div>
         <h1 className="font-serif text-3xl font-medium text-slate-900 mb-3 tracking-tight">
           Latest Signals
         </h1>
@@ -42,16 +42,16 @@ export function ArticleFeedHeader({
             key={topic}
             onClick={() => onTopicChange(topic)}
             className={cn(
-              "px-3 py-1.5 rounded-full text-sm font-medium transition-colors border",
+              'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
               activeTopic === topic
-                ? "bg-slate-900 text-white border-slate-900"
-                : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50",
+                ? 'bg-slate-900 text-white border-slate-900'
+                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50',
             )}
           >
-            {capitalized(topic)}
+            {capitalize(topic)}
           </button>
         ))}
       </div>
     </header>
-  )
+  );
 }

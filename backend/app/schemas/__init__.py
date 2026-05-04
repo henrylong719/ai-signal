@@ -7,7 +7,16 @@ from app.schemas.article import (
 )
 from app.schemas.common import Message
 from app.schemas.item import ItemCreate, ItemPublic, ItemsPublic, ItemUpdate
-from app.schemas.source import CATEGORIES, SOURCES, Category, Source
+from app.schemas.source import (
+    CATEGORIES,
+    SOURCE_TYPES,
+    SOURCES,
+    Category,
+    Source,
+    SourcePublic,
+    SourcesPublic,
+    SourceType,
+)
 from app.schemas.token import NewPassword, Token, TokenPayload
 from app.schemas.user import (
     UpdatePassword,
@@ -34,7 +43,11 @@ __all__ = [
     "Message",
     "NewPassword",
     "SOURCES",
+    "SOURCE_TYPES",
     "Source",
+    "SourcePublic",
+    "SourcesPublic",
+    "SourceType",
     "Token",
     "TokenPayload",
     "UpdatePassword",

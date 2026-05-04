@@ -40,8 +40,7 @@ export const ArticlePublicSchema = {
         author: {
             anyOf: [
                 {
-                    type: 'string',
-                    maxLength: 128
+                    type: 'string'
                 },
                 {
                     type: 'null'
@@ -357,6 +356,90 @@ export const PrivateUserCreateSchema = {
     type: 'object',
     required: ['email', 'password', 'full_name'],
     title: 'PrivateUserCreate'
+} as const;
+
+export const SavedArticleIdsPublicSchema = {
+    properties: {
+        article_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Article Ids'
+        }
+    },
+    type: 'object',
+    required: ['article_ids'],
+    title: 'SavedArticleIdsPublic'
+} as const;
+
+export const SavedArticlesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ArticlePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'SavedArticlesPublic'
+} as const;
+
+export const SourcePublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        default_category: {
+            type: 'string',
+            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'other'],
+            title: 'Default Category'
+        },
+        source_type: {
+            type: 'string',
+            enum: ['official', 'independent', 'community', 'research'],
+            title: 'Source Type'
+        },
+        topic: {
+            type: 'string',
+            title: 'Topic'
+        },
+        description: {
+            type: 'string',
+            title: 'Description'
+        }
+    },
+    type: 'object',
+    required: ['name', 'default_category', 'source_type', 'topic', 'description'],
+    title: 'SourcePublic'
+} as const;
+
+export const SourcesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/SourcePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'SourcesPublic'
 } as const;
 
 export const TokenSchema = {

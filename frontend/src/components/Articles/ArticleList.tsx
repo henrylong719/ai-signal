@@ -1,16 +1,16 @@
-import type { ArticlePublic } from '@/client';
-import { ArticleCard } from './ArticleCard';
-import { ArticleCardSkeleton } from './ArticleCardSkeleton';
-import { useSavedArticles } from '@/hooks/useSavedArticles';
-import { isLoggedIn } from '@/hooks/useAuth';
-import useCustomToast from '@/hooks/useCustomToast';
+import type { ArticlePublic } from "@/client"
+import { isLoggedIn } from "@/hooks/useAuth"
+import useCustomToast from "@/hooks/useCustomToast"
+import { useSavedArticles } from "@/hooks/useSavedArticles"
+import { ArticleCard } from "./ArticleCard"
+import { ArticleCardSkeleton } from "./ArticleCardSkeleton"
 
 interface ArticleListProps {
-  articles: ArticlePublic[];
-  feedStatus: string | null;
-  loadMoreRef: (node: HTMLDivElement | null) => void;
-  isPending: boolean;
-  isError: boolean;
+  articles: ArticlePublic[]
+  feedStatus: string | null
+  loadMoreRef: (node: HTMLDivElement | null) => void
+  isPending: boolean
+  isError: boolean
 }
 
 export function ArticleList({
@@ -20,17 +20,17 @@ export function ArticleList({
   isPending,
   isError,
 }: ArticleListProps) {
-  const { savedArticleIds, toggleSave } = useSavedArticles();
-  const { showErrorToast } = useCustomToast();
+  const { savedArticleIds, toggleSave } = useSavedArticles()
+  const { showErrorToast } = useCustomToast()
 
   const handleBookmark = (articleId: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!isLoggedIn()) {
-      showErrorToast('Please login to save articles!');
-      return;
+      showErrorToast("Please login to save articles!")
+      return
     }
-    toggleSave(articleId);
-  };
+    toggleSave(articleId)
+  }
 
   if (isPending) {
     return (
@@ -40,7 +40,7 @@ export function ArticleList({
         <ArticleCardSkeleton />
         <ArticleCardSkeleton />
       </div>
-    );
+    )
   }
 
   if (isError) {
@@ -48,7 +48,7 @@ export function ArticleList({
       <div className="py-8 text-sm text-slate-500">
         Could not load articles.
       </div>
-    );
+    )
   }
 
   return (
@@ -68,5 +68,5 @@ export function ArticleList({
         {feedStatus}
       </div>
     </div>
-  );
+  )
 }

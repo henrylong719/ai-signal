@@ -7,7 +7,13 @@ from sqlmodel import SQLModel
 from app import crud
 from app.api.deps import CurrentUser, SessionDep
 from app.schemas import ArticlePublic, ArticlesPublic
-from app.schemas.source import Category
+from app.schemas.source import (
+    SOURCES,
+    Category,
+    SourcePublic,
+    SourcesPublic,
+    SourceType,
+)
 
 router = APIRouter(prefix="/articles", tags=["articles"])
 
@@ -17,18 +23,47 @@ def read_articles(
     session: SessionDep,
     category: Category | None = Query(default=None),
     search: str | None = Query(default=None),
+    source: str | None = Query(default=None, max_length=64),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> Any:
     """
     Retrieve articles.
     """
-    count = crud.count_articles(session=session, category=category, search=search)
+    count = crud.count_articles(
+        session=session, category=category, search=search, source=source
+    )
     articles = crud.get_articles(
-        session=session, category=category, search=search, skip=skip, limit=limit
+        session=session,
+        category=category,
+        search=search,
+        source=source,
+        skip=skip,
+        limit=limit,
     )
     articles_public = [ArticlePublic.model_validate(article) for article in articles]
     return ArticlesPublic(data=articles_public, count=count)
+
+
+@router.get("/sources/", response_model=SourcesPublic)
+def read_sources(
+    source_type: SourceType | None = Query(default=None),
+) -> Any:
+    """
+    Retrieve configured article sources.
+    """
+    sources = [
+        SourcePublic(
+            name=source.name,
+            default_category=source.default_category,
+            source_type=source.source_type,
+            topic=source.topic,
+            description=source.description,
+        )
+        for source in SOURCES
+        if source_type is None or source.source_type == source_type
+    ]
+    return SourcesPublic(data=sources, count=len(sources))
 
 
 @router.get("/{id}", response_model=ArticlePublic)

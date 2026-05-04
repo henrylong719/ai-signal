@@ -10,11 +10,17 @@ from app.schemas.source import Category
 
 
 def count_articles(
-    *, session: Session, category: Category | None = None, search: str | None = None
+    *,
+    session: Session,
+    category: Category | None = None,
+    search: str | None = None,
+    source: str | None = None,
 ) -> int:
     statement = select(func.count()).select_from(Article)
     if category is not None:
         statement = statement.where(Article.category == category)
+    if source:
+        statement = statement.where(Article.source == source)
     if search:
         escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         pattern = f"%{escaped}%"
@@ -31,10 +37,13 @@ def get_articles(
     limit: int = 50,
     category: Category | None = None,
     search: str | None = None,
+    source: str | None = None,
 ) -> Sequence[Article]:
     statement = select(Article)
     if category is not None:
         statement = statement.where(Article.category == category)
+    if source:
+        statement = statement.where(Article.source == source)
     if search:
         escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         pattern = f"%{escaped}%"

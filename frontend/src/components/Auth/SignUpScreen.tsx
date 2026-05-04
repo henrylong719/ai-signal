@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import type { UseFormReturn } from 'react-hook-form';
+import { useState } from "react"
+import type { UseFormReturn } from "react-hook-form"
 import {
   Form,
   FormControl,
@@ -7,33 +7,37 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { LoadingButton } from '@/components/ui/loading-button';
-import { PasswordInput } from '@/components/ui/password-input';
-import { cn } from '@/lib/utils';
-import { AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, primaryButtonClass } from './AuthShared';
-import { AuthIntro } from './AuthIntro';
-import { SocialLoginButtons } from './SocialLoginButtons';
-import type { SignUpFormData } from './authSchemas';
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { LoadingButton } from "@/components/ui/loading-button"
+import { PasswordInput } from "@/components/ui/password-input"
+import { cn } from "@/lib/utils"
+import { AuthIntro } from "./AuthIntro"
+import {
+  AUTH_INPUT_CLASS,
+  AUTH_LABEL_CLASS,
+  primaryButtonClass,
+} from "./AuthShared"
+import type { SignUpFormData } from "./authSchemas"
+import { SocialLoginButtons } from "./SocialLoginButtons"
 
 const topics = [
-  'AI Agents',
-  'RAG',
-  'LLM Tools',
-  'MCP',
-  'Research',
-  'Voice AI',
-  'Evals',
-  'Startups',
-];
+  "AI Agents",
+  "RAG",
+  "LLM Tools",
+  "MCP",
+  "Research",
+  "Voice AI",
+  "Evals",
+  "Startups",
+]
 
 interface SignUpScreenProps {
-  form: UseFormReturn<SignUpFormData>;
-  loading: boolean;
-  onSignIn: () => void;
-  onSocialProviderClick: () => void;
-  onSubmit: (data: SignUpFormData) => void;
+  form: UseFormReturn<SignUpFormData>
+  loading: boolean
+  onSignIn: () => void
+  onSocialProviderClick: () => void
+  onSubmit: (data: SignUpFormData) => void
 }
 
 export function SignUpScreen({
@@ -43,15 +47,15 @@ export function SignUpScreen({
   onSocialProviderClick,
   onSubmit,
 }: SignUpScreenProps) {
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([])
 
   const toggleTopic = (topic: string) => {
     setSelectedTopics((currentTopics) =>
       currentTopics.includes(topic)
         ? currentTopics.filter((currentTopic) => currentTopic !== topic)
         : [...currentTopics, topic],
-    );
-  };
+    )
+  }
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -117,7 +121,7 @@ export function SignUpScreen({
                         autoComplete="new-password"
                         data-testid="password-input"
                         placeholder="Password"
-                        className={cn(AUTH_INPUT_CLASS, 'pr-12 sm:pr-14')}
+                        className={cn(AUTH_INPUT_CLASS, "pr-12 sm:pr-14")}
                         {...field}
                       />
                     </FormControl>
@@ -139,7 +143,7 @@ export function SignUpScreen({
                         autoComplete="new-password"
                         data-testid="confirm-password-input"
                         placeholder="Confirm password"
-                        className={cn(AUTH_INPUT_CLASS, 'pr-12 sm:pr-14')}
+                        className={cn(AUTH_INPUT_CLASS, "pr-12 sm:pr-14")}
                         {...field}
                       />
                     </FormControl>
@@ -158,24 +162,24 @@ export function SignUpScreen({
             </h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {topics.map((topic) => {
-                const selected = selectedTopics.includes(topic);
+                const selected = selectedTopics.includes(topic)
 
                 return (
                   <button
                     type="button"
                     aria-pressed={selected}
                     className={cn(
-                      'rounded-full border px-3 py-1 text-xs font-semibold transition sm:px-4 sm:py-1.5 sm:text-sm',
+                      "rounded-full border px-3 py-1 text-xs font-semibold transition sm:px-4 sm:py-1.5 sm:text-sm",
                       selected
-                        ? 'border-slate-950 bg-slate-950 text-white'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300',
+                        ? "border-slate-950 bg-slate-950 text-white"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
                     )}
                     key={topic}
                     onClick={() => toggleTopic(topic)}
                   >
                     {topic}
                   </button>
-                );
+                )
               })}
             </div>
           </div>
@@ -183,7 +187,7 @@ export function SignUpScreen({
           <LoadingButton
             type="submit"
             loading={loading}
-            className={cn(primaryButtonClass, 'mt-6')}
+            className={cn(primaryButtonClass, "mt-6")}
           >
             Create Account
           </LoadingButton>
@@ -193,7 +197,7 @@ export function SignUpScreen({
       </Form>
 
       <p className="mt-5 text-center text-sm text-slate-500">
-        Already have an account?{' '}
+        Already have an account?{" "}
         <button
           type="button"
           className="font-semibold text-slate-950 hover:text-blue-700"
@@ -203,5 +207,5 @@ export function SignUpScreen({
         </button>
       </p>
     </div>
-  );
+  )
 }

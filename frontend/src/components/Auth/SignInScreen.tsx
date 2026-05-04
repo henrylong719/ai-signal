@@ -1,7 +1,7 @@
-import { Link as RouterLink } from '@tanstack/react-router';
-import { useId } from 'react';
-import type { UseFormReturn } from 'react-hook-form';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Link as RouterLink } from "@tanstack/react-router"
+import { useId } from "react"
+import type { UseFormReturn } from "react-hook-form"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Form,
   FormControl,
@@ -9,24 +9,28 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { LoadingButton } from '@/components/ui/loading-button';
-import { PasswordInput } from '@/components/ui/password-input';
-import { cn } from '@/lib/utils';
-import { AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, primaryButtonClass } from './AuthShared';
-import { AuthIntro } from './AuthIntro';
-import { SocialLoginButtons } from './SocialLoginButtons';
-import type { LoginFormData } from './authSchemas';
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { LoadingButton } from "@/components/ui/loading-button"
+import { PasswordInput } from "@/components/ui/password-input"
+import { cn } from "@/lib/utils"
+import { AuthIntro } from "./AuthIntro"
+import {
+  AUTH_INPUT_CLASS,
+  AUTH_LABEL_CLASS,
+  primaryButtonClass,
+} from "./AuthShared"
+import type { LoginFormData } from "./authSchemas"
+import { SocialLoginButtons } from "./SocialLoginButtons"
 
 interface SignInScreenProps {
-  form: UseFormReturn<LoginFormData>;
-  loading: boolean;
-  onCreateAccount: () => void;
-  onSocialProviderClick: () => void;
-  onSubmit: (data: LoginFormData) => void;
-  remember: boolean;
-  setRemember: (remember: boolean) => void;
+  form: UseFormReturn<LoginFormData>
+  loading: boolean
+  onCreateAccount: () => void
+  onSocialProviderClick: () => void
+  onSubmit: (data: LoginFormData) => void
+  remember: boolean
+  setRemember: (remember: boolean) => void
 }
 
 export function SignInScreen({
@@ -38,7 +42,7 @@ export function SignInScreen({
   remember,
   setRemember,
 }: SignInScreenProps) {
-  const rememberId = useId();
+  const rememberId = useId()
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -82,7 +86,7 @@ export function SignInScreen({
                       autoComplete="current-password"
                       data-testid="password-input"
                       placeholder="Password"
-                      className={cn(AUTH_INPUT_CLASS, 'pr-12 sm:pr-16')}
+                      className={cn(AUTH_INPUT_CLASS, "pr-12 sm:pr-16")}
                       {...field}
                     />
                   </FormControl>
@@ -117,7 +121,7 @@ export function SignInScreen({
           <LoadingButton
             type="submit"
             loading={loading}
-            className={cn(primaryButtonClass, 'mt-6')}
+            className={cn(primaryButtonClass, "mt-6")}
           >
             Sign In
           </LoadingButton>
@@ -127,7 +131,7 @@ export function SignInScreen({
       </Form>
 
       <p className="mt-5 text-center text-sm text-slate-500">
-        Don&apos;t have an account?{' '}
+        Don&apos;t have an account?{" "}
         <button
           type="button"
           className="font-semibold text-slate-950 hover:text-blue-700"
@@ -137,5 +141,5 @@ export function SignInScreen({
         </button>
       </p>
     </div>
-  );
+  )
 }

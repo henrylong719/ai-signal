@@ -1,12 +1,7 @@
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { createFileRoute, Outlet } from "@tanstack/react-router"
+import Header from "@/components/Common/Header"
 
-import { Footer } from '@/components/Common/Footer';
-import AppSidebar from '@/components/Sidebar/AppSidebar';
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { isLoggedIn } from '@/hooks/useAuth';
-import Header from '@/components/Common/Header';
-
-export const Route = createFileRoute('/_layout')({
+export const Route = createFileRoute("/_layout")({
   component: Layout,
   beforeLoad: async () => {
     // if (!isLoggedIn()) {
@@ -15,7 +10,7 @@ export const Route = createFileRoute('/_layout')({
     //   });
     // }
   },
-});
+})
 
 function Layout() {
   return (
@@ -32,7 +27,7 @@ function Layout() {
       {/* <Footer /> */}
       {/* </SidebarInset> */}
     </>
-  );
+  )
 }
 
-export default Layout;
+export default Layout

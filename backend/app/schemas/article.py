@@ -13,7 +13,7 @@ class ArticleBase(SQLModel):
 
     excerpt: str | None = None
     image_url: str | None = None
-    author: str | None = Field(default=None, max_length=128)
+    author: str | None = None
 
     category: Category
     tags: list[str] = Field(default_factory=list)
@@ -31,7 +31,7 @@ class ArticleUpdate(SQLModel):
     source: str | None = Field(default=None, max_length=64)
     excerpt: str | None = None
     image_url: str | None = None
-    author: str | None = Field(default=None, max_length=128)
+    author: str | None = None
     category: Category | None = None
     tags: list[str] | None = None
     published_at: datetime | None = None

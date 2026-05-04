@@ -18,7 +18,7 @@ import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutSavedArticlesRouteImport } from './routes/_layout/saved-articles'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
-import { Route as LayoutAllArticleSourcesRouteImport } from './routes/_layout/all-article-sources'
+import { Route as LayoutArticleSourcesRouteImport } from './routes/_layout/article-sources'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutSearchFeedQRouteImport } from './routes/_layout/search-feed.$q'
 import { Route as LayoutCategoryFeedCatRouteImport } from './routes/_layout/category-feed.$cat'
@@ -68,9 +68,9 @@ const LayoutItemsRoute = LayoutItemsRouteImport.update({
   path: '/items',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutAllArticleSourcesRoute = LayoutAllArticleSourcesRouteImport.update({
-  id: '/all-article-sources',
-  path: '/all-article-sources',
+const LayoutArticleSourcesRoute = LayoutArticleSourcesRouteImport.update({
+  id: '/article-sources',
+  path: '/article-sources',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
@@ -89,9 +89,9 @@ const LayoutCategoryFeedCatRoute = LayoutCategoryFeedCatRouteImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutArticleSourcesSRoute = LayoutArticleSourcesSRouteImport.update({
-  id: '/article-sources/$s',
-  path: '/article-sources/$s',
-  getParentRoute: () => LayoutRoute,
+  id: '/$s',
+  path: '/$s',
+  getParentRoute: () => LayoutArticleSourcesRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -101,7 +101,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
-  '/all-article-sources': typeof LayoutAllArticleSourcesRoute
+  '/article-sources': typeof LayoutArticleSourcesRouteWithChildren
   '/items': typeof LayoutItemsRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
@@ -115,7 +115,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
-  '/all-article-sources': typeof LayoutAllArticleSourcesRoute
+  '/article-sources': typeof LayoutArticleSourcesRouteWithChildren
   '/items': typeof LayoutItemsRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
@@ -132,7 +132,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
-  '/_layout/all-article-sources': typeof LayoutAllArticleSourcesRoute
+  '/_layout/article-sources': typeof LayoutArticleSourcesRouteWithChildren
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/saved-articles': typeof LayoutSavedArticlesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
@@ -150,7 +150,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
-    | '/all-article-sources'
+    | '/article-sources'
     | '/items'
     | '/saved-articles'
     | '/settings'
@@ -164,7 +164,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
-    | '/all-article-sources'
+    | '/article-sources'
     | '/items'
     | '/saved-articles'
     | '/settings'
@@ -180,7 +180,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_layout/admin'
-    | '/_layout/all-article-sources'
+    | '/_layout/article-sources'
     | '/_layout/items'
     | '/_layout/saved-articles'
     | '/_layout/settings'
@@ -263,11 +263,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutItemsRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/all-article-sources': {
-      id: '/_layout/all-article-sources'
-      path: '/all-article-sources'
-      fullPath: '/all-article-sources'
-      preLoaderRoute: typeof LayoutAllArticleSourcesRouteImport
+    '/_layout/article-sources': {
+      id: '/_layout/article-sources'
+      path: '/article-sources'
+      fullPath: '/article-sources'
+      preLoaderRoute: typeof LayoutArticleSourcesRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/admin': {
@@ -293,34 +293,43 @@ declare module '@tanstack/react-router' {
     }
     '/_layout/article-sources/$s': {
       id: '/_layout/article-sources/$s'
-      path: '/article-sources/$s'
+      path: '/$s'
       fullPath: '/article-sources/$s'
       preLoaderRoute: typeof LayoutArticleSourcesSRouteImport
-      parentRoute: typeof LayoutRoute
+      parentRoute: typeof LayoutArticleSourcesRoute
     }
   }
 }
 
+interface LayoutArticleSourcesRouteChildren {
+  LayoutArticleSourcesSRoute: typeof LayoutArticleSourcesSRoute
+}
+
+const LayoutArticleSourcesRouteChildren: LayoutArticleSourcesRouteChildren = {
+  LayoutArticleSourcesSRoute: LayoutArticleSourcesSRoute,
+}
+
+const LayoutArticleSourcesRouteWithChildren =
+  LayoutArticleSourcesRoute._addFileChildren(LayoutArticleSourcesRouteChildren)
+
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
-  LayoutAllArticleSourcesRoute: typeof LayoutAllArticleSourcesRoute
+  LayoutArticleSourcesRoute: typeof LayoutArticleSourcesRouteWithChildren
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutSavedArticlesRoute: typeof LayoutSavedArticlesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
-  LayoutArticleSourcesSRoute: typeof LayoutArticleSourcesSRoute
   LayoutCategoryFeedCatRoute: typeof LayoutCategoryFeedCatRoute
   LayoutSearchFeedQRoute: typeof LayoutSearchFeedQRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
-  LayoutAllArticleSourcesRoute: LayoutAllArticleSourcesRoute,
+  LayoutArticleSourcesRoute: LayoutArticleSourcesRouteWithChildren,
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutSavedArticlesRoute: LayoutSavedArticlesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
-  LayoutArticleSourcesSRoute: LayoutArticleSourcesSRoute,
   LayoutCategoryFeedCatRoute: LayoutCategoryFeedCatRoute,
   LayoutSearchFeedQRoute: LayoutSearchFeedQRoute,
 }

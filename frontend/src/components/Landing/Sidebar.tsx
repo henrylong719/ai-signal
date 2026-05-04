@@ -1,13 +1,10 @@
-import { Link } from '@tanstack/react-router';
-import { Sparkles } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { capitalized } from '@/lib/utils';
-import { CATEGORIES } from '@/lib/constants';
-import { isLoggedIn } from '@/hooks/useAuth';
-import RecentBookmarks from './RecentBookmarks';
+import useAuth from "@/hooks/useAuth"
+import ArticleSource from "./ArticleSource"
+import RecentBookmarks from "./RecentBookmarks"
+import RecommendedTopics from "./RecommendedTopics"
 
 export function Sidebar() {
-  const loggedIn = isLoggedIn();
+  const { user } = useAuth()
 
   return (
     <aside className="pt-8 hidden lg:block lg:col-span-4 space-y-10 border-l border-slate-100 flex-0 lg:pl-10 md:flex-2">
@@ -35,27 +32,14 @@ export function Sidebar() {
         </Link>
       </div> */}
 
-      {/* Trending Topics */}
-      <div>
-        <h3 className="font-sans text-xs font-medium uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 stroke-[1.5]" /> Recommended topics
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((cat) => (
-            <Link key={cat} to={`/category-feed/$cat`} params={{ cat: cat }}>
-              <Badge
-                variant="secondary"
-                className="font-sans font-normal text-sm text-slate-900 bg-slate-100 border-transparent hover:bg-slate-200 px-6 py-2 cursor-pointer"
-              >
-                {capitalized(cat)}
-              </Badge>
-            </Link>
-          ))}
-        </div>
-      </div>
+      {/* Recommended Topics */}
+      <RecommendedTopics />
+
+      {/* Sources */}
+      <ArticleSource />
 
       {/* Saved Articles Shortcut */}
-      {loggedIn && <RecentBookmarks />}
+      {user && <RecentBookmarks />}
     </aside>
-  );
+  )
 }

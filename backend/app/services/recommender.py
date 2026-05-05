@@ -82,8 +82,8 @@ class UserProfile:
     saved_sources: frozenset[str] = field(default_factory=frozenset)
     clicked_tags: frozenset[str] = field(default_factory=frozenset)
     clicked_sources: frozenset[str] = field(default_factory=frozenset)
-    saved_article_ids: frozenset[str] = field(default_factory=frozenset)
-    dismissed_article_ids: frozenset[str] = field(default_factory=frozenset)
+    saved_article_ids: frozenset[UUID] = field(default_factory=frozenset)
+    dismissed_article_ids: frozenset[UUID] = field(default_factory=frozenset)
 
     @property
     def has_any_signal(self) -> bool:
@@ -362,12 +362,12 @@ def reason_for(scored: ScoredArticle, profile: UserProfile) -> str | None:
             tag = sorted(matched_tags)[0]
             return f"Matches your interest in {tag}"
         return "Matches your interest"
-        if dominant == "source":
-            return f"Popular from {article.source}"
-        if dominant == "recency":
-            return "Fresh from you feed"
+    if dominant == "source":
+        return f"Popular from {article.source}"
+    if dominant == "recency":
+        return "Fresh from your feed"
 
-        return None
+    return None
 
 
 # ---------------------------------------------------------------------------

@@ -1,29 +1,39 @@
-import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router"
+import { useQuery } from '@tanstack/react-query';
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useLocation,
+} from '@tanstack/react-router';
 
-import { AlertCircleIcon, ArrowRightIcon } from "lucide-react"
-import { useState } from "react"
-import { ArticlesService, type source_type } from "@/client"
-import { ArticleListState } from "@/components/Articles/ArticleList"
-import { Skeleton } from "@/components/ui/skeleton"
-import { capitalize, cn } from "@/lib/utils"
+import { AlertCircleIcon, ArrowRightIcon } from 'lucide-react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { ArticlesService, type source_type } from '@/client';
+import { ArticleListState } from '@/components/Articles/ArticleList';
+import { Skeleton } from '@/components/ui/skeleton';
+import { capitalize, cn } from '@/lib/utils';
 
-export const Route = createFileRoute("/_layout/all-article-sources")({
+export const Route = createFileRoute('/_layout/all-article-sources')({
   component: AllArticleSources,
-})
+});
 
-export type source_types = "all" | source_type
+export type source_types = 'all' | source_type;
 
 const SOURCE_TYPES: source_types[] = [
-  "all",
-  "official",
-  "independent",
-  "research",
-  "community",
-]
+  'all',
+  'official',
+  'independent',
+  'research',
+  'media',
+  'newsletter',
+  'community',
+];
 
-const SOURCE_SKELETON_GROUPS = ["official", "independent", "research"]
-const SOURCE_SKELETON_ITEMS = ["first", "second", "third", "fourth"]
+const isSourceType = (value: unknown): value is source_types =>
+  typeof value === 'string' && SOURCE_TYPES.includes(value as source_types);
+
+const SOURCE_SKELETON_GROUPS = ['official', 'research', 'media'];
+const SOURCE_SKELETON_ITEMS = ['first', 'second', 'third', 'fourth'];
 
 function SourceGroupSkeleton() {
   return (
@@ -54,34 +64,61 @@ function SourceGroupSkeleton() {
         </section>
       ))}
     </>
-  )
+  );
 }
 
 function AllArticleSources() {
-  const [sourceFilter, setSourceFilter] = useState<source_types>("all")
+  const location = useLocation();
+  const savedRouteState = location.state as {
+    allArticleSourcesFilter?: unknown;
+    allArticleSourcesScrollY?: unknown;
+  };
+  const [sourceFilter, setSourceFilter] = useState<source_types>(() =>
+    isSourceType(savedRouteState.allArticleSourcesFilter)
+      ? savedRouteState.allArticleSourcesFilter
+      : 'all',
+  );
+  const hasRestoredScroll = useRef(false);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["articleSources"],
+    queryKey: ['articleSources'],
     queryFn: () => ArticlesService.readSources(),
-  })
+  });
+
+  const savedScrollY = savedRouteState.allArticleSourcesScrollY;
+
+  useLayoutEffect(() => {
+    if (
+      hasRestoredScroll.current ||
+      isLoading ||
+      typeof savedScrollY !== 'number'
+    ) {
+      return;
+    }
+
+    hasRestoredScroll.current = true;
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: savedScrollY });
+    });
+  }, [isLoading, savedScrollY]);
 
   const filteredSources =
-    sourceFilter === "all"
+    sourceFilter === 'all'
       ? data?.data
-      : data?.data.filter((s) => s.source_type === sourceFilter)
+      : data?.data.filter((s) => s.source_type === sourceFilter);
 
-  const groups = SOURCE_TYPES.filter((type) => type !== "all")
+  const groups = SOURCE_TYPES.filter((type) => type !== 'all')
     .map((type) => {
       return {
         type,
         items: filteredSources?.filter((s) => s.source_type === type),
-      }
+      };
     })
-    .filter((group) => (group?.items || []).length > 0)
+    .filter((group) => (group?.items || []).length > 0);
 
   const handleFilterClick = (type: source_types) => {
-    setSourceFilter(type)
-  }
+    setSourceFilter(type);
+  };
 
   return (
     <div className="w-full bg-white pb-24">
@@ -92,8 +129,9 @@ function AllArticleSources() {
             Sources
           </h1>
           <p className="text-lg text-slate-500 leading-relaxed font-serif">
-            Explore the official publications, research feeds, independent
-            writers, and community sites behind AI Signal.
+            Explore the official publications, research feeds, media outlets,
+            newsletters, independent writers, and community sites behind AI
+            Signal.
           </p>
         </div>
 
@@ -105,10 +143,10 @@ function AllArticleSources() {
               key={type}
               onClick={() => handleFilterClick(type)}
               className={cn(
-                "px-3 py-1.5 rounded-full text-sm font-medium transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2",
+                'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2',
                 sourceFilter === type
-                  ? "bg-slate-900 text-white border-slate-900"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50",
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50',
               )}
             >
               {capitalize(type)}
@@ -131,16 +169,16 @@ function AllArticleSources() {
           ) : groups.length === 0 ? (
             <ArticleListState
               title={
-                sourceFilter === "all"
-                  ? "No sources yet"
+                sourceFilter === 'all'
+                  ? 'No sources yet'
                   : `No ${capitalize(sourceFilter)} sources yet`
               }
               description="Sources will appear here as soon as they are available."
               action={
-                sourceFilter !== "all" && (
+                sourceFilter !== 'all' && (
                   <button
                     type="button"
-                    onClick={() => setSourceFilter("all")}
+                    onClick={() => setSourceFilter('all')}
                     className="inline-flex h-9 items-center rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
                   >
                     Show all sources
@@ -162,6 +200,11 @@ function AllArticleSources() {
                           key={source.name}
                           to="/article-sources/$s"
                           params={{ s: source.name }}
+                          state={(previousState) => ({
+                            ...previousState,
+                            allArticleSourcesFilter: sourceFilter,
+                            allArticleSourcesScrollY: window.scrollY,
+                          })}
                           className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
                         >
                           <div
@@ -184,7 +227,7 @@ function AllArticleSources() {
                                 {source.description}
                               </p>
                             </div>
-                            <div className="hidden sm:flex shrink-0 items-center justify-center w-8 h-8 rounded-full bg-white border border-slate-100 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="mt-3 hidden sm:flex shrink-0 items-center justify-center w-8 h-8 rounded-full bg-white border border-slate-100 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
                               <ArrowRightIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors" />
                             </div>
                           </div>
@@ -199,5 +242,5 @@ function AllArticleSources() {
       </div>
       <Outlet />
     </div>
-  )
+  );
 }

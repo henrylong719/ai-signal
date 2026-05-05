@@ -55,7 +55,7 @@ def set_interests(
             "updated_at": now,
         },
     )
-    session.exec(stmt)  # type: ignore[call-overload]
+    session.exec(stmt)
     session.commit()
 
     # Re-fetch so the caller gets the canonical row, not a stale snapshot.

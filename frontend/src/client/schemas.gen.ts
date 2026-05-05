@@ -50,7 +50,7 @@ export const ArticlePublicSchema = {
         },
         category: {
             type: 'string',
-            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'other'],
+            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other'],
             title: 'Category'
         },
         tags: {
@@ -401,12 +401,12 @@ export const SourcePublicSchema = {
         },
         default_category: {
             type: 'string',
-            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'other'],
+            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other'],
             title: 'Default Category'
         },
         source_type: {
             type: 'string',
-            enum: ['official', 'independent', 'community', 'research'],
+            enum: ['official', 'independent', 'community', 'research', 'media', 'newsletter'],
             title: 'Source Type'
         },
         topic: {
@@ -526,7 +526,7 @@ export const UserInterestPublicSchema = {
         categories: {
             items: {
                 type: 'string',
-                enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'other']
+                enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other']
             },
             type: 'array',
             title: 'Categories',
@@ -567,10 +567,10 @@ export const UserInterestUpdateSchema = {
         categories: {
             items: {
                 type: 'string',
-                enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'other']
+                enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other']
             },
             type: 'array',
-            maxItems: 7,
+            maxItems: 11,
             title: 'Categories'
         },
         tags: {

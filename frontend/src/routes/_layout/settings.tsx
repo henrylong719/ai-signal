@@ -4,6 +4,7 @@ import { AlertCircleIcon, LogInIcon } from "lucide-react"
 import { ArticleListState } from "@/components/Articles/ArticleList"
 import ChangePassword from "@/components/UserSettings/ChangePassword"
 import DeleteAccount from "@/components/UserSettings/DeleteAccount"
+import InterestPicker from "@/components/UserSettings/InterestPicker"
 import UserInformation from "@/components/UserSettings/UserInformation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -11,6 +12,7 @@ import useAuth from "@/hooks/useAuth"
 
 const tabsConfig = [
   { value: "my-profile", title: "My profile", component: UserInformation },
+  { value: "interests", title: "Interests", component: InterestPicker },
   { value: "password", title: "Password", component: ChangePassword },
   { value: "danger-zone", title: "Danger zone", component: DeleteAccount },
 ]
@@ -29,9 +31,11 @@ export const Route = createFileRoute("/_layout/settings")({
 function SettingsSkeleton() {
   return (
     <div className="px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
-      <header className="pt-12 pb-5 border-b border-slate-100">
-        <Skeleton className="h-10 w-56 rounded" />
-        <Skeleton className="mt-3 h-5 w-full max-w-md rounded" />
+      <header className="pt-10 pb-8">
+        <div className="flex flex-col items-center pb-5">
+          <Skeleton className="h-10 w-56 rounded" />
+          <Skeleton className="mt-3 h-5 w-full max-w-md rounded" />
+        </div>
       </header>
       <div className="space-y-6">
         <Skeleton className="h-9 w-80 max-w-full rounded-lg" />
@@ -48,8 +52,12 @@ function SettingsSkeleton() {
 
 function UserSettings() {
   const { user: currentUser, isLoading, isError } = useAuth()
+  // Existing behaviour: same tabs shown for both groups (the slice was a
+  // no-op since both arrays are equivalent in length). The slice still
+  // gives a single point to gate Danger zone if we ever want to hide it
+  // from superusers — currently we don't.
   const finalTabs = currentUser?.is_superuser
-    ? tabsConfig.slice(0, 3)
+    ? tabsConfig.slice(0, 4)
     : tabsConfig
 
   if (isLoading) {
@@ -90,13 +98,15 @@ function UserSettings() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
-      <header className="pt-12 pb-5 border-b border-slate-100">
-        <h1 className="font-serif text-3xl sm:text-4xl font-medium text-slate-900 tracking-tight">
-          User settings
-        </h1>
-        <p className="mt-3 text-lg text-slate-500 leading-relaxed font-serif">
-          Manage your account settings and preferences.
-        </p>
+      <header className="pt-10 pb-8">
+        <div className="text-center pb-5">
+          <h1 className="font-serif text-3xl sm:text-4xl font-medium text-slate-900 mb-3 tracking-tight">
+            User settings
+          </h1>
+          <p className="text-lg text-slate-500 leading-relaxed font-serif">
+            Manage your account settings and preferences.
+          </p>
+        </div>
       </header>
 
       <Tabs defaultValue="my-profile">

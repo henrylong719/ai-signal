@@ -75,3 +75,38 @@ def test_tag_article_identifies_agent_subtopic_tags() -> None:
 
     assert category == "agents"
     assert tags == ["agents", "mcp", "tool-use", "workflows"]
+
+
+def test_tag_article_identifies_expanded_categories() -> None:
+    examples = [
+        (
+            "AI tutoring in the classroom",
+            "Education use cases are changing workplace productivity.",
+            "applications",
+            {"applications", "education", "productivity"},
+        ),
+        (
+            "AI startup raises new funding",
+            "Investors lifted the company's valuation as enterprise AI adoption grows.",
+            "business",
+            {"business", "market", "startups"},
+        ),
+        (
+            "AI regulation and copyright lawsuit update",
+            "Policy makers are weighing governance rules and licensing requirements.",
+            "policy",
+            {"legal", "policy", "regulation"},
+        ),
+        (
+            "Red-team report on prompt injection",
+            "The study covers safety, alignment, jailbreaks, misuse, and privacy risks.",
+            "safety",
+            {"alignment", "safety", "security"},
+        ),
+    ]
+
+    for title, excerpt, expected_category, expected_tags in examples:
+        category, tags = tag_article(title=title, excerpt=excerpt, fallback="other")
+
+        assert category == expected_category
+        assert expected_tags.issubset(tags)

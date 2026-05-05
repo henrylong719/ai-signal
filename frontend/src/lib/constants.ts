@@ -7,12 +7,18 @@ export const CATEGORIES: category[] = [
   "infrastructure",
   "engineering",
   "research",
+  "applications",
+  "business",
+  "policy",
+  "safety",
   "other",
 ]
 
 export const previewSourceTypes: SourcePublic["source_type"][] = [
   "official",
   "research",
+  "media",
+  "newsletter",
   "independent",
   "community",
 ]

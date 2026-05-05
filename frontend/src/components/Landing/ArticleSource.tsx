@@ -6,9 +6,12 @@ import {
   FlaskConicalIcon,
   Library,
   type LucideIcon,
+  MailIcon,
+  MegaphoneIcon,
   NewspaperIcon,
   UsersIcon,
 } from "lucide-react"
+import { useMemo } from "react"
 import { ArticlesService, type SourcePublic } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { previewSourceTypes } from "@/lib/constants"
@@ -20,17 +23,39 @@ const sourceTypeIcons: Record<SourcePublic["source_type"], LucideIcon> = {
   independent: NewspaperIcon,
   community: UsersIcon,
   research: FlaskConicalIcon,
+  media: MegaphoneIcon,
+  newsletter: MailIcon,
+}
+
+const shuffle = <T,>(items: T[]) => {
+  const shuffled = [...items]
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    const currentItem = shuffled[index]
+
+    shuffled[index] = shuffled[swapIndex]
+    shuffled[swapIndex] = currentItem
+  }
+
+  return shuffled
 }
 
 const getPreviewSources = (sources: SourcePublic[], limit = 4) => {
   const selected: SourcePublic[] = []
   const selectedNames = new Set<string>()
+  const sourcesByType = new Map<SourcePublic["source_type"], SourcePublic[]>()
 
-  for (const sourceType of previewSourceTypes) {
-    const source = sources.find(
-      (item) =>
-        item.source_type === sourceType && !selectedNames.has(item.name),
-    )
+  for (const source of sources) {
+    const existingSources = sourcesByType.get(source.source_type) ?? []
+
+    sourcesByType.set(source.source_type, [...existingSources, source])
+  }
+
+  for (const sourceType of shuffle(previewSourceTypes)) {
+    if (selected.length >= limit) break
+
+    const source = shuffle(sourcesByType.get(sourceType) ?? [])[0]
 
     if (source) {
       selected.push(source)
@@ -38,8 +63,9 @@ const getPreviewSources = (sources: SourcePublic[], limit = 4) => {
     }
   }
 
-  for (const source of sources) {
+  for (const source of shuffle(sources)) {
     if (selected.length >= limit) break
+
     if (!selectedNames.has(source.name)) {
       selected.push(source)
       selectedNames.add(source.name)
@@ -55,7 +81,7 @@ const ArticleSource = () => {
     queryFn: () => ArticlesService.readSources(),
   })
 
-  const sources = getPreviewSources(data?.data ?? [])
+  const sources = useMemo(() => getPreviewSources(data?.data ?? []), [data])
 
   return (
     <div>

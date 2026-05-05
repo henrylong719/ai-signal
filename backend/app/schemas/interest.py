@@ -5,13 +5,13 @@ from datetime import datetime
 from pydantic import Field
 from sqlmodel import SQLModel
 
-from app.schemas.source import Category
+from app.schemas.source import CATEGORIES, Category
 
 # Tags are user-supplied free text. We cap quantity and length at the schema
 # layer so the storage column can't be DOS'd by a malicious or buggy client.
 _MAX_TAGS = 20
 _MAX_TAG_LENGTH = 32
-_MAX_CATEGORIES = 7  # currently we have 7 distinct Category values
+_MAX_CATEGORIES = len(CATEGORIES)
 
 
 class UserInterestPublic(SQLModel):

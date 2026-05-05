@@ -3,12 +3,12 @@ from fastapi import APIRouter
 from app.api.routes import (
     article,
     ingest,
+    interest,
     items,
     login,
     private,
     users,
     utils,
-    interest,
 )
 from app.core.config import settings
 

@@ -11,6 +11,10 @@ const FILTER_TOPICS = [
   "infrastructure",
   "engineering",
   "research",
+  "applications",
+  "business",
+  "policy",
+  "safety",
   "other",
 ] satisfies TopicFilter[]
 
@@ -25,13 +29,13 @@ export function ArticleFeedHeader({
 }: ArticleFeedHeaderProps) {
   return (
     <header className="max-w-7xl pb-6">
-      <div>
-        <h1 className="font-serif text-3xl font-medium text-slate-900 mb-3 tracking-tight">
+      <div className="text-center pb-5">
+        <h1 className="font-serif text-3xl sm:text-4xl font-medium text-slate-900 mb-3 tracking-tight">
           Latest Signals
         </h1>
         <p className="text-lg text-slate-500 leading-relaxed font-serif">
-          Curated AI engineering updates on agents, RAG, LLM tools, research,
-          and developer trends.
+          Curated AI updates on agents, RAG, models, infrastructure,
+          applications, policy, and developer trends.
         </p>
       </div>
 

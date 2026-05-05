@@ -75,6 +75,29 @@ def test_read_sources_by_source_type(client: TestClient) -> None:
     assert all(source["source_type"] == "community" for source in content["data"])
 
 
+def test_read_for_you_requires_auth(client: TestClient) -> None:
+    response = client.get(f"{settings.API_V1_STR}/articles/for-you")
+    assert response.status_code == 401
+
+
+def test_read_for_you_articles(
+    client: TestClient,
+    db: Session,
+    normal_user_token_headers: dict[str, str],
+) -> None:
+    create_random_article(db)
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/for-you",
+        headers=normal_user_token_headers,
+        params={"skip": 0, "limit": 20},
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["count"] >= 1
+    assert len(content["data"]) >= 1
+    assert "reason" in content["data"][0]
+
+
 def test_read_article(client: TestClient, db: Session) -> None:
     image_url = "https://example.com/article-image.png"
     article = create_random_article(db, image_url=image_url)

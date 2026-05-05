@@ -163,6 +163,15 @@ _RULES: list[tuple[Category, list[re.Pattern[str]], list[str]]] = [
         ["agents", "workflows"],
     ),
     (
+        "agents",
+        [
+            re.compile(r"\bcomputer\s+use\b", re.I),
+            re.compile(r"\bbrowser\s+use\b", re.I),
+            re.compile(r"\bautonomous\s+(agent|agents|system|systems)\b", re.I),
+        ],
+        ["agents", "automation"],
+    ),
+    (
         "rag",
         [
             re.compile(r"\brag\b", re.I),
@@ -229,6 +238,14 @@ _RULES: list[tuple[Category, list[re.Pattern[str]], list[str]]] = [
             re.compile(r"\blong[\s-]?context\b", re.I),
         ],
         ["models", "long-context"],
+    ),
+    (
+        "models",
+        [
+            re.compile(r"\breasoning\s+model(s)?\b", re.I),
+            re.compile(r"\bchain[\s-]?of[\s-]?thought\b", re.I),
+        ],
+        ["models", "reasoning"],
     ),
     (
         "models",
@@ -349,6 +366,84 @@ _RULES: list[tuple[Category, list[re.Pattern[str]], list[str]]] = [
         ["engineering", "structured-outputs"],
     ),
     (
+        "engineering",
+        [
+            re.compile(r"\bai\s+sdk\b", re.I),
+            re.compile(r"\bdeveloper\s+tool(s|ing)?\b", re.I),
+            re.compile(r"\bcode\s+assistant(s)?\b", re.I),
+        ],
+        ["engineering", "developer-tools"],
+    ),
+    (
+        "applications",
+        [
+            re.compile(r"\b(use\s+case|use[\s-]?cases)\b", re.I),
+            re.compile(r"\bproductivity\b", re.I),
+            re.compile(r"\bworkplace\b", re.I),
+            re.compile(r"\boffice\b", re.I),
+        ],
+        ["applications", "productivity"],
+    ),
+    (
+        "applications",
+        [
+            re.compile(r"\beducation\b", re.I),
+            re.compile(r"\bclassroom\b", re.I),
+            re.compile(r"\btutor(s|ing)?\b", re.I),
+        ],
+        ["applications", "education"],
+    ),
+    (
+        "applications",
+        [
+            re.compile(r"\bcustomer\s+support\b", re.I),
+            re.compile(r"\bhealthcare\b", re.I),
+            re.compile(r"\blegal\b", re.I),
+            re.compile(r"\bfinance\b", re.I),
+        ],
+        ["applications", "industry-use-cases"],
+    ),
+    (
+        "business",
+        [
+            re.compile(r"\bstartup(s)?\b", re.I),
+            re.compile(r"\bfunding\b", re.I),
+            re.compile(r"\brais(e|ed|es|ing)\b", re.I),
+            re.compile(r"\bvaluation\b", re.I),
+            re.compile(r"\bacquisition\b", re.I),
+        ],
+        ["business", "startups"],
+    ),
+    (
+        "business",
+        [
+            re.compile(r"\benterprise\s+(adoption|ai)\b", re.I),
+            re.compile(r"\bmarket\b", re.I),
+            re.compile(r"\brevenue\b", re.I),
+            re.compile(r"\binvest(or|ment|ing)\b", re.I),
+        ],
+        ["business", "market"],
+    ),
+    (
+        "policy",
+        [
+            re.compile(r"\bregulat(e|ion|or|ors|ory)\b", re.I),
+            re.compile(r"\bpolicy\b", re.I),
+            re.compile(r"\bgovernance\b", re.I),
+            re.compile(r"\bexecutive\s+order\b", re.I),
+        ],
+        ["policy", "regulation"],
+    ),
+    (
+        "policy",
+        [
+            re.compile(r"\bcopyright\b", re.I),
+            re.compile(r"\blawsuit\b", re.I),
+            re.compile(r"\blicens(e|ing)\b", re.I),
+        ],
+        ["policy", "legal"],
+    ),
+    (
         "research",
         [
             re.compile(r"\barxiv\b", re.I),
@@ -368,23 +463,37 @@ _RULES: list[tuple[Category, list[re.Pattern[str]], list[str]]] = [
         ["research", "datasets"],
     ),
     (
-        "research",
+        "safety",
         [
             re.compile(r"\balignment\b", re.I),
             re.compile(r"\bsafety\b", re.I),
             re.compile(r"\bred[\s-]?team", re.I),
         ],
-        ["research", "safety"],
+        ["safety", "alignment"],
+    ),
+    (
+        "safety",
+        [
+            re.compile(r"\bjailbreak(s|ing)?\b", re.I),
+            re.compile(r"\bprompt\s+injection\b", re.I),
+            re.compile(r"\bmisuse\b", re.I),
+            re.compile(r"\bprivacy\b", re.I),
+        ],
+        ["safety", "security"],
     ),
 ]
 
 _CATEGORY_PRIORITY: tuple[Category, ...] = (
     "agents",
     "rag",
+    "safety",
     "infrastructure",
     "models",
     "engineering",
     "research",
+    "applications",
+    "policy",
+    "business",
     "other",
 )
 

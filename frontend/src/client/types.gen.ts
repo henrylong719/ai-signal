@@ -7,14 +7,14 @@ export type ArticlePublic = {
     excerpt?: (string | null);
     image_url?: (string | null);
     author?: (string | null);
-    category: 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other';
+    category: 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other';
     tags?: Array<(string)>;
     published_at?: (string | null);
     id: string;
     fetched_at: string;
 };
 
-export type category = 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other';
+export type category = 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other';
 
 export type ArticlesPublic = {
     data: Array<ArticlePublic>;
@@ -84,15 +84,15 @@ export type SavedArticlesPublic = {
 
 export type SourcePublic = {
     name: string;
-    default_category: 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other';
-    source_type: 'official' | 'independent' | 'community' | 'research';
+    default_category: 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other';
+    source_type: 'official' | 'independent' | 'community' | 'research' | 'media' | 'newsletter';
     topic: string;
     description: string;
 };
 
-export type default_category = 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other';
+export type default_category = 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other';
 
-export type source_type = 'official' | 'independent' | 'community' | 'research';
+export type source_type = 'official' | 'independent' | 'community' | 'research' | 'media' | 'newsletter';
 
 export type SourcesPublic = {
     data: Array<SourcePublic>;
@@ -125,7 +125,7 @@ export type UserCreate = {
  * same thing.
  */
 export type UserInterestPublic = {
-    categories?: Array<('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other')>;
+    categories?: Array<('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other')>;
     tags?: Array<(string)>;
     updated_at?: (string | null);
 };
@@ -138,7 +138,7 @@ export type UserInterestPublic = {
  * - tags are length- and count-bounded.
  */
 export type UserInterestUpdate = {
-    categories?: Array<('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other')>;
+    categories?: Array<('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other')>;
     tags?: Array<(string)>;
 };
 
@@ -186,7 +186,7 @@ export type ValidationError = {
 };
 
 export type ArticlesReadArticlesData = {
-    category?: ('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other' | null);
+    category?: ('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other' | null);
     limit?: number;
     search?: (string | null);
     skip?: number;
@@ -196,7 +196,7 @@ export type ArticlesReadArticlesData = {
 export type ArticlesReadArticlesResponse = (ArticlesPublic);
 
 export type ArticlesReadSourcesData = {
-    sourceType?: ('official' | 'independent' | 'community' | 'research' | null);
+    sourceType?: ('official' | 'independent' | 'community' | 'research' | 'media' | 'newsletter' | null);
 };
 
 export type ArticlesReadSourcesResponse = (SourcesPublic);

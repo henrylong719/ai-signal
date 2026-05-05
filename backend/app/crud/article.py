@@ -25,7 +25,7 @@ def count_articles(
         escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         pattern = f"%{escaped}%"
         statement = statement.where(
-            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))  # type: ignore[union-attr]
+            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))
         )
     return session.exec(statement).one()
 
@@ -48,7 +48,7 @@ def get_articles(
         escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         pattern = f"%{escaped}%"
         statement = statement.where(
-            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))  # type: ignore[union-attr]
+            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))
         )
     statement = (
         statement.order_by(
@@ -112,7 +112,9 @@ def get_saved_articles(
 
 def count_saved_articles(*, session: Session, user_id: uuid.UUID) -> int:
     statement = (
-        select(func.count()).select_from(SavedArticle).where(SavedArticle.user_id == user_id)
+        select(func.count())
+        .select_from(SavedArticle)
+        .where(SavedArticle.user_id == user_id)
     )
     return session.exec(statement).one()
 
@@ -142,8 +144,59 @@ def unsave_article(*, session: Session, saved_article: SavedArticle) -> None:
     session.commit()
 
 
-def get_saved_article_ids(
-    *, session: Session, user_id: uuid.UUID
-) -> list[uuid.UUID]:
+def get_saved_article_ids(*, session: Session, user_id: uuid.UUID) -> list[uuid.UUID]:
     statement = select(SavedArticle.article_id).where(SavedArticle.user_id == user_id)
     return list(session.exec(statement).all())
+
+
+def get_saved_signals(
+    *, session: Session, user_id: uuid.UUID
+) -> tuple[frozenset[str], frozenset[str]]:
+    """Aggregate the user's saved-article tags and sources.
+
+    Same shape as ``crud.event.get_clicked_signals`` — they feed parallel
+    fields on ``UserProfile``. Saved is the strongest behavioral signal
+    (most committed action) so the recommender weights it highest;
+    clicked is weaker but still positive.
+    """
+    statement = (
+        select(Article.source, Article.tags)
+        .join(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
+        .where(SavedArticle.user_id == user_id)
+    )
+    sources: set[str] = set()
+    tags: set[str] = set()
+    for source, article_tags in session.exec(statement).all():
+        sources.add(source)
+        if article_tags:
+            tags.update(article_tags)
+    return frozenset(tags), frozenset(sources)
+
+
+def get_recent_articles_excluding(
+    *,
+    session: Session,
+    excluded_ids: set[uuid.UUID],
+    limit: int = 200,
+) -> Sequence[Article]:
+    """Candidate pool for the recommender.
+
+    We pull the ``limit`` most-recent articles that aren't already saved
+    or dismissed, then let the recommender rank them. The 200 default is
+    a deliberate trade-off: large enough that personalization signals
+    have room to reorder things, small enough that scoring in Python
+    stays under ~50ms.
+
+    We don't paginate this query — the For-You endpoint paginates the
+    *scored* output, not the candidate pool. Pagination of an unscored
+    pool would mean later pages contain articles that should have ranked
+    higher than what page 1 showed, which is the wrong order.
+    """
+    statement = select(Article)
+    if excluded_ids:
+        statement = statement.where(col(Article.id).not_in(excluded_ids))
+    statement = statement.order_by(
+        col(Article.published_at).desc().nullslast(),
+        col(Article.fetched_at).desc(),
+    ).limit(limit)
+    return session.exec(statement).all()

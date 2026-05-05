@@ -27,7 +27,7 @@ const useAuth = () => {
     isError,
   } = useQuery<UserPublic | null, Error>({
     queryKey: ["currentUser"],
-    queryFn: UsersService.readUserMe,
+    queryFn: () => UsersService.readUserMe(),
     enabled: isLoggedIn(),
   })
 

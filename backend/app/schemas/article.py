@@ -45,3 +45,19 @@ class ArticlePublic(ArticleBase):
 class ArticlesPublic(SQLModel):
     data: list[ArticlePublic]
     count: int
+
+
+class ForYouArticlePublic(ArticlePublic):
+    """Article + recommendation reason label.
+
+    The reason is built server-side from the dominant scoring component
+    (see ``services.recommender.reason_for``). Optional because pure-recency
+    recommendations may not justify a badge.
+    """
+
+    reason: str | None = None
+
+
+class ForYouArticlesPublic(SQLModel):
+    data: list[ForYouArticlePublic]
+    count: int

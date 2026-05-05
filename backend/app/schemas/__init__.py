@@ -4,6 +4,8 @@ from app.schemas.article import (
     ArticlePublic,
     ArticlesPublic,
     ArticleUpdate,
+    ForYouArticlePublic,
+    ForYouArticlesPublic,
 )
 from app.schemas.common import Message
 from app.schemas.interest import UserInterestPublic, UserInterestUpdate
@@ -37,6 +39,8 @@ __all__ = [
     "ArticleUpdate",
     "CATEGORIES",
     "Category",
+    "ForYouArticlePublic",
+    "ForYouArticlesPublic",
     "ItemCreate",
     "ItemPublic",
     "ItemsPublic",

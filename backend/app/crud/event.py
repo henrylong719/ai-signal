@@ -10,7 +10,7 @@ import uuid
 from collections.abc import Sequence
 
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app.models.article import ARTICLE_EVENT_TYPES, ArticleEvent, ArticleEventType
 from app.models.base import get_datetime_utc
@@ -34,7 +34,6 @@ def record_event(
     SQLAlchemy/Postgres would reject it anyway via the ENUM, but raising in
     Python gives a clearer error.
     """
-
     if event_type not in ARTICLE_EVENT_TYPES:
         raise ValueError(f"Unknown event_type: {event_type!r}")
 
@@ -54,7 +53,6 @@ def record_event(
             "last_at": now,
         },
     )
-
     session.exec(stmt)
     session.commit()
 
@@ -72,7 +70,8 @@ def get_event_article_ids(
     the articles table at the call site).
     """
     statement = select(ArticleEvent.article_id).where(
-        ArticleEvent.user_id == user_id, ArticleEvent.event_type == event_type
+        ArticleEvent.user_id == user_id,
+        ArticleEvent.event_type == event_type,
     )
     return list(session.exec(statement).all())
 
@@ -85,6 +84,41 @@ def get_events(
 ) -> Sequence[ArticleEvent]:
     """Full event rows, when count or recency are needed."""
     statement = select(ArticleEvent).where(
-        ArticleEvent.user_id == user_id, ArticleEvent.event_type == event_type
+        ArticleEvent.user_id == user_id,
+        ArticleEvent.event_type == event_type,
     )
     return session.exec(statement).all()
+
+
+def get_clicked_signals(
+    *, session: Session, user_id: uuid.UUID
+) -> tuple[frozenset[str], frozenset[str]]:
+    """Aggregate the user's clicked-article tags and sources.
+
+    Returns a (tags, sources) pair — exactly what the recommender's
+    UserProfile needs for the click-derived signals. Done as one JOIN
+    rather than fetch-IDs-then-fetch-articles to halve the round trips
+    and let Postgres push down the filtering.
+
+    For users with thousands of clicked articles this would benefit from
+    SQL-side aggregation (UNNEST + array_agg DISTINCT). At our scale the
+    row count is small enough that pulling into Python and using set
+    arithmetic is simpler and fast enough.
+    """
+    from app.models import Article  # local import to avoid circular
+
+    statement = (
+        select(Article.source, Article.tags)
+        .join(ArticleEvent, col(Article.id) == col(ArticleEvent.article_id))
+        .where(
+            ArticleEvent.user_id == user_id,
+            ArticleEvent.event_type == "clicked",
+        )
+    )
+    sources: set[str] = set()
+    tags: set[str] = set()
+    for source, article_tags in session.exec(statement).all():
+        sources.add(source)
+        if article_tags:
+            tags.update(article_tags)
+    return frozenset(tags), frozenset(sources)

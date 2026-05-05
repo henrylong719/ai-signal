@@ -1,7 +1,6 @@
 import { Link as RouterLink } from "@tanstack/react-router"
 import { useId } from "react"
 import type { UseFormReturn } from "react-hook-form"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Form,
   FormControl,
@@ -42,7 +41,7 @@ export function SignInScreen({
   remember,
   setRemember,
 }: SignInScreenProps) {
-  const rememberId = useId()
+  const _rememberId = useId()
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -97,7 +96,7 @@ export function SignInScreen({
           </div>
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-            <label
+            {/* <label
               htmlFor={rememberId}
               className="flex items-center gap-2 text-sm text-slate-600"
             >
@@ -108,7 +107,7 @@ export function SignInScreen({
                 onCheckedChange={(value) => setRemember(value === true)}
               />
               Remember me
-            </label>
+            </label> */}
 
             <RouterLink
               to="/recover-password"

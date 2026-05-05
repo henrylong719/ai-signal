@@ -8,7 +8,12 @@ from sqlmodel import SQLModel
 
 from app import crud
 from app.api.deps import CurrentUser, OptionalCurrentUser, SessionDep
-from app.schemas import ArticlePublic, ArticlesPublic
+from app.schemas import (
+    ArticlePublic,
+    ArticlesPublic,
+    ForYouArticlePublic,
+    ForYouArticlesPublic,
+)
 from app.schemas.source import (
     SOURCES,
     Category,
@@ -16,6 +21,7 @@ from app.schemas.source import (
     SourcesPublic,
     SourceType,
 )
+from app.services.for_you import rank_for_you
 
 router = APIRouter(prefix="/articles", tags=["articles"])
 
@@ -66,6 +72,30 @@ def read_sources(
         if source_type is None or source.source_type == source_type
     ]
     return SourcesPublic(data=sources, count=len(sources))
+
+
+@router.get("/for-you", response_model=ForYouArticlesPublic)
+def read_for_you_articles(
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+) -> Any:
+    """Get current user's personalized article feed."""
+    items, count = rank_for_you(
+        session=session,
+        user_id=current_user.id,
+        skip=skip,
+        limit=limit,
+    )
+    articles = []
+    for item in items:
+        article = crud.get_article(session=session, article_id=item.scored.article.id)
+        if article:
+            article_public = ForYouArticlePublic.model_validate(article)
+            article_public.reason = item.reason
+            articles.append(article_public)
+    return ForYouArticlesPublic(data=articles, count=count)
 
 
 @router.get("/{id}", response_model=ArticlePublic)

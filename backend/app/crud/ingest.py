@@ -1,4 +1,5 @@
 import asyncio
+import html
 from datetime import datetime, timezone
 from typing import Any
 
@@ -16,6 +17,10 @@ from app.services.article_tagging import normalize_excerpt, tag_article
 from app.services.rss_images import extract_image_url
 
 IngestResult = dict[str, int | list[str]]
+
+
+def _clean_text(value: Any) -> str:
+    return html.unescape(str(value)).strip()
 
 
 async def _fetch_one(
@@ -58,13 +63,19 @@ async def ingest_all() -> IngestResult:
         for source, entries in results:
             for entry in entries:
                 url = entry.get("link")
-                title = entry.get("title")
-                if not url or not title:
+                raw_title = entry.get("title")
+                if not url or not raw_title:
+                    continue
+
+                title = _clean_text(raw_title)
+                if not title:
                     continue
 
                 excerpt = normalize_excerpt(entry.get("summary")) or None
                 image_url = extract_image_url(entry, feed_url=source.rss_url)
-                author = entry.get("author") or None
+                author = (
+                    _clean_text(entry.get("author")) if entry.get("author") else None
+                )
                 published_at = _published_at(entry)
 
                 category, tags = tag_article(

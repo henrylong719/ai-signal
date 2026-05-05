@@ -12,9 +12,18 @@ export type ArticlePublic = {
     published_at?: (string | null);
     id: string;
     fetched_at: string;
+    content_quality: 'full' | 'excerpt' | 'title_only' | 'insufficient';
+    summary?: (string | null);
+    why_it_matters?: (string | null);
+    difficulty?: ('beginner' | 'intermediate' | 'advanced' | null);
+    summary_status: 'pending' | 'done' | 'failed' | 'skipped';
 };
 
 export type category = 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other';
+
+export type content_quality = 'full' | 'excerpt' | 'title_only' | 'insufficient';
+
+export type summary_status = 'pending' | 'done' | 'failed' | 'skipped';
 
 export type ArticlesPublic = {
     data: Array<ArticlePublic>;
@@ -64,6 +73,13 @@ export type Message = {
 export type NewPassword = {
     token: string;
     new_password: string;
+};
+
+export type PollResult = {
+    fetched: number;
+    succeeded: number;
+    failed: number;
+    gave_up: number;
 };
 
 export type PrivateUserCreate = {
@@ -202,6 +218,8 @@ export type ArticlesUnsaveArticleData = {
 };
 
 export type ArticlesUnsaveArticleResponse = (unknown);
+
+export type EnrichmentTriggerEnrichmentPollResponse = (PollResult);
 
 export type IngestTriggerIngestResponse = (unknown);
 

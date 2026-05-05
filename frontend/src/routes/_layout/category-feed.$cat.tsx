@@ -1,17 +1,17 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import type { category } from '@/client';
-import { ArticleList } from '@/components/Articles/ArticleList';
-import { useArticleFeed } from '@/hooks/useArticleFeed';
-import { CATEGORIES } from '@/lib/constants';
-import { capitalize } from '@/lib/utils';
+import { createFileRoute, Link } from "@tanstack/react-router"
+import type { category } from "@/client"
+import { ArticleList } from "@/components/Articles/ArticleList"
+import { useArticleFeed } from "@/hooks/useArticleFeed"
+import { CATEGORIES } from "@/lib/constants"
+import { capitalize } from "@/lib/utils"
 
-export const Route = createFileRoute('/_layout/category-feed/$cat')({
+export const Route = createFileRoute("/_layout/category-feed/$cat")({
   component: CategoryFeed,
-});
+})
 
 function CategoryFeed() {
-  const { cat } = Route.useParams();
-  const feed = useArticleFeed({ category: cat as category });
+  const { cat } = Route.useParams()
+  const feed = useArticleFeed({ category: cat as category })
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 flex-auto md:flex-5">
@@ -22,11 +22,11 @@ function CategoryFeed() {
               key={tab}
               to="/category-feed/$cat"
               params={{ cat: tab }}
-              aria-current={cat === tab ? 'page' : undefined}
+              aria-current={cat === tab ? "page" : undefined}
               className={`relative shrink-0 rounded-sm pb-5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${
                 cat === tab
-                  ? 'text-slate-900'
-                  : 'text-slate-400 hover:text-slate-600'
+                  ? "text-slate-900"
+                  : "text-slate-400 hover:text-slate-600"
               }`}
             >
               {capitalize(tab)}
@@ -44,5 +44,5 @@ function CategoryFeed() {
         errorTitle={`Could not load ${capitalize(cat)} articles`}
       />
     </div>
-  );
+  )
 }

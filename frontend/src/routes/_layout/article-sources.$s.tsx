@@ -1,19 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { AlertCircleIcon, ArrowLeftIcon } from 'lucide-react';
-import { ArticlesService } from '@/client';
-import { ArticleCardSkeleton } from '@/components/Articles/ArticleCardSkeleton';
+import { useQuery } from "@tanstack/react-query"
+import { createFileRoute, Link } from "@tanstack/react-router"
+import { AlertCircleIcon, ArrowLeftIcon } from "lucide-react"
+import { ArticlesService } from "@/client"
+import { ArticleCardSkeleton } from "@/components/Articles/ArticleCardSkeleton"
 import {
   ArticleList,
   ArticleListState,
-} from '@/components/Articles/ArticleList';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useArticleFeed } from '@/hooks/useArticleFeed';
-import { capitalize } from '@/lib/utils';
+} from "@/components/Articles/ArticleList"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useArticleFeed } from "@/hooks/useArticleFeed"
+import { capitalize } from "@/lib/utils"
 
-export const Route = createFileRoute('/_layout/article-sources/$s')({
+export const Route = createFileRoute("/_layout/article-sources/$s")({
   component: ArticlesSources,
-});
+})
 
 function ArticleSourceSkeleton() {
   return (
@@ -40,23 +40,23 @@ function ArticleSourceSkeleton() {
         <ArticleCardSkeleton />
       </div>
     </div>
-  );
+  )
 }
 
 function ArticlesSources() {
-  const { s } = Route.useParams();
+  const { s } = Route.useParams()
 
-  const feed = useArticleFeed({ source: s });
+  const feed = useArticleFeed({ source: s })
 
   const sourcesQuery = useQuery({
-    queryKey: ['articleSources'],
+    queryKey: ["articleSources"],
     queryFn: () => ArticlesService.readSources(),
-  });
+  })
 
-  const source = sourcesQuery.data?.data.find((source) => source.name === s);
+  const source = sourcesQuery.data?.data.find((source) => source.name === s)
 
   if (sourcesQuery.isLoading) {
-    return <ArticleSourceSkeleton />;
+    return <ArticleSourceSkeleton />
   }
 
   if (sourcesQuery.isError) {
@@ -77,7 +77,7 @@ function ArticlesSources() {
           }
         />
       </div>
-    );
+    )
   }
 
   if (!source) {
@@ -97,7 +97,7 @@ function ArticlesSources() {
           }
         />
       </div>
-    );
+    )
   }
 
   return (
@@ -122,5 +122,5 @@ function ArticlesSources() {
         errorTitle={`Could not load articles from ${source.name}`}
       />
     </div>
-  );
+  )
 }

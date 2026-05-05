@@ -81,10 +81,54 @@ export const ArticlePublicSchema = {
             type: 'string',
             format: 'date-time',
             title: 'Fetched At'
+        },
+        content_quality: {
+            type: 'string',
+            enum: ['full', 'excerpt', 'title_only', 'insufficient'],
+            title: 'Content Quality'
+        },
+        summary: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Summary'
+        },
+        why_it_matters: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Why It Matters'
+        },
+        difficulty: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['beginner', 'intermediate', 'advanced']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Difficulty'
+        },
+        summary_status: {
+            type: 'string',
+            enum: ['pending', 'done', 'failed', 'skipped'],
+            title: 'Summary Status'
         }
     },
     type: 'object',
-    required: ['url', 'title', 'source', 'category', 'id', 'fetched_at'],
+    required: ['url', 'title', 'source', 'category', 'id', 'fetched_at', 'content_quality', 'summary_status'],
     title: 'ArticlePublic'
 } as const;
 
@@ -331,6 +375,30 @@ export const NewPasswordSchema = {
     type: 'object',
     required: ['token', 'new_password'],
     title: 'NewPassword'
+} as const;
+
+export const PollResultSchema = {
+    properties: {
+        fetched: {
+            type: 'integer',
+            title: 'Fetched'
+        },
+        succeeded: {
+            type: 'integer',
+            title: 'Succeeded'
+        },
+        failed: {
+            type: 'integer',
+            title: 'Failed'
+        },
+        gave_up: {
+            type: 'integer',
+            title: 'Gave Up'
+        }
+    },
+    type: 'object',
+    required: ['fetched', 'succeeded', 'failed', 'gave_up'],
+    title: 'PollResult'
 } as const;
 
 export const PrivateUserCreateSchema = {

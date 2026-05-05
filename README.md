@@ -1,184 +1,199 @@
 # AI Signal
 
-## Product Description
+AI Signal is a full-stack AI engineering news dashboard. It collects article metadata from trusted AI blogs, research labs, engineering teams, newsletters, and community sources, then organizes those articles into a focused feed for builders who want to follow practical AI updates.
 
-**AI Signal** is an AI engineering knowledge aggregator designed to help developers, students, and builders stay up to date with the latest trends in artificial intelligence, agentic AI, large language models, retrieval-augmented generation, voice agents, model tooling, and AI engineering practices.
+The app is built around discovery rather than replacing original sources. Articles link back to the original post, paper, repository, or announcement.
 
-Instead of forcing users to manually check multiple blogs, newsletters, GitHub repositories, research papers, and community platforms every day, AI Signal brings high-value AI updates into one focused dashboard. The platform collects article metadata from trusted sources, organizes the content by topic, and provides concise summaries, tags, and learning signals to help users quickly understand what matters.
+## Features
 
-The goal of AI Signal is not to replace original sources. Instead, it acts as a discovery and learning layer that helps users find relevant AI content faster and then directs them back to the original article, paper, repository, or announcement.
+- Curated AI article feed with infinite scrolling
+- Filtering by topic category, source, and search query
+- Source directory for official, independent, community, and research feeds
+- Saved articles for signed-in users
+- Authentication, account settings, and admin user management
+- RSS ingestion endpoint for importing articles from configured sources
+- Generated TypeScript API client from the FastAPI OpenAPI schema
+- For You page prepared for future personalized recommendations
 
----
+## Tech Stack
 
-## Product Vision
+**Frontend**
 
-The vision of AI Signal is to become a personalized intelligence dashboard for people learning and building with AI.
+- React
+- TypeScript
+- Vite
+- TanStack Router
+- TanStack Query
+- Tailwind CSS
+- Radix UI
+- Playwright
 
-AI is moving quickly, especially in areas such as AI agents, tool calling, MCP, RAG, multimodal AI, voice agents, and AI evaluation. For many students and early-career engineers, it is difficult to know which updates are actually important and which ones are just hype.
+**Backend**
 
-AI Signal aims to solve this problem by filtering noise, organizing knowledge, and making AI trends easier to understand.
+- FastAPI
+- SQLModel
+- PostgreSQL
+- Alembic
+- Pydantic Settings
+- uv
 
-In the long term, AI Signal could become a daily learning companion for AI engineers, helping them discover important technical updates, understand why they matter, and apply them to real-world projects.
+**Infrastructure**
 
----
+- Docker Compose
+- Traefik for local/prod-style routing
+- Adminer for database inspection
+- Mailcatcher for local email testing
 
-## Problem Statement
+## Project Structure
 
-AI developers often face several problems when trying to stay updated:
+```text
+.
+├── backend/              # FastAPI app, SQLModel models, API routes, migrations, tests
+├── frontend/             # React/Vite app, routes, components, generated API client
+├── scripts/              # Root helper scripts, including API client generation
+├── compose.yml           # Docker Compose services
+├── compose.override.yml  # Local development Compose overrides
+├── package.json          # Bun workspace scripts for the frontend
+└── pyproject.toml        # uv workspace configuration for the backend
+```
 
-1. **Information is scattered across many platforms**  
-   Important AI updates are published across official company blogs, GitHub repositories, newsletters, YouTube videos, research papers, and social platforms.
+## Prerequisites
 
-2. **Too much content, not enough context**  
-   Many articles and announcements are difficult to evaluate quickly. Users may not know whether a post is important, beginner-friendly, advanced, practical, or mostly marketing.
+- [Bun](https://bun.sh/) for frontend dependencies and scripts
+- [uv](https://docs.astral.sh/uv/) for backend dependencies
+- [Docker](https://www.docker.com/) for PostgreSQL and full-stack local services
 
-3. **Agentic AI is evolving quickly**  
-   Topics such as tool use, AI agents, MCP, RAG, memory, evaluations, and workflow orchestration are changing fast. It is hard for learners to keep track of the latest patterns.
+## Environment
 
-4. **Reading full articles every day takes time**  
-   Students and developers may want to stay informed, but they do not always have time to read long posts or research papers.
+The backend reads configuration from the root `.env` file. At minimum, local development needs values for:
 
-5. **Existing news platforms are often too broad**  
-   General AI news websites often focus on big company announcements, investment news, or consumer AI products, rather than practical engineering knowledge.
+```env
+PROJECT_NAME=AI Signal
+SECRET_KEY=changethis
+FIRST_SUPERUSER=admin@example.com
+FIRST_SUPERUSER_PASSWORD=changethis
+POSTGRES_SERVER=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=app
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=changethis
+FRONTEND_HOST=http://localhost:5173
+BACKEND_CORS_ORIGINS=http://localhost:5173
+```
 
----
+Change the secret values before deploying anywhere outside local development.
 
-## Target Users
+## Quick Start
 
-### Primary Users
+Install dependencies:
 
-**AI engineering learners**  
-Students, bootcamp graduates, and junior developers who want to understand modern AI engineering trends and build stronger portfolio projects.
+```bash
+bun install
+cd backend
+uv sync
+```
 
-**Software engineers moving into AI**  
-Developers with web, backend, or full-stack experience who want to learn about LLM applications, agents, RAG, and production AI systems.
+Start PostgreSQL from the repository root:
 
-**AI project builders**  
-People building projects using tools such as OpenAI, Anthropic, LangGraph, LlamaIndex, Vercel AI SDK, Supabase, pgvector, and FastAPI.
+```bash
+docker compose up -d db
+```
 
-### Secondary Users
+Initialize the backend database:
 
-**Startup founders and product builders**  
-People looking for AI product ideas, market trends, and practical technical inspiration.
+```bash
+cd backend
+uv run bash scripts/prestart.sh
+```
 
-**Technical content creators**  
-Writers, educators, and YouTubers who want to track emerging AI engineering topics.
+Run the backend:
 
----
+```bash
+cd backend
+uv run fastapi dev app/main.py
+```
 
-## Core Value Proposition
+In another terminal, run the frontend from the repository root:
 
-AI Signal helps users answer one important question:
+```bash
+bun run dev
+```
 
-> “What important AI engineering updates should I know about today, and why do they matter?”
+Open the app at `http://localhost:5173`.
 
-The product provides value by:
+The API is available at `http://localhost:8000`, and the OpenAPI docs are available at `http://localhost:8000/docs`.
 
-- Collecting AI-related content from trusted technical sources
-- Organizing updates by topic, source, and difficulty level
-- Summarizing key points in simple language
-- Highlighting why each update matters for builders
-- Helping users discover practical tools, frameworks, papers, and repositories
-- Linking users back to original sources for deeper reading
+## Docker Compose
 
----
+To run the local stack with Docker Compose:
 
-## Product Positioning
+```bash
+docker compose up -d --wait
+```
 
-AI Signal is not a general news website. It is positioned as a focused AI engineering knowledge platform.
+Useful local services:
 
-A possible one-line description:
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- Adminer: `http://localhost:8080`
+- Mailcatcher: `http://localhost:1080`
 
-> **AI Signal is a daily AI engineering dashboard that helps builders track important updates in AI agents, LLM tools, RAG, research, and production AI systems.**
+To stop the stack:
 
-A shorter tagline:
+```bash
+docker compose down
+```
 
-> **Find the signal in AI noise.**
+To reset local database data:
 
----
+```bash
+docker compose down -v
+```
 
-## Key Content Categories
+## Common Commands
 
-AI Signal should organize content into clear categories so users can quickly find what they care about.
+Frontend commands from the repository root:
 
-### 1. Agentic AI
+```bash
+bun run dev
+bun run lint
+bun run test
+cd frontend && bun run build
+```
 
-Content related to:
+Backend commands from `backend/`:
 
-- AI agents
-- Tool calling
-- Multi-agent systems
-- Agent workflows
-- Agent memory
-- Agent evaluation
-- MCP servers and clients
-- Human-in-the-loop agent systems
+```bash
+uv sync
+bash ./scripts/lint.sh
+bash ./scripts/test.sh
+```
 
-### 2. RAG and Knowledge Systems
+Regenerate the frontend API client after backend OpenAPI changes:
 
-Content related to:
+```bash
+bash ./scripts/generate-client.sh
+```
 
-- Retrieval-augmented generation
-- Embeddings
-- Vector databases
-- pgvector
-- Hybrid search
-- Document understanding
-- Knowledge graphs
-- Context engineering
+## Article Ingestion
 
-### 3. AI Engineering
+Article sources are configured in `backend/app/schemas/source.py`. The protected ingestion endpoint imports from those RSS/Atom feeds:
 
-Content related to:
+```http
+POST /api/v1/ingest
+```
 
-- Production LLM apps
-- Prompt engineering
-- Observability
-- Evaluation pipelines
-- Latency and cost optimization
-- Guardrails
-- Deployment patterns
-- API design for AI systems
+The endpoint requires a superuser account.
 
-### 4. Models and Platforms
+## Documentation
 
-Content related to:
+- Backend details: [backend/README.md](backend/README.md)
+- Frontend details: [frontend/README.md](frontend/README.md)
+- Local development notes: [development.md](development.md)
 
-- New model releases
-- Model comparisons
-- Open-source models
-- API updates
-- Pricing updates
-- Performance benchmarks
+## Roadmap
 
-### 5. Voice and Multimodal AI
-
-Content related to:
-
-- Speech-to-text
-- Text-to-speech
-- Voice agents
-- Real-time conversations
-- Vision-language models
-- Multimodal interfaces
-
-### 6. Research and Papers
-
-Content related to:
-
-- Important AI research papers
-- Agent research
-- Evaluation methods
-- Reasoning models
-- Alignment and safety
-- Applied machine learning research
-
-### 7. GitHub and Open Source
-
-Content related to:
-
-- Trending AI repositories
-- New open-source tools
-- Framework updates
-- Developer templates
-- Example applications
+- Personalized recommendations for the For You page
+- Better interest and topic preference signals
+- More source quality controls
+- Richer article ranking and discovery tools

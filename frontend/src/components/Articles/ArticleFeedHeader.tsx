@@ -1,22 +1,22 @@
-import type { category } from '@/client';
-import { capitalize, cn } from '@/lib/utils';
+import type { category } from "@/client"
+import { capitalize, cn } from "@/lib/utils"
 
-export type TopicFilter = 'all' | category;
+export type TopicFilter = "all" | category
 
 const FILTER_TOPICS = [
-  'all',
-  'agents',
-  'rag',
-  'models',
-  'infrastructure',
-  'engineering',
-  'research',
-  'other',
-] satisfies TopicFilter[];
+  "all",
+  "agents",
+  "rag",
+  "models",
+  "infrastructure",
+  "engineering",
+  "research",
+  "other",
+] satisfies TopicFilter[]
 
 interface ArticleFeedHeaderProps {
-  activeTopic: TopicFilter;
-  onTopicChange: (topic: TopicFilter) => void;
+  activeTopic: TopicFilter
+  onTopicChange: (topic: TopicFilter) => void
 }
 
 export function ArticleFeedHeader({
@@ -42,10 +42,10 @@ export function ArticleFeedHeader({
             key={topic}
             onClick={() => onTopicChange(topic)}
             className={cn(
-              'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
+              "px-3 py-1.5 rounded-full text-sm font-medium transition-colors border",
               activeTopic === topic
-                ? 'bg-slate-900 text-white border-slate-900'
-                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50',
+                ? "bg-slate-900 text-white border-slate-900"
+                : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50",
             )}
           >
             {capitalize(topic)}
@@ -53,5 +53,5 @@ export function ArticleFeedHeader({
         ))}
       </div>
     </header>
-  );
+  )
 }

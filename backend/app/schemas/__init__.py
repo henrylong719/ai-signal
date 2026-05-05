@@ -6,6 +6,7 @@ from app.schemas.article import (
     ArticleUpdate,
 )
 from app.schemas.common import Message
+from app.schemas.interest import UserInterestPublic, UserInterestUpdate
 from app.schemas.item import ItemCreate, ItemPublic, ItemsPublic, ItemUpdate
 from app.schemas.source import (
     CATEGORIES,
@@ -52,6 +53,8 @@ __all__ = [
     "TokenPayload",
     "UpdatePassword",
     "UserCreate",
+    "UserInterestPublic",
+    "UserInterestUpdate",
     "UserPublic",
     "UserRegister",
     "UsersPublic",

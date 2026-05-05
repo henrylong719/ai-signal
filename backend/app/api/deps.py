@@ -50,6 +50,39 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
+# Optional-auth variant. Used by endpoints (like the click redirect) that
+# work for both signed-in and anonymous users — they want to log on behalf
+# of the user when one is present, but should never fail on missing or
+# invalid auth. We swallow auth errors silently here because callers only
+# care whether they got a User back or not.
+optional_oauth2 = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_STR}/login/access-token",
+    auto_error=False,
+)
+
+
+def get_optional_user(
+    session: SessionDep,
+    token: Annotated[str | None, Depends(optional_oauth2)],
+) -> User | None:
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
+        )
+        token_data = TokenPayload(**payload)
+    except (InvalidTokenError, ValidationError):
+        return None
+    user = session.get(User, token_data.sub)
+    if not user or not user.is_active:
+        return None
+    return user
+
+
+OptionalCurrentUser = Annotated[User | None, Depends(get_optional_user)]
+
+
 def get_current_active_superuser(current_user: CurrentUser) -> User:
     if not current_user.is_superuser:
         raise HTTPException(

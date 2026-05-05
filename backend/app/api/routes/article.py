@@ -1,11 +1,13 @@
 import uuid
 from typing import Any
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import RedirectResponse
 from sqlmodel import SQLModel
 
 from app import crud
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, OptionalCurrentUser, SessionDep
 from app.schemas import ArticlePublic, ArticlesPublic
 from app.schemas.source import (
     SOURCES,
@@ -134,9 +136,7 @@ def save_article(
     )
     if existing:
         raise HTTPException(status_code=409, detail="Article already saved")
-    crud.save_article(
-        session=session, user_id=current_user.id, article_id=article_id
-    )
+    crud.save_article(session=session, user_id=current_user.id, article_id=article_id)
     return {"message": "Article saved"}
 
 
@@ -154,3 +154,72 @@ def unsave_article(
         raise HTTPException(status_code=404, detail="Saved article not found")
     crud.unsave_article(session=session, saved_article=existing)
     return {"message": "Article unsaved"}
+
+
+# --- Behavioral events ---
+
+
+_ALLOWED_REDIRECT_SCHEMES = {"http", "https"}
+
+
+@router.get("/{article_id}/go")
+def go_to_article(
+    session: SessionDep,
+    user: OptionalCurrentUser,
+    article_id: uuid.UUID,
+) -> RedirectResponse:
+    """Log a click and 302-redirect to the article's external URL.
+
+    Auth is optional: anonymous users get the redirect with no logging,
+    signed-in users get the click recorded as a behavioral signal for the
+    recommender. Logging is best-effort — navigation is the contract.
+
+    The destination URL comes from the article row in the DB (never from a
+    query parameter), which means this endpoint cannot be repurposed as an
+    open redirect by an attacker. The scheme is whitelisted defensively.
+    """
+    article = crud.get_article(session=session, article_id=article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    parsed = urlparse(article.url)
+    if parsed.scheme not in _ALLOWED_REDIRECT_SCHEMES or not parsed.netloc:
+        # Should never happen for ingested articles, but defense in depth.
+        raise HTTPException(status_code=400, detail="Article URL is invalid")
+
+    if user is not None:
+        # Best-effort: a logging failure must not block the redirect.
+        try:
+            crud.record_event(
+                session=session,
+                user_id=user.id,
+                article_id=article_id,
+                event_type="clicked",
+            )
+        except Exception:  # noqa: BLE001
+            session.rollback()
+
+    return RedirectResponse(url=article.url, status_code=302)
+
+
+@router.post("/{article_id}/dismiss", status_code=204)
+def dismiss_article(
+    session: SessionDep,
+    current_user: CurrentUser,
+    article_id: uuid.UUID,
+) -> None:
+    """Mark an article as dismissed by the current user.
+
+    Dismissed articles are hard-filtered out of the For-You feed (see
+    `recommender.filter_candidates`). Idempotent — a second dismiss just
+    bumps the count and last_at.
+    """
+    article = crud.get_article(session=session, article_id=article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    crud.record_event(
+        session=session,
+        user_id=current_user.id,
+        article_id=article_id,
+        event_type="dismissed",
+    )

@@ -1,19 +1,19 @@
-import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { AlertCircleIcon, ArrowLeftIcon } from "lucide-react"
-import { ArticlesService } from "@/client"
-import { ArticleCardSkeleton } from "@/components/Articles/ArticleCardSkeleton"
+import { useQuery } from '@tanstack/react-query';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { AlertCircleIcon, ArrowLeftIcon } from 'lucide-react';
+import { ArticlesService } from '@/client';
+import { ArticleCardSkeleton } from '@/components/Articles/ArticleCardSkeleton';
 import {
   ArticleList,
   ArticleListState,
-} from "@/components/Articles/ArticleList"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useArticleFeed } from "@/hooks/useArticleFeed"
-import { capitalize } from "@/lib/utils"
+} from '@/components/Articles/ArticleList';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useArticleFeed } from '@/hooks/useArticleFeed';
+import { capitalize } from '@/lib/utils';
 
-export const Route = createFileRoute("/_layout/article-sources/$s")({
+export const Route = createFileRoute('/_layout/article-sources/$s')({
   component: ArticlesSources,
-})
+});
 
 function ArticleSourceSkeleton() {
   return (
@@ -40,23 +40,23 @@ function ArticleSourceSkeleton() {
         <ArticleCardSkeleton />
       </div>
     </div>
-  )
+  );
 }
 
 function ArticlesSources() {
-  const { s } = Route.useParams()
+  const { s } = Route.useParams();
 
-  const feed = useArticleFeed({ source: s })
+  const feed = useArticleFeed({ source: s });
 
   const sourcesQuery = useQuery({
-    queryKey: ["articleSources"],
+    queryKey: ['articleSources'],
     queryFn: () => ArticlesService.readSources(),
-  })
+  });
 
-  const source = sourcesQuery.data?.data.find((source) => source.name === s)
+  const source = sourcesQuery.data?.data.find((source) => source.name === s);
 
   if (sourcesQuery.isLoading) {
-    return <ArticleSourceSkeleton />
+    return <ArticleSourceSkeleton />;
   }
 
   if (sourcesQuery.isError) {
@@ -77,7 +77,7 @@ function ArticlesSources() {
           }
         />
       </div>
-    )
+    );
   }
 
   if (!source) {
@@ -97,29 +97,21 @@ function ArticlesSources() {
           }
         />
       </div>
-    )
+    );
   }
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 flex-auto md:flex-5">
-      <header className="pt-12 pb-5 border-b border-slate-100">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
-          <div className="">
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <h1 className="font-serif text-3xl sm:text-4xl font-medium text-slate-900 tracking-tight">
-                {capitalize(source.name)}
-              </h1>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium uppercase tracking-wider bg-slate-100 text-slate-600">
-                {capitalize(source.source_type)}
-              </span>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium uppercase tracking-wider border border-slate-200 text-slate-600">
-                {capitalize(source.topic)}
-              </span>
-            </div>
-            <p className="text-lg text-slate-500 leading-relaxed font-serif">
-              {source.description}
-            </p>
+      <header className="pt-10 pb-5 border-b border-slate-100">
+        <div className="flex flex-col sm:flex-col sm:items-center justify-center items-center gap-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-serif text-3xl sm:text-4xl font-medium text-slate-900 tracking-tight">
+              {capitalize(source.name)}
+            </h1>
           </div>
+          <p className="text-lg text-slate-500 leading-relaxed font-serif">
+            {source.description}
+          </p>
         </div>
       </header>
 
@@ -130,5 +122,5 @@ function ArticlesSources() {
         errorTitle={`Could not load articles from ${source.name}`}
       />
     </div>
-  )
+  );
 }

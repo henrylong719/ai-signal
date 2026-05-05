@@ -11,20 +11,32 @@ import { ApiError, OpenAPI } from "./client"
 import { ThemeProvider } from "./components/theme-provider"
 import { Toaster } from "./components/ui/sonner"
 import "./index.css"
-import { clearAccessToken, getAccessToken } from "./lib/auth-token"
+import { authInterceptor } from "./lib/auth-interceptor"
+import { clearLoginState } from "./lib/auth-state"
 import { routeTree } from "./routeTree.gen"
 
 OpenAPI.BASE = import.meta.env.VITE_API_URL
-OpenAPI.TOKEN = async () => {
-  return getAccessToken()
-}
+// Send cookies on cross-origin API calls. This is the load-bearing line
+// for cookie-based auth — without it, axios won't include the access
+// cookie in requests to a different origin (frontend on :5173, backend
+// on :8000 in dev).
+OpenAPI.WITH_CREDENTIALS = true
 
+// Response interceptor for the 401 → refresh → retry flow.
+OpenAPI.interceptors.response.use(authInterceptor)
+
+// Error handler for everything the auth interceptor doesn't catch.
+// 401s are *handled* by the interceptor (refresh + retry), so they don't
+// usually reach this point. If they do — meaning even after a refresh
+// attempt the server still says no — fall through to the same logged-out
+// flow as the interceptor's onRefreshFailure.
 const handleApiError = (error: Error) => {
-  if (error instanceof ApiError && [401, 403].includes(error.status)) {
-    clearAccessToken()
+  if (error instanceof ApiError && error.status === 401) {
+    clearLoginState()
     window.location.href = "/login"
   }
 }
+
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: handleApiError,

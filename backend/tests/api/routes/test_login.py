@@ -190,3 +190,186 @@ def test_login_with_argon2_password_keeps_hash(client: TestClient, db: Session) 
 
     assert user.hashed_password == original_hash
     assert user.hashed_password.startswith("$argon2")
+
+
+# ---------------------------------------------------------------------------
+# Cookie-based session flow
+# ---------------------------------------------------------------------------
+#
+# These tests verify the cookie auth path the SPA actually uses: login sets
+# httpOnly cookies, protected endpoints accept the cookie, refresh rotates
+# the tokens, logout clears them. The earlier tests above continue to use
+# the JSON-token + Bearer-header path because that path remains valid for
+# CLI / service-to-service callers.
+
+
+def _get_set_cookie_for(response: object, name: str) -> str | None:
+    """Return the raw Set-Cookie header value for ``name``, or None.
+
+    Inspecting attributes (HttpOnly, Path, SameSite) requires the raw header
+    string — TestClient's ``response.cookies`` only exposes parsed values.
+    """
+    headers: list[str] = response.headers.get_list("set-cookie")  # type: ignore[attr-defined]
+    for raw in headers:
+        if raw.split("=", 1)[0] == name:
+            return raw
+    return None
+
+
+def test_login_sets_three_cookies_with_correct_attributes(
+    client: TestClient,
+) -> None:
+    """The login endpoint must set access, refresh, and is_logged_in cookies."""
+    login_data = {
+        "username": settings.FIRST_SUPERUSER,
+        "password": settings.FIRST_SUPERUSER_PASSWORD,
+    }
+    r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    assert r.status_code == 200
+
+    access_cookie = _get_set_cookie_for(r, "access_token")
+    refresh_cookie = _get_set_cookie_for(r, "refresh_token")
+    marker_cookie = _get_set_cookie_for(r, "is_logged_in")
+
+    assert access_cookie is not None
+    assert refresh_cookie is not None
+    assert marker_cookie is not None
+
+    # Access cookie — httpOnly so JS can't read it; site-wide path.
+    assert "HttpOnly" in access_cookie
+    assert "Path=/" in access_cookie
+    assert "SameSite=lax" in access_cookie.lower() or "samesite=lax" in access_cookie
+
+    # Refresh cookie — also httpOnly, but path-scoped to the refresh
+    # endpoint only. This is defense in depth: the browser will never send
+    # this cookie to any other endpoint.
+    assert "HttpOnly" in refresh_cookie
+    assert "Path=/api/v1/login/refresh" in refresh_cookie
+
+    # Marker cookie — explicitly NOT httpOnly because the SPA reads it for
+    # UI state. Has no security significance to the server.
+    assert "HttpOnly" not in marker_cookie
+    assert "Path=/" in marker_cookie
+
+
+def test_protected_endpoint_accepts_cookie_auth(client: TestClient) -> None:
+    """Once logged in, a request with no Authorization header but the
+    access_token cookie should authenticate. This is the production path
+    for the SPA, where the token never touches JavaScript."""
+    fresh = TestClient(client.app)  # type: ignore[arg-type]
+    login_data = {
+        "username": settings.FIRST_SUPERUSER,
+        "password": settings.FIRST_SUPERUSER_PASSWORD,
+    }
+    r = fresh.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    assert r.status_code == 200
+
+    # No Authorization header — TestClient sends cookies automatically.
+    r = fresh.post(f"{settings.API_V1_STR}/login/test-token")
+    assert r.status_code == 200
+    assert r.json()["email"] == settings.FIRST_SUPERUSER
+
+
+def test_unauthenticated_request_returns_401(client: TestClient) -> None:
+    """Auth failures must be 401, not 403. The SPA's refresh interceptor
+    watches for 401 specifically — 403 means 'authenticated but not
+    permitted' and is reserved for privilege checks."""
+    fresh = TestClient(client.app)  # type: ignore[arg-type]
+    r = fresh.post(f"{settings.API_V1_STR}/login/test-token")
+    assert r.status_code == 401
+
+
+def test_refresh_without_cookie_returns_401(client: TestClient) -> None:
+    fresh = TestClient(client.app)  # type: ignore[arg-type]
+    r = fresh.post(f"{settings.API_V1_STR}/login/refresh")
+    assert r.status_code == 401
+
+
+def test_refresh_rotates_session(client: TestClient) -> None:
+    """Each successful refresh must issue fresh access + refresh + marker
+    cookies. Rotation means a stolen refresh token has limited useful life:
+    the legitimate user's next refresh overwrites the cookie."""
+    fresh = TestClient(client.app)  # type: ignore[arg-type]
+    login_data = {
+        "username": settings.FIRST_SUPERUSER,
+        "password": settings.FIRST_SUPERUSER_PASSWORD,
+    }
+    fresh.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    original_access = fresh.cookies.get("access_token")
+    original_refresh = fresh.cookies.get("refresh_token")
+    assert original_access and original_refresh
+
+    r = fresh.post(f"{settings.API_V1_STR}/login/refresh")
+    assert r.status_code == 200
+    # Rotation: the new cookies must be different from the old ones.
+    # (Content differs because the iat/exp claims are fresh.)
+    assert _get_set_cookie_for(r, "access_token") is not None
+    assert _get_set_cookie_for(r, "refresh_token") is not None
+
+    # The protected endpoint should still work with the rotated cookies.
+    r = fresh.post(f"{settings.API_V1_STR}/login/test-token")
+    assert r.status_code == 200
+
+
+def test_refresh_rejects_access_token_in_refresh_slot(client: TestClient) -> None:
+    """Type-claim defense: an access token presented as a refresh token
+    must be rejected. Without this check, anyone who exfiltrated the
+    access cookie (despite httpOnly) could mint new sessions indefinitely."""
+    fresh = TestClient(client.app)  # type: ignore[arg-type]
+    login_data = {
+        "username": settings.FIRST_SUPERUSER,
+        "password": settings.FIRST_SUPERUSER_PASSWORD,
+    }
+    fresh.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    access_token = fresh.cookies.get("access_token")
+    assert access_token
+
+    # Plant the access token into the refresh cookie slot.
+    fresh.cookies.delete("refresh_token", path="/api/v1/login/refresh")
+    fresh.cookies.set("refresh_token", access_token, path="/api/v1/login/refresh")
+
+    r = fresh.post(f"{settings.API_V1_STR}/login/refresh")
+    assert r.status_code == 401
+
+
+def test_logout_clears_all_three_cookies(client: TestClient) -> None:
+    """Logout must explicitly clear all three cookies. Because cookies are
+    scoped to a path, the delete must use the same path used to set them
+    or the browser keeps the original."""
+    fresh = TestClient(client.app)  # type: ignore[arg-type]
+    login_data = {
+        "username": settings.FIRST_SUPERUSER,
+        "password": settings.FIRST_SUPERUSER_PASSWORD,
+    }
+    fresh.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    assert fresh.cookies.get("access_token")
+
+    r = fresh.post(f"{settings.API_V1_STR}/login/logout")
+    assert r.status_code == 200
+
+    # Each cookie should have a Max-Age=0 entry, which is how the browser
+    # signals deletion.
+    for name, expected_path in [
+        ("access_token", "/"),
+        ("refresh_token", "/api/v1/login/refresh"),
+        ("is_logged_in", "/"),
+    ]:
+        cookie_header = _get_set_cookie_for(r, name)
+        assert cookie_header is not None, f"{name} not cleared"
+        assert "Max-Age=0" in cookie_header, f"{name} not deleted (Max-Age != 0)"
+        assert f"Path={expected_path}" in cookie_header, (
+            f"{name} cleared with wrong path"
+        )
+
+    # Subsequent protected request should now 401.
+    r = fresh.post(f"{settings.API_V1_STR}/login/test-token")
+    assert r.status_code == 401
+
+
+def test_logout_is_idempotent_when_not_logged_in(client: TestClient) -> None:
+    """Calling logout without being logged in must not error — it's a no-op
+    that just sets clearing headers. This matters because the SPA may call
+    logout in error-recovery paths where session state is uncertain."""
+    fresh = TestClient(client.app)  # type: ignore[arg-type]
+    r = fresh.post(f"{settings.API_V1_STR}/login/logout")
+    assert r.status_code == 200

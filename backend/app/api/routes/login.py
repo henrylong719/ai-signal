@@ -1,7 +1,8 @@
 from datetime import timedelta
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException
+import jwt
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -9,6 +10,13 @@ from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core import security
 from app.core.config import settings
+from app.core.cookies import (
+    REFRESH_COOKIE_NAME,
+    clear_auth_cookies,
+    set_access_cookie,
+    set_logged_in_marker,
+    set_refresh_cookie,
+)
 from app.schemas import Message, NewPassword, Token, UserPublic, UserUpdate
 from app.utils import (
     generate_password_reset_token,
@@ -20,26 +28,88 @@ from app.utils import (
 router = APIRouter(tags=["login"])
 
 
+def _issue_session(response: Response, user_id: Any) -> str:
+    """Mint access + refresh tokens, set all three auth cookies, return access token.
+
+    Returning the access token lets the test suite continue using Bearer auth
+    against endpoints other than the login flow. The frontend never reads it.
+    """
+    access_ttl = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    refresh_ttl = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+
+    access_token = security.create_access_token(user_id, expires_delta=access_ttl)
+    refresh_token = security.create_refresh_token(user_id, expires_delta=refresh_ttl)
+
+    set_access_cookie(response, access_token, int(access_ttl.total_seconds()))
+    set_refresh_cookie(response, refresh_token, int(refresh_ttl.total_seconds()))
+    # Marker matches the refresh TTL — the user "stays logged in" for as long
+    # as their refresh token is valid, even if the access token expires often.
+    set_logged_in_marker(response, int(refresh_ttl.total_seconds()))
+
+    return access_token
+
+
 @router.post("/login/access-token")
 def login_access_token(
-    session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+    response: Response,
+    session: SessionDep,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
-    """
-    OAuth2 compatible token login, get an access token for future requests
+    """Authenticate a user and start a cookie-backed session.
+
+    Sets three cookies (access, refresh, is_logged_in marker) and also
+    returns the access token in the response body. The body is for the
+    test suite and isn't used by the frontend — production traffic
+    authenticates entirely via the cookies.
     """
     user = crud.authenticate(
         session=session, email=form_data.username, password=form_data.password
     )
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
-    elif not user.is_active:
+    if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return Token(
-        access_token=security.create_access_token(
-            user.id, expires_delta=access_token_expires
-        )
-    )
+
+    access_token = _issue_session(response, user.id)
+    return Token(access_token=access_token)
+
+
+@router.post("/login/refresh")
+def refresh_session(
+    response: Response,
+    refresh_token: Annotated[str | None, Cookie(alias=REFRESH_COOKIE_NAME)] = None,
+) -> Message:
+    """Mint a new access token using the refresh cookie.
+
+    Rotates the refresh token too: each refresh issues a fresh refresh
+    cookie alongside the access cookie. This means a stolen refresh token
+    is single-use — the next legitimate refresh invalidates it (because
+    JWTs are stateless we can't actually invalidate the old one, but in
+    practice the legitimate user's next refresh will overwrite the cookie
+    and any subsequent attacker use will at least show stale activity).
+    Production-grade rotation requires server-side refresh-token tracking,
+    which we'd add via Redis if the project ever needed it.
+    """
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="No refresh token")
+    try:
+        payload = security.decode_token(refresh_token, expected_type="refresh")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    subject = payload.get("sub")
+    if not subject:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    _issue_session(response, subject)
+    return Message(message="Session refreshed")
+
+
+@router.post("/login/logout")
+def logout(response: Response) -> Message:
+    """Clear all auth cookies. No-op if the user wasn't logged in."""
+    clear_auth_cookies(response)
+    return Message(message="Logged out")
 
 
 @router.post("/login/test-token", response_model=UserPublic)

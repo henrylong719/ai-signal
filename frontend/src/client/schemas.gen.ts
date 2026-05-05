@@ -521,6 +521,76 @@ export const UserCreateSchema = {
     title: 'UserCreate'
 } as const;
 
+export const UserInterestPublicSchema = {
+    properties: {
+        categories: {
+            items: {
+                type: 'string',
+                enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'other']
+            },
+            type: 'array',
+            title: 'Categories',
+            default: []
+        },
+        tags: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Tags',
+            default: []
+        },
+        updated_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    title: 'UserInterestPublic',
+    description: `Wire shape returned to the client.
+
+A user with no interests row in the DB still gets a valid response
+with empty lists — the frontend treats absence and emptiness as the
+same thing.`
+} as const;
+
+export const UserInterestUpdateSchema = {
+    properties: {
+        categories: {
+            items: {
+                type: 'string',
+                enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'other']
+            },
+            type: 'array',
+            maxItems: 7,
+            title: 'Categories'
+        },
+        tags: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            maxItems: 20,
+            title: 'Tags'
+        }
+    },
+    type: 'object',
+    title: 'UserInterestUpdate',
+    description: `PUT body for /users/me/interests.
+
+Validation:
+  - categories must be drawn from the Category Literal (Pydantic enforces).
+  - tags are length- and count-bounded.`
+} as const;
+
 export const UserPublicSchema = {
     properties: {
         email: {

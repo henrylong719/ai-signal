@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, IngestTriggerIngestResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class ArticlesService {
     /**
@@ -83,6 +83,7 @@ export class ArticlesService {
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
+     * @param data.accessToken
      * @returns SavedArticlesPublic Successful Response
      * @throws ApiError
      */
@@ -90,6 +91,9 @@ export class ArticlesService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/articles/saved/',
+            cookies: {
+                access_token: data.accessToken
+            },
             query: {
                 skip: data.skip,
                 limit: data.limit
@@ -103,13 +107,21 @@ export class ArticlesService {
     /**
      * Read Saved Article Ids
      * Get IDs of all articles saved by current user (for UI state).
+     * @param data The data for the request.
+     * @param data.accessToken
      * @returns SavedArticleIdsPublic Successful Response
      * @throws ApiError
      */
-    public static readSavedArticleIds(): CancelablePromise<ArticlesReadSavedArticleIdsResponse> {
+    public static readSavedArticleIds(data: ArticlesReadSavedArticleIdsData = {}): CancelablePromise<ArticlesReadSavedArticleIdsResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/articles/saved/ids'
+            url: '/api/v1/articles/saved/ids',
+            cookies: {
+                access_token: data.accessToken
+            },
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
     
@@ -118,6 +130,7 @@ export class ArticlesService {
      * Save an article for the current user.
      * @param data The data for the request.
      * @param data.articleId
+     * @param data.accessToken
      * @returns unknown Successful Response
      * @throws ApiError
      */
@@ -127,6 +140,9 @@ export class ArticlesService {
             url: '/api/v1/articles/{article_id}/save',
             path: {
                 article_id: data.articleId
+            },
+            cookies: {
+                access_token: data.accessToken
             },
             errors: {
                 422: 'Validation Error'
@@ -139,6 +155,7 @@ export class ArticlesService {
      * Remove article from saved list.
      * @param data The data for the request.
      * @param data.articleId
+     * @param data.accessToken
      * @returns unknown Successful Response
      * @throws ApiError
      */
@@ -148,6 +165,71 @@ export class ArticlesService {
             url: '/api/v1/articles/{article_id}/save',
             path: {
                 article_id: data.articleId
+            },
+            cookies: {
+                access_token: data.accessToken
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Go To Article
+     * Log a click and 302-redirect to the article's external URL.
+     *
+     * Auth is optional: anonymous users get the redirect with no logging,
+     * signed-in users get the click recorded as a behavioral signal for the
+     * recommender. Logging is best-effort — navigation is the contract.
+     *
+     * The destination URL comes from the article row in the DB (never from a
+     * query parameter), which means this endpoint cannot be repurposed as an
+     * open redirect by an attacker. The scheme is whitelisted defensively.
+     * @param data The data for the request.
+     * @param data.articleId
+     * @param data.accessToken
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static goToArticle(data: ArticlesGoToArticleData): CancelablePromise<ArticlesGoToArticleResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/articles/{article_id}/go',
+            path: {
+                article_id: data.articleId
+            },
+            cookies: {
+                access_token: data.accessToken
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Dismiss Article
+     * Mark an article as dismissed by the current user.
+     *
+     * Dismissed articles are hard-filtered out of the For-You feed (see
+     * `recommender.filter_candidates`). Idempotent — a second dismiss just
+     * bumps the count and last_at.
+     * @param data The data for the request.
+     * @param data.articleId
+     * @param data.accessToken
+     * @returns void Successful Response
+     * @throws ApiError
+     */
+    public static dismissArticle(data: ArticlesDismissArticleData): CancelablePromise<ArticlesDismissArticleResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/articles/{article_id}/dismiss',
+            path: {
+                article_id: data.articleId
+            },
+            cookies: {
+                access_token: data.accessToken
             },
             errors: {
                 422: 'Validation Error'
@@ -159,13 +241,72 @@ export class ArticlesService {
 export class IngestService {
     /**
      * Trigger Ingest
+     * @param data The data for the request.
+     * @param data.accessToken
      * @returns unknown Successful Response
      * @throws ApiError
      */
-    public static triggerIngest(): CancelablePromise<IngestTriggerIngestResponse> {
+    public static triggerIngest(data: IngestTriggerIngestData = {}): CancelablePromise<IngestTriggerIngestResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/ingest'
+            url: '/api/v1/ingest',
+            cookies: {
+                access_token: data.accessToken
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class InterestsService {
+    /**
+     * Read Interests
+     * Current user's stored interests, or empty defaults if none set.
+     * @param data The data for the request.
+     * @param data.accessToken
+     * @returns UserInterestPublic Successful Response
+     * @throws ApiError
+     */
+    public static readInterests(data: InterestsReadInterestsData = {}): CancelablePromise<InterestsReadInterestsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/users/me/interests',
+            cookies: {
+                access_token: data.accessToken
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Interests
+     * Replace the current user's interests with the provided lists.
+     *
+     * Pydantic enforces that `body.categories` is a subset of the Category
+     * Literal; tag normalization (lowercase, trim, dedupe, length cap) happens
+     * in `body.normalized_tags()` before reaching the DB layer.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @param data.accessToken
+     * @returns UserInterestPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateInterests(data: InterestsUpdateInterestsData): CancelablePromise<InterestsUpdateInterestsResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/users/me/interests',
+            cookies: {
+                access_token: data.accessToken
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
 }
@@ -177,6 +318,7 @@ export class ItemsService {
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
+     * @param data.accessToken
      * @returns ItemsPublic Successful Response
      * @throws ApiError
      */
@@ -184,6 +326,9 @@ export class ItemsService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/items/',
+            cookies: {
+                access_token: data.accessToken
+            },
             query: {
                 skip: data.skip,
                 limit: data.limit
@@ -199,6 +344,7 @@ export class ItemsService {
      * Create new item.
      * @param data The data for the request.
      * @param data.requestBody
+     * @param data.accessToken
      * @returns ItemPublic Successful Response
      * @throws ApiError
      */
@@ -206,6 +352,9 @@ export class ItemsService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/items/',
+            cookies: {
+                access_token: data.accessToken
+            },
             body: data.requestBody,
             mediaType: 'application/json',
             errors: {
@@ -219,6 +368,7 @@ export class ItemsService {
      * Get item by ID.
      * @param data The data for the request.
      * @param data.id
+     * @param data.accessToken
      * @returns ItemPublic Successful Response
      * @throws ApiError
      */
@@ -228,6 +378,9 @@ export class ItemsService {
             url: '/api/v1/items/{id}',
             path: {
                 id: data.id
+            },
+            cookies: {
+                access_token: data.accessToken
             },
             errors: {
                 422: 'Validation Error'
@@ -241,6 +394,7 @@ export class ItemsService {
      * @param data The data for the request.
      * @param data.id
      * @param data.requestBody
+     * @param data.accessToken
      * @returns ItemPublic Successful Response
      * @throws ApiError
      */
@@ -250,6 +404,9 @@ export class ItemsService {
             url: '/api/v1/items/{id}',
             path: {
                 id: data.id
+            },
+            cookies: {
+                access_token: data.accessToken
             },
             body: data.requestBody,
             mediaType: 'application/json',
@@ -264,6 +421,7 @@ export class ItemsService {
      * Delete an item.
      * @param data The data for the request.
      * @param data.id
+     * @param data.accessToken
      * @returns Message Successful Response
      * @throws ApiError
      */
@@ -273,6 +431,9 @@ export class ItemsService {
             url: '/api/v1/items/{id}',
             path: {
                 id: data.id
+            },
+            cookies: {
+                access_token: data.accessToken
             },
             errors: {
                 422: 'Validation Error'
@@ -284,7 +445,12 @@ export class ItemsService {
 export class LoginService {
     /**
      * Login Access Token
-     * OAuth2 compatible token login, get an access token for future requests
+     * Authenticate a user and start a cookie-backed session.
+     *
+     * Sets three cookies (access, refresh, is_logged_in marker) and also
+     * returns the access token in the response body. The body is for the
+     * test suite and isn't used by the frontend — production traffic
+     * authenticates entirely via the cookies.
      * @param data The data for the request.
      * @param data.formData
      * @returns Token Successful Response
@@ -303,15 +469,66 @@ export class LoginService {
     }
     
     /**
+     * Refresh Session
+     * Mint a new access token using the refresh cookie.
+     *
+     * Rotates the refresh token too: each refresh issues a fresh refresh
+     * cookie alongside the access cookie. This means a stolen refresh token
+     * is single-use — the next legitimate refresh invalidates it (because
+     * JWTs are stateless we can't actually invalidate the old one, but in
+     * practice the legitimate user's next refresh will overwrite the cookie
+     * and any subsequent attacker use will at least show stale activity).
+     * Production-grade rotation requires server-side refresh-token tracking,
+     * which we'd add via Redis if the project ever needed it.
+     * @param data The data for the request.
+     * @param data.refreshToken
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static refreshSession(data: LoginRefreshSessionData = {}): CancelablePromise<LoginRefreshSessionResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/login/refresh',
+            cookies: {
+                refresh_token: data.refreshToken
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Logout
+     * Clear all auth cookies. No-op if the user wasn't logged in.
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static logout(): CancelablePromise<LoginLogoutResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/login/logout'
+        });
+    }
+    
+    /**
      * Test Token
      * Test access token
+     * @param data The data for the request.
+     * @param data.accessToken
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
-    public static testToken(): CancelablePromise<LoginTestTokenResponse> {
+    public static testToken(data: LoginTestTokenData = {}): CancelablePromise<LoginTestTokenResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/login/test-token'
+            url: '/api/v1/login/test-token',
+            cookies: {
+                access_token: data.accessToken
+            },
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
     
@@ -361,6 +578,7 @@ export class LoginService {
      * HTML Content for Password Recovery
      * @param data The data for the request.
      * @param data.email
+     * @param data.accessToken
      * @returns string Successful Response
      * @throws ApiError
      */
@@ -370,6 +588,9 @@ export class LoginService {
             url: '/api/v1/password-recovery-html-content/{email}',
             path: {
                 email: data.email
+            },
+            cookies: {
+                access_token: data.accessToken
             },
             errors: {
                 422: 'Validation Error'
@@ -407,6 +628,7 @@ export class UsersService {
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
+     * @param data.accessToken
      * @returns UsersPublic Successful Response
      * @throws ApiError
      */
@@ -414,6 +636,9 @@ export class UsersService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/users/',
+            cookies: {
+                access_token: data.accessToken
+            },
             query: {
                 skip: data.skip,
                 limit: data.limit
@@ -429,6 +654,7 @@ export class UsersService {
      * Create new user.
      * @param data The data for the request.
      * @param data.requestBody
+     * @param data.accessToken
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
@@ -436,6 +662,33 @@ export class UsersService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/users/',
+            cookies: {
+                access_token: data.accessToken
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update User Me
+     * Update own user.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @param data.accessToken
+     * @returns UserPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateUserMe(data: UsersUpdateUserMeData): CancelablePromise<UsersUpdateUserMeResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/users/me',
+            cookies: {
+                access_token: data.accessToken
+            },
             body: data.requestBody,
             mediaType: 'application/json',
             errors: {
@@ -447,43 +700,39 @@ export class UsersService {
     /**
      * Read User Me
      * Get current user.
+     * @param data The data for the request.
+     * @param data.accessToken
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
-    public static readUserMe(): CancelablePromise<UsersReadUserMeResponse> {
+    public static readUserMe(data: UsersReadUserMeData = {}): CancelablePromise<UsersReadUserMeResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/users/me'
+            url: '/api/v1/users/me',
+            cookies: {
+                access_token: data.accessToken
+            },
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
     
     /**
      * Delete User Me
      * Delete own user.
+     * @param data The data for the request.
+     * @param data.accessToken
      * @returns Message Successful Response
      * @throws ApiError
      */
-    public static deleteUserMe(): CancelablePromise<UsersDeleteUserMeResponse> {
+    public static deleteUserMe(data: UsersDeleteUserMeData = {}): CancelablePromise<UsersDeleteUserMeResponse> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/users/me'
-        });
-    }
-    
-    /**
-     * Update User Me
-     * Update own user.
-     * @param data The data for the request.
-     * @param data.requestBody
-     * @returns UserPublic Successful Response
-     * @throws ApiError
-     */
-    public static updateUserMe(data: UsersUpdateUserMeData): CancelablePromise<UsersUpdateUserMeResponse> {
-        return __request(OpenAPI, {
-            method: 'PATCH',
             url: '/api/v1/users/me',
-            body: data.requestBody,
-            mediaType: 'application/json',
+            cookies: {
+                access_token: data.accessToken
+            },
             errors: {
                 422: 'Validation Error'
             }
@@ -495,6 +744,7 @@ export class UsersService {
      * Update own password.
      * @param data The data for the request.
      * @param data.requestBody
+     * @param data.accessToken
      * @returns Message Successful Response
      * @throws ApiError
      */
@@ -502,6 +752,9 @@ export class UsersService {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/api/v1/users/me/password',
+            cookies: {
+                access_token: data.accessToken
+            },
             body: data.requestBody,
             mediaType: 'application/json',
             errors: {
@@ -535,6 +788,7 @@ export class UsersService {
      * Get a specific user by id.
      * @param data The data for the request.
      * @param data.userId
+     * @param data.accessToken
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
@@ -544,6 +798,9 @@ export class UsersService {
             url: '/api/v1/users/{user_id}',
             path: {
                 user_id: data.userId
+            },
+            cookies: {
+                access_token: data.accessToken
             },
             errors: {
                 422: 'Validation Error'
@@ -557,6 +814,7 @@ export class UsersService {
      * @param data The data for the request.
      * @param data.userId
      * @param data.requestBody
+     * @param data.accessToken
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
@@ -566,6 +824,9 @@ export class UsersService {
             url: '/api/v1/users/{user_id}',
             path: {
                 user_id: data.userId
+            },
+            cookies: {
+                access_token: data.accessToken
             },
             body: data.requestBody,
             mediaType: 'application/json',
@@ -580,6 +841,7 @@ export class UsersService {
      * Delete a user.
      * @param data The data for the request.
      * @param data.userId
+     * @param data.accessToken
      * @returns Message Successful Response
      * @throws ApiError
      */
@@ -589,6 +851,9 @@ export class UsersService {
             url: '/api/v1/users/{user_id}',
             path: {
                 user_id: data.userId
+            },
+            cookies: {
+                access_token: data.accessToken
             },
             errors: {
                 422: 'Validation Error'
@@ -603,6 +868,7 @@ export class UtilsService {
      * Test emails.
      * @param data The data for the request.
      * @param data.emailTo
+     * @param data.accessToken
      * @returns Message Successful Response
      * @throws ApiError
      */
@@ -610,6 +876,9 @@ export class UtilsService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/utils/test-email/',
+            cookies: {
+                access_token: data.accessToken
+            },
             query: {
                 email_to: data.emailTo
             },

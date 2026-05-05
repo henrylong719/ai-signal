@@ -1,29 +1,36 @@
-import { AlertCircleIcon, NewspaperIcon } from "lucide-react"
-import type { ReactNode } from "react"
-import type { ArticlePublic } from "@/client"
-import { isLoggedIn } from "@/hooks/useAuth"
-import useCustomToast from "@/hooks/useCustomToast"
-import { useSavedArticles } from "@/hooks/useSavedArticles"
-import { ArticleCard } from "./ArticleCard"
-import { ArticleCardSkeleton } from "./ArticleCardSkeleton"
+import { AlertCircleIcon, NewspaperIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
+import type { ArticlePublic } from '@/client';
+import { useDismissArticle } from '@/hooks/useArticleEvents';
+import { isLoggedIn } from '@/hooks/useAuth';
+import useCustomToast from '@/hooks/useCustomToast';
+import { useSavedArticles } from '@/hooks/useSavedArticles';
+import { ArticleCard } from './ArticleCard';
+import { ArticleCardSkeleton } from './ArticleCardSkeleton';
 
 interface ArticleListProps {
-  articles: ArticlePublic[]
-  feedStatus: string | null
-  loadMoreRef: (node: HTMLDivElement | null) => void
-  isPending: boolean
-  isError: boolean
-  emptyTitle?: string
-  emptyDescription?: string
-  errorTitle?: string
-  errorDescription?: string
+  articles: ArticlePublic[];
+  feedStatus: string | null;
+  loadMoreRef: (node: HTMLDivElement | null) => void;
+  isPending: boolean;
+  isError: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  errorTitle?: string;
+  errorDescription?: string;
+  /**
+   * Show a dismiss button on each card. Currently set only by the
+   * For-You feed; other feeds leave it false because dismissals only
+   * affect what the recommender shows you, not the chronological lists.
+   */
+  showDismiss?: boolean;
 }
 
 interface ArticleListStateProps {
-  title: string
-  description: string
-  icon?: ReactNode
-  action?: ReactNode
+  title: string;
+  description: string;
+  icon?: ReactNode;
+  action?: ReactNode;
 }
 
 export function ArticleListState({
@@ -43,7 +50,7 @@ export function ArticleListState({
       </p>
       {action && <div className="mt-5">{action}</div>}
     </div>
-  )
+  );
 }
 
 export function ArticleList({
@@ -52,22 +59,36 @@ export function ArticleList({
   loadMoreRef,
   isPending,
   isError,
-  emptyTitle = "No articles yet",
-  emptyDescription = "New signals will appear here as soon as they are available.",
-  errorTitle = "Could not load articles",
-  errorDescription = "Please refresh the page or try again in a moment.",
+  emptyTitle = 'No articles yet',
+  emptyDescription = 'New signals will appear here as soon as they are available.',
+  errorTitle = 'Could not load articles',
+  errorDescription = 'Please refresh the page or try again in a moment.',
+  showDismiss = false,
 }: ArticleListProps) {
-  const { savedArticleIds, toggleSave } = useSavedArticles()
-  const { showErrorToast } = useCustomToast()
+  const { savedArticleIds, toggleSave } = useSavedArticles();
+  const { dismissedIds, dismiss } = useDismissArticle();
+  const { showErrorToast } = useCustomToast();
 
   const handleBookmark = (articleId: string) => (e: React.MouseEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!isLoggedIn()) {
-      showErrorToast("Please login to save articles!")
-      return
+      showErrorToast('Please login to save articles!');
+      return;
     }
-    toggleSave(articleId)
-  }
+    toggleSave(articleId);
+  };
+
+  // Dismiss handler is only wired when showDismiss is true. Optimistic
+  // removal happens through the dismissedIds filter below; the mutation
+  // hook handles rollback on error.
+  const handleDismiss = (articleId: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!isLoggedIn()) {
+      showErrorToast('Please login to personalize your feed!');
+      return;
+    }
+    dismiss(articleId);
+  };
 
   if (isPending) {
     return (
@@ -77,7 +98,7 @@ export function ArticleList({
         <ArticleCardSkeleton />
         <ArticleCardSkeleton />
       </div>
-    )
+    );
   }
 
   if (isError) {
@@ -87,23 +108,33 @@ export function ArticleList({
         description={errorDescription}
         icon={<AlertCircleIcon className="h-5 w-5 stroke-[1.5]" />}
       />
-    )
+    );
   }
 
-  if (articles.length === 0) {
+  // Filter out optimistically-dismissed articles. Only relevant when
+  // dismiss is enabled; on other feeds dismissedIds will still be
+  // populated if the user dismissed elsewhere in the same session, but
+  // we deliberately don't filter — Latest/Saved feeds should show what
+  // they say they show.
+  const visibleArticles = showDismiss
+    ? articles.filter((article) => !dismissedIds.has(article.id))
+    : articles;
+
+  if (visibleArticles.length === 0) {
     return (
       <ArticleListState title={emptyTitle} description={emptyDescription} />
-    )
+    );
   }
 
   return (
     <div>
-      {articles.map((article) => (
+      {visibleArticles.map((article) => (
         <ArticleCard
           article={article}
           key={article.id}
           onBookmark={handleBookmark(article.id)}
           isBookmarked={savedArticleIds.has(article.id)}
+          onDismiss={showDismiss ? handleDismiss(article.id) : undefined}
         />
       ))}
       <div
@@ -113,5 +144,5 @@ export function ArticleList({
         {feedStatus}
       </div>
     </div>
-  )
+  );
 }

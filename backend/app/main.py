@@ -20,7 +20,14 @@ app = FastAPI(
     generate_unique_id_function=custom_generate_unique_id,
 )
 
-# Set all CORS enabled origins
+# CORS for credentialed (cookie-bearing) requests has two non-negotiable
+# requirements:
+#   1. ``allow_credentials=True`` — without it, browsers strip the cookie.
+#   2. ``allow_origins`` must be an explicit list, not "*" — browsers refuse
+#      credentialed requests against wildcard origins.
+# Both are satisfied below. ``settings.all_cors_origins`` includes
+# ``FRONTEND_HOST`` (default localhost:5173 in dev); production hosts go in
+# the ``BACKEND_CORS_ORIGINS`` env var.
 if settings.all_cors_origins:
     app.add_middleware(
         CORSMiddleware,

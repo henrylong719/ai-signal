@@ -117,6 +117,31 @@ export type UserCreate = {
     password: string;
 };
 
+/**
+ * Wire shape returned to the client.
+ *
+ * A user with no interests row in the DB still gets a valid response
+ * with empty lists — the frontend treats absence and emptiness as the
+ * same thing.
+ */
+export type UserInterestPublic = {
+    categories?: Array<('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other')>;
+    tags?: Array<(string)>;
+    updated_at?: (string | null);
+};
+
+/**
+ * PUT body for /users/me/interests.
+ *
+ * Validation:
+ * - categories must be drawn from the Category Literal (Pydantic enforces).
+ * - tags are length- and count-bounded.
+ */
+export type UserInterestUpdate = {
+    categories?: Array<('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'other')>;
+    tags?: Array<(string)>;
+};
+
 export type UserPublic = {
     email: string;
     is_active?: boolean;
@@ -183,29 +208,68 @@ export type ArticlesReadArticleData = {
 export type ArticlesReadArticleResponse = (ArticlePublic);
 
 export type ArticlesReadSavedArticlesData = {
+    accessToken?: (string | null);
     limit?: number;
     skip?: number;
 };
 
 export type ArticlesReadSavedArticlesResponse = (SavedArticlesPublic);
 
+export type ArticlesReadSavedArticleIdsData = {
+    accessToken?: (string | null);
+};
+
 export type ArticlesReadSavedArticleIdsResponse = (SavedArticleIdsPublic);
 
 export type ArticlesSaveArticleData = {
+    accessToken?: (string | null);
     articleId: string;
 };
 
 export type ArticlesSaveArticleResponse = (unknown);
 
 export type ArticlesUnsaveArticleData = {
+    accessToken?: (string | null);
     articleId: string;
 };
 
 export type ArticlesUnsaveArticleResponse = (unknown);
 
+export type ArticlesGoToArticleData = {
+    accessToken?: (string | null);
+    articleId: string;
+};
+
+export type ArticlesGoToArticleResponse = (unknown);
+
+export type ArticlesDismissArticleData = {
+    accessToken?: (string | null);
+    articleId: string;
+};
+
+export type ArticlesDismissArticleResponse = (void);
+
+export type IngestTriggerIngestData = {
+    accessToken?: (string | null);
+};
+
 export type IngestTriggerIngestResponse = (unknown);
 
+export type InterestsReadInterestsData = {
+    accessToken?: (string | null);
+};
+
+export type InterestsReadInterestsResponse = (UserInterestPublic);
+
+export type InterestsUpdateInterestsData = {
+    accessToken?: (string | null);
+    requestBody: UserInterestUpdate;
+};
+
+export type InterestsUpdateInterestsResponse = (UserInterestPublic);
+
 export type ItemsReadItemsData = {
+    accessToken?: (string | null);
     limit?: number;
     skip?: number;
 };
@@ -213,18 +277,21 @@ export type ItemsReadItemsData = {
 export type ItemsReadItemsResponse = (ItemsPublic);
 
 export type ItemsCreateItemData = {
+    accessToken?: (string | null);
     requestBody: ItemCreate;
 };
 
 export type ItemsCreateItemResponse = (ItemPublic);
 
 export type ItemsReadItemData = {
+    accessToken?: (string | null);
     id: string;
 };
 
 export type ItemsReadItemResponse = (ItemPublic);
 
 export type ItemsUpdateItemData = {
+    accessToken?: (string | null);
     id: string;
     requestBody: ItemUpdate;
 };
@@ -232,6 +299,7 @@ export type ItemsUpdateItemData = {
 export type ItemsUpdateItemResponse = (ItemPublic);
 
 export type ItemsDeleteItemData = {
+    accessToken?: (string | null);
     id: string;
 };
 
@@ -242,6 +310,18 @@ export type LoginLoginAccessTokenData = {
 };
 
 export type LoginLoginAccessTokenResponse = (Token);
+
+export type LoginRefreshSessionData = {
+    refreshToken?: (string | null);
+};
+
+export type LoginRefreshSessionResponse = (Message);
+
+export type LoginLogoutResponse = (Message);
+
+export type LoginTestTokenData = {
+    accessToken?: (string | null);
+};
 
 export type LoginTestTokenResponse = (UserPublic);
 
@@ -258,6 +338,7 @@ export type LoginResetPasswordData = {
 export type LoginResetPasswordResponse = (Message);
 
 export type LoginRecoverPasswordHtmlContentData = {
+    accessToken?: (string | null);
     email: string;
 };
 
@@ -270,6 +351,7 @@ export type PrivateCreateUserData = {
 export type PrivateCreateUserResponse = (UserPublic);
 
 export type UsersReadUsersData = {
+    accessToken?: (string | null);
     limit?: number;
     skip?: number;
 };
@@ -277,22 +359,33 @@ export type UsersReadUsersData = {
 export type UsersReadUsersResponse = (UsersPublic);
 
 export type UsersCreateUserData = {
+    accessToken?: (string | null);
     requestBody: UserCreate;
 };
 
 export type UsersCreateUserResponse = (UserPublic);
 
-export type UsersReadUserMeResponse = (UserPublic);
-
-export type UsersDeleteUserMeResponse = (Message);
-
 export type UsersUpdateUserMeData = {
+    accessToken?: (string | null);
     requestBody: UserUpdateMe;
 };
 
 export type UsersUpdateUserMeResponse = (UserPublic);
 
+export type UsersReadUserMeData = {
+    accessToken?: (string | null);
+};
+
+export type UsersReadUserMeResponse = (UserPublic);
+
+export type UsersDeleteUserMeData = {
+    accessToken?: (string | null);
+};
+
+export type UsersDeleteUserMeResponse = (Message);
+
 export type UsersUpdatePasswordMeData = {
+    accessToken?: (string | null);
     requestBody: UpdatePassword;
 };
 
@@ -305,12 +398,14 @@ export type UsersRegisterUserData = {
 export type UsersRegisterUserResponse = (UserPublic);
 
 export type UsersReadUserByIdData = {
+    accessToken?: (string | null);
     userId: string;
 };
 
 export type UsersReadUserByIdResponse = (UserPublic);
 
 export type UsersUpdateUserData = {
+    accessToken?: (string | null);
     requestBody: UserUpdate;
     userId: string;
 };
@@ -318,12 +413,14 @@ export type UsersUpdateUserData = {
 export type UsersUpdateUserResponse = (UserPublic);
 
 export type UsersDeleteUserData = {
+    accessToken?: (string | null);
     userId: string;
 };
 
 export type UsersDeleteUserResponse = (Message);
 
 export type UtilsTestEmailData = {
+    accessToken?: (string | null);
     emailTo: string;
 };
 

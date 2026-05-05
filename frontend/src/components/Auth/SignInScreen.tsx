@@ -1,5 +1,4 @@
 import { Link as RouterLink } from "@tanstack/react-router"
-import { useId } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import {
   Form,
@@ -38,11 +37,7 @@ export function SignInScreen({
   onCreateAccount,
   onSocialProviderClick,
   onSubmit,
-  remember,
-  setRemember,
 }: SignInScreenProps) {
-  const _rememberId = useId()
-
   return (
     <div className="flex w-full flex-col items-center">
       <AuthIntro

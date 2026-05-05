@@ -1,5 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { AlertCircleIcon, LogInIcon } from "lucide-react"
+import {
+  AlertCircleIcon,
+  LogInIcon,
+  ShieldCheckIcon,
+  SlidersHorizontalIcon,
+  Trash2Icon,
+  UserRoundIcon,
+} from "lucide-react"
+import type { ReactNode } from "react"
 
 import { ArticleListState } from "@/components/Articles/ArticleList"
 import ChangePassword from "@/components/UserSettings/ChangePassword"
@@ -7,15 +15,8 @@ import DeleteAccount from "@/components/UserSettings/DeleteAccount"
 import InterestPicker from "@/components/UserSettings/InterestPicker"
 import UserInformation from "@/components/UserSettings/UserInformation"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import useAuth from "@/hooks/useAuth"
-
-const tabsConfig = [
-  { value: "my-profile", title: "My profile", component: UserInformation },
-  { value: "interests", title: "Interests", component: InterestPicker },
-  { value: "password", title: "Password", component: ChangePassword },
-  { value: "danger-zone", title: "Danger zone", component: DeleteAccount },
-]
+import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/_layout/settings")({
   component: UserSettings,
@@ -30,21 +31,24 @@ export const Route = createFileRoute("/_layout/settings")({
 
 function SettingsSkeleton() {
   return (
-    <div className="px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
-      <header className="pt-10 pb-8">
-        <div className="flex flex-col items-center pb-5">
-          <Skeleton className="h-10 w-56 rounded" />
-          <Skeleton className="mt-3 h-5 w-full max-w-md rounded" />
+    <div className="mx-auto w-full max-w-5xl pb-16 pt-8 sm:pb-20 sm:pt-10">
+      <header className="mb-6 border-b border-slate-200/70 pb-6">
+        <div className="max-w-2xl">
+          <Skeleton className="h-4 w-28 rounded" />
+          <Skeleton className="mt-4 h-10 w-72 max-w-full rounded" />
+          <Skeleton className="mt-3 h-5 w-full max-w-lg rounded" />
         </div>
       </header>
-      <div className="space-y-6">
-        <Skeleton className="h-9 w-80 max-w-full rounded-lg" />
-        <div className="max-w-md space-y-4">
-          <Skeleton className="h-5 w-40 rounded" />
-          <Skeleton className="h-9 w-full rounded-md" />
-          <Skeleton className="h-9 w-full rounded-md" />
-          <Skeleton className="h-9 w-20 rounded-md" />
-        </div>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.86fr)]">
+        {[0, 1, 2].map((item) => (
+          <Skeleton
+            key={item}
+            className={cn(
+              "h-72 rounded-lg",
+              item === 2 && "lg:col-span-2 h-80",
+            )}
+          />
+        ))}
       </div>
     </div>
   )
@@ -52,13 +56,6 @@ function SettingsSkeleton() {
 
 function UserSettings() {
   const { user: currentUser, isLoading, isError } = useAuth()
-  // Existing behaviour: same tabs shown for both groups (the slice was a
-  // no-op since both arrays are equivalent in length). The slice still
-  // gives a single point to gate Danger zone if we ever want to hide it
-  // from superusers — currently we don't.
-  const finalTabs = currentUser?.is_superuser
-    ? tabsConfig.slice(0, 4)
-    : tabsConfig
 
   if (isLoading) {
     return <SettingsSkeleton />
@@ -66,7 +63,7 @@ function UserSettings() {
 
   if (isError) {
     return (
-      <div className="px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pt-10">
         <ArticleListState
           title="Could not load settings"
           description="Please refresh the page or try again in a moment."
@@ -78,7 +75,7 @@ function UserSettings() {
 
   if (!currentUser) {
     return (
-      <div className="px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pt-10">
         <ArticleListState
           title="Sign in to manage settings"
           description="Account settings are available after you sign in."
@@ -97,34 +94,127 @@ function UserSettings() {
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
-      <header className="pt-10 pb-8">
-        <div className="text-center pb-5">
-          <h1 className="font-serif text-3xl sm:text-4xl font-medium text-slate-900 mb-3 tracking-tight">
-            User settings
-          </h1>
-          <p className="text-lg text-slate-500 leading-relaxed font-serif">
-            Manage your account settings and preferences.
+    <div className="mx-auto w-full max-w-5xl pb-16 pt-8 sm:pb-20 sm:pt-10">
+      <header className="mb-6 flex flex-col gap-5 border-b border-slate-200/70 pb-6 md:flex-row md:items-end md:justify-between">
+        <div className="max-w-2xl">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Workspace
           </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+            Account Settings
+          </h1>
+          <p className="mt-3 max-w-xl text-base leading-7 text-slate-500">
+            Manage your identity, security, and the signals that shape your
+            personalized feed.
+          </p>
+        </div>
+        <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-500 shadow-sm md:self-auto">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="truncate">{currentUser.email}</span>
         </div>
       </header>
 
-      <Tabs defaultValue="my-profile">
-        <div className="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
-          <TabsList className="w-max">
-            {finalTabs.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value}>
-                {tab.title}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
-        {finalTabs.map((tab) => (
-          <TabsContent key={tab.value} value={tab.value} className="pt-2">
-            <tab.component />
-          </TabsContent>
-        ))}
-      </Tabs>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.86fr)]">
+        <SettingsSection
+          title="Profile Information"
+          description="Update the personal details attached to your account."
+          icon={<UserRoundIcon className="h-4 w-4 stroke-[1.8]" />}
+        >
+          <UserInformation />
+        </SettingsSection>
+
+        <SettingsSection
+          title="Password & Security"
+          description="Keep your sign-in credentials current and protected."
+          icon={<ShieldCheckIcon className="h-4 w-4 stroke-[1.8]" />}
+        >
+          <ChangePassword />
+        </SettingsSection>
+
+        <SettingsSection
+          title="Topic Preferences"
+          description="Tune the categories and tags used to recommend articles."
+          icon={<SlidersHorizontalIcon className="h-4 w-4 stroke-[1.8]" />}
+          className="lg:col-span-2"
+        >
+          <InterestPicker />
+        </SettingsSection>
+
+        <SettingsSection
+          title="Danger Zone"
+          description="Permanent account actions live here."
+          icon={<Trash2Icon className="h-4 w-4 stroke-[1.8]" />}
+          danger
+          className="lg:col-span-2"
+        >
+          <DeleteAccount />
+        </SettingsSection>
+      </div>
     </div>
+  )
+}
+
+function SettingsSection({
+  title,
+  description,
+  icon,
+  danger = false,
+  children,
+  className,
+}: {
+  title: string
+  description: string
+  icon: ReactNode
+  danger?: boolean
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <section
+      className={cn(
+        "overflow-hidden rounded-lg border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.04)]",
+        danger ? "border-red-200/80" : "border-slate-200/80",
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          "flex gap-4 border-b px-5 py-4 sm:px-6",
+          danger
+            ? "border-red-100 bg-red-50/60"
+            : "border-slate-100 bg-slate-50/70",
+        )}
+      >
+        <div
+          className={cn(
+            "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border",
+            danger
+              ? "border-red-200 bg-white text-red-600"
+              : "border-slate-200 bg-white text-slate-600",
+          )}
+        >
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <h2
+            className={cn(
+              "text-base font-semibold tracking-tight",
+              danger ? "text-red-950" : "text-slate-950",
+            )}
+          >
+            {title}
+          </h2>
+          <p
+            className={cn(
+              "mt-1 text-sm leading-6",
+              danger ? "text-red-700/75" : "text-slate-500",
+            )}
+          >
+            {description}
+          </p>
+        </div>
+      </div>
+      <div className="p-5 sm:p-6">{children}</div>
+    </section>
   )
 }

@@ -2,11 +2,14 @@ import DeleteConfirmation from "./DeleteConfirmation"
 
 const DeleteAccount = () => {
   return (
-    <div className="max-w-md mt-4 rounded-lg border border-destructive/50 p-4">
-      <h3 className="font-semibold text-destructive">Delete Account</h3>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Permanently delete your account and all associated data.
-      </p>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="max-w-2xl">
+        <h3 className="text-sm font-semibold text-red-950">Delete account</h3>
+        <p className="mt-1 text-sm leading-6 text-red-700/75">
+          This permanently removes your saved articles, preferences, and account
+          data.
+        </p>
+      </div>
       <DeleteConfirmation />
     </div>
   )

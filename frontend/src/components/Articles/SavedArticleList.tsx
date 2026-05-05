@@ -68,7 +68,7 @@ export function SavedArticleList() {
   }
 
   return (
-    <div>
+    <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white px-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.04)] sm:px-6">
       {articles.map((article) => (
         <ArticleCard
           article={article}

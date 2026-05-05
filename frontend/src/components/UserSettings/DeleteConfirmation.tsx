@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { Trash2Icon } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { UsersService } from "@/client"
@@ -43,19 +44,25 @@ const DeleteConfirmation = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="destructive" className="mt-3">
-          Delete Account
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 w-full border-red-200 bg-white px-4 font-medium text-red-600 shadow-sm hover:bg-red-50 hover:text-red-700 sm:w-auto"
+        >
+          <Trash2Icon className="h-4 w-4" />
+          Delete account
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="rounded-lg border-red-100">
         <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogHeader>
-            <DialogTitle>Confirmation Required</DialogTitle>
-            <DialogDescription>
+          <DialogHeader className="pr-6">
+            <DialogTitle className="text-slate-950">
+              Delete account?
+            </DialogTitle>
+            <DialogDescription className="leading-6">
               All your account data will be{" "}
               <strong>permanently deleted.</strong> If you are sure, please
-              click <strong>"Confirm"</strong> to proceed. This action cannot be
-              undone.
+              confirm below. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
@@ -69,8 +76,10 @@ const DeleteConfirmation = () => {
               variant="destructive"
               type="submit"
               loading={mutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              <Trash2Icon className="h-4 w-4" />
+              Delete account
             </LoadingButton>
           </DialogFooter>
         </form>

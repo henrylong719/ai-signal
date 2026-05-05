@@ -11,7 +11,7 @@ export function useSavedArticles() {
 
   const { data: savedIds } = useQuery({
     queryKey: SAVED_IDS_KEY,
-    queryFn: ArticlesService.readSavedArticleIds,
+    queryFn: () => ArticlesService.readSavedArticleIds(),
     enabled: isLoggedIn(),
   })
 

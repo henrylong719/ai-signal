@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
+import { KeyRoundIcon } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -66,24 +67,24 @@ const ChangePassword = () => {
   }
 
   return (
-    <div className="max-w-md">
-      <h3 className="text-lg font-semibold py-4">Change Password</h3>
+    <div className="w-full max-w-lg">
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-4"
-        >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <FormField
             control={form.control}
             name="current_password"
             render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel>Current Password</FormLabel>
+                <FormLabel className="text-sm font-medium text-slate-800">
+                  Current password
+                </FormLabel>
                 <FormControl>
                   <PasswordInput
                     data-testid="current-password-input"
+                    autoComplete="current-password"
                     placeholder="••••••••"
                     aria-invalid={fieldState.invalid}
+                    className="h-10 rounded-md border-slate-200 bg-white pl-3.5 pr-10 text-sm shadow-sm shadow-slate-950/[0.02] transition-colors focus-visible:border-slate-400 focus-visible:ring-slate-900/10"
                     {...field}
                   />
                 </FormControl>
@@ -97,12 +98,16 @@ const ChangePassword = () => {
             name="new_password"
             render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel>New Password</FormLabel>
+                <FormLabel className="text-sm font-medium text-slate-800">
+                  New password
+                </FormLabel>
                 <FormControl>
                   <PasswordInput
                     data-testid="new-password-input"
+                    autoComplete="new-password"
                     placeholder="••••••••"
                     aria-invalid={fieldState.invalid}
+                    className="h-10 rounded-md border-slate-200 bg-white pl-3.5 pr-10 text-sm shadow-sm shadow-slate-950/[0.02] transition-colors focus-visible:border-slate-400 focus-visible:ring-slate-900/10"
                     {...field}
                   />
                 </FormControl>
@@ -116,12 +121,16 @@ const ChangePassword = () => {
             name="confirm_password"
             render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
+                <FormLabel className="text-sm font-medium text-slate-800">
+                  Confirm new password
+                </FormLabel>
                 <FormControl>
                   <PasswordInput
                     data-testid="confirm-password-input"
+                    autoComplete="new-password"
                     placeholder="••••••••"
                     aria-invalid={fieldState.invalid}
+                    className="h-10 rounded-md border-slate-200 bg-white pl-3.5 pr-10 text-sm shadow-sm shadow-slate-950/[0.02] transition-colors focus-visible:border-slate-400 focus-visible:ring-slate-900/10"
                     {...field}
                   />
                 </FormControl>
@@ -133,9 +142,11 @@ const ChangePassword = () => {
           <LoadingButton
             type="submit"
             loading={mutation.isPending}
-            className="self-start"
+            size="sm"
+            className="h-9 w-full border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-950 sm:w-auto"
           >
-            Update Password
+            <KeyRoundIcon className="h-4 w-4" />
+            Update password
           </LoadingButton>
         </form>
       </Form>

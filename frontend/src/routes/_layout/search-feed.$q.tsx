@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { SearchIcon } from "lucide-react"
 import { ArticleList } from "@/components/Articles/ArticleList"
 import { useArticleFeed } from "@/hooks/useArticleFeed"
 
@@ -12,23 +13,32 @@ function SearchFeed() {
   const feed = useArticleFeed({ search: q })
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 flex-auto md:flex-5">
-      <header className="pt-10 pb-8">
-        <div className="text-center pb-5">
-          <h1 className="font-serif text-3xl sm:text-4xl font-medium text-slate-900 mb-3 tracking-tight">
+    <div className="mx-auto w-full max-w-5xl pb-16 pt-8 sm:pb-20 sm:pt-10">
+      <header className="mb-6 flex flex-col gap-5 border-b border-slate-200/70 pb-6 md:flex-row md:items-end md:justify-between">
+        <div className="max-w-2xl">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Search
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
             Search results
           </h1>
-          <p className="break-words text-lg text-slate-500 leading-relaxed font-serif">
-            Results for "{q}"
+          <p className="mt-3 max-w-xl break-words text-base leading-7 text-slate-500">
+            Articles matching your query.
           </p>
         </div>
+        <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-500 shadow-sm md:self-auto">
+          <SearchIcon className="h-4 w-4 stroke-[1.8] text-slate-400" />
+          <span className="truncate">{q}</span>
+        </div>
       </header>
-      <ArticleList
-        {...feed}
-        emptyTitle={`No results for "${q}"`}
-        emptyDescription="Try a different phrase or browse the latest AI signals."
-        errorTitle="Could not load search results"
-      />
+      <div className="max-w-4xl">
+        <ArticleList
+          {...feed}
+          emptyTitle={`No results for "${q}"`}
+          emptyDescription="Try a different phrase or browse the latest AI signals."
+          errorTitle="Could not load search results"
+        />
+      </div>
     </div>
   )
 }

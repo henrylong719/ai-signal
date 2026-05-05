@@ -238,7 +238,7 @@ def test_login_sets_three_cookies_with_correct_attributes(
     # Access cookie — httpOnly so JS can't read it; site-wide path.
     assert "HttpOnly" in access_cookie
     assert "Path=/" in access_cookie
-    assert "SameSite=lax" in access_cookie.lower() or "samesite=lax" in access_cookie
+    assert "samesite=lax" in access_cookie.lower()
 
     # Refresh cookie — also httpOnly, but path-scoped to the refresh
     # endpoint only. This is defense in depth: the browser will never send

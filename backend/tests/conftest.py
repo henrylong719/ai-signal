@@ -116,6 +116,13 @@ def client() -> Generator[TestClient, None, None]:
         yield c
 
 
+@pytest.fixture(autouse=True)
+def clear_client_cookies(client: TestClient) -> Generator[None, None, None]:
+    client.cookies.clear()
+    yield
+    client.cookies.clear()
+
+
 @pytest.fixture(scope="module")
 def superuser_token_headers(client: TestClient) -> dict[str, str]:
     return get_superuser_token_headers(client)

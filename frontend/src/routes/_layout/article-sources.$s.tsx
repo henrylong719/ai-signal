@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useLocation } from "@tanstack/react-router"
-import { AlertCircleIcon, ArrowLeftIcon } from "lucide-react"
+import { AlertCircleIcon, ArrowLeftIcon, RadioTowerIcon } from "lucide-react"
 import { ArticlesService } from "@/client"
 import { ArticleCardSkeleton } from "@/components/Articles/ArticleCardSkeleton"
 import {
@@ -17,22 +17,17 @@ export const Route = createFileRoute("/_layout/article-sources/$s")({
 
 function ArticleSourceSkeleton() {
   return (
-    <div className="px-4 sm:px-6 lg:px-8 flex-auto md:flex-5">
-      <header className="pt-10 pb-8">
-        <div className="flex flex-col items-center pb-5">
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
-            <Skeleton className="h-10 w-56 rounded" />
-            <Skeleton className="h-7 w-24 rounded-md" />
-            <Skeleton className="h-7 w-28 rounded-md" />
-          </div>
-          <div className="flex w-full max-w-2xl flex-col items-center space-y-2">
-            <Skeleton className="h-5 w-full max-w-xl rounded" />
-            <Skeleton className="h-5 w-3/4 max-w-lg rounded" />
-          </div>
+    <div className="mx-auto w-full max-w-5xl pb-16 pt-8 sm:pb-20 sm:pt-10">
+      <header className="mb-6 border-b border-slate-200/70 pb-6">
+        <Skeleton className="h-9 w-32 rounded-md" />
+        <div className="mt-8 max-w-2xl">
+          <Skeleton className="h-4 w-24 rounded" />
+          <Skeleton className="mt-4 h-10 w-72 max-w-full rounded" />
+          <Skeleton className="mt-3 h-5 w-full max-w-xl rounded" />
         </div>
       </header>
 
-      <div className="py-8">
+      <div className="max-w-4xl rounded-lg border border-slate-200/80 bg-white px-5 sm:px-6">
         <ArticleCardSkeleton />
         <ArticleCardSkeleton />
         <ArticleCardSkeleton />
@@ -51,11 +46,13 @@ function ArticlesSources() {
   const allArticleSourcesScrollY = articleSourcesState.allArticleSourcesScrollY
   const backToAllSourcesState =
     typeof allArticleSourcesScrollY === "number"
-      ? (previousState: object) => ({
-          ...previousState,
-          allArticleSourcesFilter: articleSourcesState.allArticleSourcesFilter,
-          allArticleSourcesScrollY,
-        })
+      ? (previousState: object) =>
+          ({
+            ...previousState,
+            allArticleSourcesFilter:
+              articleSourcesState.allArticleSourcesFilter,
+            allArticleSourcesScrollY,
+          }) as never
       : undefined
 
   const feed = useArticleFeed({ source: s })
@@ -73,7 +70,7 @@ function ArticlesSources() {
 
   if (sourcesQuery.isError) {
     return (
-      <div className="px-4 sm:px-6 lg:px-8 flex-auto md:flex-5">
+      <div className="mx-auto w-full max-w-3xl pt-10">
         <ArticleListState
           title="Could not load source"
           description="Please refresh the page or try again in a moment."
@@ -95,7 +92,7 @@ function ArticlesSources() {
 
   if (!source) {
     return (
-      <div className="px-4 sm:px-6 lg:px-8 flex-auto md:flex-5">
+      <div className="mx-auto w-full max-w-3xl pt-10">
         <ArticleListState
           title="Source not found"
           description="This source may have been removed or renamed."
@@ -115,29 +112,40 @@ function ArticlesSources() {
   }
 
   return (
-    <>
+    <div className="mx-auto w-full max-w-5xl pb-16 pt-8 sm:pb-20 sm:pt-10">
       <Link
         to="/all-article-sources"
         state={backToAllSourcesState}
-        className="mt-8 inline-flex h-9 items-center rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+        className="inline-flex h-9 items-center rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
       >
         <ArrowLeftIcon className="mr-2 h-4 w-4" />
-        Back to all
+        Back to sources
       </Link>
-      <div className="px-4 sm:px-6 lg:px-8 flex-auto md:flex-5">
-        <header className="pt-10 pb-8">
-          <div className="text-center pb-5">
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <h1 className="font-serif text-3xl sm:text-4xl font-medium text-slate-900 mb-3 tracking-tight">
-                {capitalize(source.name)}
-              </h1>
-            </div>
-            <p className="text-lg text-slate-500 leading-relaxed font-serif">
-              {source.description}
-            </p>
-          </div>
-        </header>
 
+      <header className="mb-6 mt-8 flex flex-col gap-5 border-b border-slate-200/70 pb-6 md:flex-row md:items-end md:justify-between">
+        <div className="max-w-2xl">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Source
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+            {capitalize(source.name)}
+          </h1>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-500">
+            {source.description}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 self-start md:self-auto">
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-500 shadow-sm">
+            <RadioTowerIcon className="h-4 w-4 stroke-[1.8] text-slate-400" />
+            {source.source_type}
+          </div>
+          <div className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-500 shadow-sm">
+            {source.topic}
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-4xl">
         <ArticleList
           {...feed}
           emptyTitle={`No articles from ${source.name} yet`}
@@ -145,6 +153,6 @@ function ArticlesSources() {
           errorTitle={`Could not load articles from ${source.name}`}
         />
       </div>
-    </>
+    </div>
   )
 }

@@ -1,11 +1,55 @@
 import uuid
+from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
+from app import crud
 from app.core.config import settings
-from app.schemas.source import SOURCES
+from app.models import Article, User
+from app.schemas import ArticleCreate, UserCreate
+from app.schemas.source import SOURCES, Category
 from tests.utils.article import create_random_article
+from tests.utils.user import user_authentication_headers
+from tests.utils.utils import random_email, random_lower_string
+
+
+def _create_authenticated_user(
+    client: TestClient,
+    db: Session,
+) -> tuple[User, dict[str, str]]:
+    email = random_email()
+    password = random_lower_string()
+    user = crud.create_user(
+        session=db,
+        user_create=UserCreate(email=email, password=password),
+    )
+    return user, user_authentication_headers(
+        client=client, email=email, password=password
+    )
+
+
+def _create_article(
+    db: Session,
+    *,
+    url: str | None = None,
+    title: str | None = None,
+    source: str = "Example",
+    category: Category = "models",
+    tags: list[str] | None = None,
+) -> Article:
+    return crud.create_article(
+        session=db,
+        article_in=ArticleCreate(
+            url=url or f"https://example.com/{uuid.uuid4()}",
+            title=title or random_lower_string(),
+            source=source,
+            excerpt=random_lower_string(),
+            category=category,
+            tags=tags or [category],
+            published_at=datetime.now(timezone.utc),
+        ),
+    )
 
 
 def test_read_articles(client: TestClient, db: Session) -> None:
@@ -52,7 +96,10 @@ def test_read_sources(client: TestClient) -> None:
     assert content["count"] == len(content["data"])
     assert content["count"] == len(SOURCES)
     assert all(source["topic"] != "AI source" for source in content["data"])
-    assert all(source["description"] != "Curated source for AI Signal." for source in content["data"])
+    assert all(
+        source["description"] != "Curated source for AI Signal."
+        for source in content["data"]
+    )
 
     openai = next(source for source in content["data"] if source["name"] == "OpenAI")
     assert openai == {
@@ -96,6 +143,203 @@ def test_read_for_you_articles(
     assert content["count"] >= 1
     assert len(content["data"]) >= 1
     assert "reason" in content["data"][0]
+
+
+def test_read_for_you_excludes_saved_and_dismissed_articles(
+    client: TestClient,
+    db: Session,
+) -> None:
+    user, headers = _create_authenticated_user(client, db)
+    shown = _create_article(db, title="For You match", category="rag", tags=["rag"])
+    saved = _create_article(db, title="Already saved", category="rag", tags=["rag"])
+    dismissed = _create_article(db, title="Dismissed", category="rag", tags=["rag"])
+
+    crud.set_interests(
+        session=db,
+        user_id=user.id,
+        categories=["rag"],
+        tags=["rag"],
+    )
+    crud.save_article(
+        session=db,
+        user_id=user.id,
+        article_id=saved.id,
+    )
+    crud.record_event(
+        session=db,
+        user_id=user.id,
+        article_id=dismissed.id,
+        event_type="dismissed",
+    )
+
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/for-you",
+        headers=headers,
+        params={"limit": 200},
+    )
+
+    assert response.status_code == 200
+    ids = {article["id"] for article in response.json()["data"]}
+    assert str(shown.id) in ids
+    assert str(saved.id) not in ids
+    assert str(dismissed.id) not in ids
+
+
+def test_saved_article_routes_cover_create_list_ids_and_delete(
+    client: TestClient,
+    db: Session,
+) -> None:
+    _, headers = _create_authenticated_user(client, db)
+    article = create_random_article(db)
+
+    fresh_client = TestClient(client.app)
+    unauthenticated = fresh_client.post(
+        f"{settings.API_V1_STR}/articles/{article.id}/save",
+    )
+    assert unauthenticated.status_code == 401
+
+    saved = client.post(
+        f"{settings.API_V1_STR}/articles/{article.id}/save",
+        headers=headers,
+    )
+    assert saved.status_code == 201
+    assert saved.json() == {"message": "Article saved"}
+
+    duplicate = client.post(
+        f"{settings.API_V1_STR}/articles/{article.id}/save",
+        headers=headers,
+    )
+    assert duplicate.status_code == 409
+    assert duplicate.json()["detail"] == "Article already saved"
+
+    ids = client.get(f"{settings.API_V1_STR}/articles/saved/ids", headers=headers)
+    assert ids.status_code == 200
+    assert str(article.id) in ids.json()["article_ids"]
+
+    saved_list = client.get(f"{settings.API_V1_STR}/articles/saved/", headers=headers)
+    assert saved_list.status_code == 200
+    assert str(article.id) in [item["id"] for item in saved_list.json()["data"]]
+
+    removed = client.delete(
+        f"{settings.API_V1_STR}/articles/{article.id}/save",
+        headers=headers,
+    )
+    assert removed.status_code == 200
+    assert removed.json() == {"message": "Article unsaved"}
+
+    missing = client.delete(
+        f"{settings.API_V1_STR}/articles/{article.id}/save",
+        headers=headers,
+    )
+    assert missing.status_code == 404
+    assert missing.json()["detail"] == "Saved article not found"
+
+
+def test_save_article_returns_404_for_missing_article(
+    client: TestClient,
+    db: Session,
+) -> None:
+    _, headers = _create_authenticated_user(client, db)
+
+    response = client.post(
+        f"{settings.API_V1_STR}/articles/{uuid.uuid4()}/save",
+        headers=headers,
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Article not found"
+
+
+def test_dismiss_article_records_idempotent_event(
+    client: TestClient,
+    db: Session,
+) -> None:
+    user, headers = _create_authenticated_user(client, db)
+    article = create_random_article(db)
+
+    first = client.post(
+        f"{settings.API_V1_STR}/articles/{article.id}/dismiss",
+        headers=headers,
+    )
+    second = client.post(
+        f"{settings.API_V1_STR}/articles/{article.id}/dismiss",
+        headers=headers,
+    )
+
+    assert first.status_code == 204
+    assert second.status_code == 204
+    events = crud.get_events(
+        session=db,
+        user_id=user.id,
+        event_type="dismissed",
+    )
+    event = next(event for event in events if event.article_id == article.id)
+    assert event.count == 2
+
+
+def test_dismiss_article_returns_404_for_missing_article(
+    client: TestClient,
+    db: Session,
+) -> None:
+    _, headers = _create_authenticated_user(client, db)
+
+    response = client.post(
+        f"{settings.API_V1_STR}/articles/{uuid.uuid4()}/dismiss",
+        headers=headers,
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Article not found"
+
+
+def test_go_to_article_redirects_and_records_click_for_authenticated_user(
+    client: TestClient,
+    db: Session,
+) -> None:
+    user, headers = _create_authenticated_user(client, db)
+    article = _create_article(db, url=f"https://example.com/read/{uuid.uuid4()}")
+
+    anonymous = client.get(
+        f"{settings.API_V1_STR}/articles/{article.id}/go",
+        follow_redirects=False,
+    )
+    authenticated = client.get(
+        f"{settings.API_V1_STR}/articles/{article.id}/go",
+        headers=headers,
+        follow_redirects=False,
+    )
+
+    assert anonymous.status_code == 302
+    assert anonymous.headers["location"] == article.url
+    assert authenticated.status_code == 302
+    assert authenticated.headers["location"] == article.url
+    events = crud.get_events(
+        session=db,
+        user_id=user.id,
+        event_type="clicked",
+    )
+    assert [event.article_id for event in events].count(article.id) == 1
+
+
+def test_go_to_article_rejects_missing_or_invalid_destination(
+    client: TestClient,
+    db: Session,
+) -> None:
+    invalid = _create_article(db, url="javascript:alert(1)")
+
+    missing = client.get(
+        f"{settings.API_V1_STR}/articles/{uuid.uuid4()}/go",
+        follow_redirects=False,
+    )
+    invalid_response = client.get(
+        f"{settings.API_V1_STR}/articles/{invalid.id}/go",
+        follow_redirects=False,
+    )
+
+    assert missing.status_code == 404
+    assert missing.json()["detail"] == "Article not found"
+    assert invalid_response.status_code == 400
+    assert invalid_response.json()["detail"] == "Article URL is invalid"
 
 
 def test_read_article(client: TestClient, db: Session) -> None:

@@ -16,6 +16,7 @@ def user_authentication_headers(
     r = client.post(f"{settings.API_V1_STR}/login/access-token", data=data)
     response = r.json()
     auth_token = response["access_token"]
+    client.cookies.clear()
     headers = {"Authorization": f"Bearer {auth_token}"}
     return headers
 

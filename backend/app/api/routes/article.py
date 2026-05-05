@@ -98,17 +98,6 @@ def read_for_you_articles(
     return ForYouArticlesPublic(data=articles, count=count)
 
 
-@router.get("/{id}", response_model=ArticlePublic)
-def read_article(session: SessionDep, id: uuid.UUID) -> Any:
-    """
-    Get article by ID.
-    """
-    article = crud.get_article(session=session, article_id=id)
-    if not article:
-        raise HTTPException(status_code=404, detail="Article not found")
-    return article
-
-
 # --- Saved articles ---
 
 
@@ -253,3 +242,14 @@ def dismiss_article(
         article_id=article_id,
         event_type="dismissed",
     )
+
+
+@router.get("/{id}", response_model=ArticlePublic)
+def read_article(session: SessionDep, id: uuid.UUID) -> Any:
+    """
+    Get article by ID.
+    """
+    article = crud.get_article(session=session, article_id=id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return article

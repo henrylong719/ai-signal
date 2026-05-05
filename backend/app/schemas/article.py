@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlmodel import Field, SQLModel
 
-from app.schemas.source import Category
+from app.schemas.source import Category, ContentQuality, Difficulty, SummaryStatus
 
 
 class ArticleBase(SQLModel):
@@ -40,6 +40,14 @@ class ArticleUpdate(SQLModel):
 class ArticlePublic(ArticleBase):
     id: uuid.UUID
     fetched_at: datetime
+
+    # Enrichment fields. May be null on freshly-ingested articles
+    # or on rows the enrichment worker chose to skip.
+    content_quality: ContentQuality
+    summary: str | None = None
+    why_it_matters: str | None = None
+    difficulty: Difficulty | None = None
+    summary_status: SummaryStatus
 
 
 class ArticlesPublic(SQLModel):

@@ -13,6 +13,7 @@ from app.models import Article
 from app.models.base import get_datetime_utc
 from app.schemas.source import SOURCES, Source
 from app.services.article_tagging import normalize_excerpt, tag_article
+from app.services.content_quality import classify_content_quality
 from app.services.rss_images import extract_image_url
 
 IngestResult = dict[str, int | list[str]]
@@ -71,6 +72,23 @@ async def ingest_all() -> IngestResult:
                     title=title, excerpt=excerpt or "", fallback=source.default_category
                 )
 
+                # Decide whether this article is worth sending to the
+                # enrichment LLM later. The classifier looks at the title
+                # and the normalized excerpt; the worker uses the result
+                # via summary_status below.
+                content_quality = classify_content_quality(
+                    title=title, excerpt=excerpt or ""
+                )
+
+                # Articles with usable content go into the worker's queue
+                # ('pending'). Title-only and insufficient rows are marked
+                # 'skipped' so the worker leaves them alone — no LLM cost,
+                # no retries, no wasted attempts.
+                if content_quality in ("full", "excerpt"):
+                    summary_status = "pending"
+                else:
+                    summary_status = "skipped"
+
                 stmt = (
                     insert(article_table)
                     .values(
@@ -84,6 +102,9 @@ async def ingest_all() -> IngestResult:
                         tags=tags,
                         published_at=published_at,
                         fetched_at=get_datetime_utc(),
+                        content_quality=content_quality,
+                        summary_status=summary_status,
+                        summary_attempts=0,
                     )
                     .on_conflict_do_nothing(index_elements=["url"])
                     .returning(article_table.c.id)

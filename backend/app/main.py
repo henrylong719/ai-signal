@@ -1,3 +1,6 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 import sentry_sdk
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
@@ -5,6 +8,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
 from app.core.config import settings
+from app.core.scheduler import start_scheduler, stop_scheduler
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -14,10 +18,26 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
     sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """App startup/shutdown hooks.
+
+    Starts the background scheduler (ingest + enrichment jobs) on boot
+    and stops it cleanly on shutdown.
+    """
+    start_scheduler()
+    try:
+        yield
+    finally:
+        stop_scheduler()
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     generate_unique_id_function=custom_generate_unique_id,
+    lifespan=lifespan,
 )
 
 # Set all CORS enabled origins

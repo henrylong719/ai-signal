@@ -14,6 +14,20 @@ Category = Literal[
 ]
 SourceType = Literal["official", "independent", "community", "research"]
 
+# How much usable content we have for an article. Set during ingest.
+# Drives whether the enrichment worker calls the LLM for this row.
+ContentQuality = Literal["full", "excerpt", "title_only", "insufficient"]
+
+# Reading-difficulty label produced by the enrichment LLM.
+Difficulty = Literal["beginner", "intermediate", "advanced"]
+
+# State machine for the enrichment worker.
+# pending = waiting to be enriched
+# done    = enriched successfully
+# failed  = tried, hit max attempts, gave up
+# skipped = deliberately not attempted (title_only / insufficient)
+SummaryStatus = Literal["pending", "done", "failed", "skipped"]
+
 CATEGORIES: tuple[Category, ...] = (
     "agents",
     "rag",

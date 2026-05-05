@@ -1,13 +1,13 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Index, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlmodel import Field, SQLModel
 
 from app.models.base import get_datetime_utc
 from app.schemas.article import ArticleBase
-from app.schemas.source import Category
+from app.schemas.source import Category, ContentQuality, Difficulty, SummaryStatus
 
 _published_at_column = Column(DateTime(timezone=True), nullable=True)
 
@@ -38,6 +38,35 @@ class Article(ArticleBase, table=True):
     fetched_at: datetime = Field(
         default_factory=get_datetime_utc,
         sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+
+    content_quality: ContentQuality = Field(
+        default="excerpt",
+        sa_column=Column(String(16), nullable=False),
+    )
+
+    summary: str | None = Field(default=None, sa_type=Text, nullable=True)
+    why_it_matters: str | None = Field(default=None, sa_type=Text, nullable=True)
+    difficulty: Difficulty | None = Field(
+        default=None,
+        sa_column=Column(String(16), nullable=True),
+    )
+
+    summary_status: SummaryStatus = Field(
+        default="pending",
+        sa_column=Column(String(16), nullable=False),
+    )
+    summary_attempts: int = Field(
+        default=0,
+        sa_column=Column(Integer, nullable=False),
+    )
+    summary_prompt_version: int | None = Field(
+        default=None,
+        sa_column=Column(Integer, nullable=True),
+    )
+    summary_generated_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
     )
 
     __table_args__ = (

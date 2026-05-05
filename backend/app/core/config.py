@@ -94,6 +94,10 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
+    # Anthropic API key, used by the article enrichment worker.
+    # If unset, enrichment is disabled and the worker is a no-op.
+    ANTHROPIC_API_KEY: str | None = None
+
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (

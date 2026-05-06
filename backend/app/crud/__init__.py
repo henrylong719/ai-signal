@@ -33,6 +33,17 @@ from app.crud.item import (
     get_items,
     update_item,
 )
+from app.crud.refresh_session import (
+    create_refresh_session,
+    get_refresh_session_for_update,
+    hash_refresh_token_id,
+    mark_refresh_session_used,
+    refresh_session_is_active,
+    refresh_token_matches_previous,
+    revoke_refresh_session,
+    revoke_refresh_sessions_for_user,
+    rotate_refresh_session,
+)
 from app.crud.user import authenticate, create_user, get_user_by_email, update_user
 
 __all__ = [
@@ -42,6 +53,7 @@ __all__ = [
     "count_saved_articles",
     "create_article",
     "create_item",
+    "create_refresh_session",
     "create_user",
     "delete_article",
     "delete_item",
@@ -59,8 +71,16 @@ __all__ = [
     "get_saved_signals",
     "get_item",
     "get_items",
+    "get_refresh_session_for_update",
     "get_user_by_email",
+    "hash_refresh_token_id",
+    "mark_refresh_session_used",
+    "refresh_session_is_active",
+    "refresh_token_matches_previous",
     "record_event",
+    "revoke_refresh_session",
+    "revoke_refresh_sessions_for_user",
+    "rotate_refresh_session",
     "save_article",
     "set_interests",
     "unsave_article",

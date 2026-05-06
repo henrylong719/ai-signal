@@ -116,6 +116,7 @@ def update_password_me(
     hashed_password = get_password_hash(body.new_password)
     current_user.hashed_password = hashed_password
     session.add(current_user)
+    crud.revoke_refresh_sessions_for_user(session=session, user_id=current_user.id)
     session.commit()
     return Message(message="Password updated successfully")
 
@@ -137,6 +138,7 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
+    crud.revoke_refresh_sessions_for_user(session=session, user_id=current_user.id)
     session.delete(current_user)
     session.commit()
     return Message(message="User deleted successfully")
@@ -207,6 +209,9 @@ def update_user(
             )
 
     db_user = crud.update_user(session=session, db_user=db_user, user_in=user_in)
+    if user_in.password is not None:
+        crud.revoke_refresh_sessions_for_user(session=session, user_id=db_user.id)
+        session.commit()
     return db_user
 
 
@@ -224,6 +229,7 @@ def delete_user(
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
+    crud.revoke_refresh_sessions_for_user(session=session, user_id=user_id)
     statement = delete(Item).where(col(Item.owner_id) == user_id)
     session.exec(statement)
     session.delete(user)

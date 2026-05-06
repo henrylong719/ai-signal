@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Literal
 
@@ -30,6 +31,7 @@ def _create_token(
     subject: str | Any,
     expires_delta: timedelta,
     token_type: TokenType,
+    extra_claims: dict[str, Any] | None = None,
 ) -> str:
     """Encode a JWT with ``sub``, ``exp``, and ``type`` claims.
 
@@ -38,6 +40,8 @@ def _create_token(
     """
     expire = datetime.now(timezone.utc) + expires_delta
     payload = {"exp": expire, "sub": str(subject), "type": token_type}
+    if extra_claims:
+        payload.update(extra_claims)
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -49,7 +53,11 @@ def create_access_token(subject: str | Any, expires_delta: timedelta) -> str:
 
 
 def create_refresh_token(
-    subject: str | Any, expires_delta: timedelta | None = None
+    subject: str | Any,
+    expires_delta: timedelta | None = None,
+    *,
+    session_id: str | Any,
+    token_id: str,
 ) -> str:
     """Long-lived JWT presented to the refresh endpoint to mint new access tokens.
 
@@ -61,8 +69,15 @@ def create_refresh_token(
     if expires_delta is None:
         expires_delta = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     return _create_token(
-        subject=subject, expires_delta=expires_delta, token_type="refresh"
+        subject=subject,
+        expires_delta=expires_delta,
+        token_type="refresh",
+        extra_claims={"sid": str(session_id), "jti": token_id},
     )
+
+
+def generate_refresh_token_id() -> str:
+    return secrets.token_urlsafe(32)
 
 
 def decode_token(token: str, *, expected_type: TokenType) -> dict[str, Any]:

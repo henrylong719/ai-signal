@@ -4,11 +4,10 @@ All cookie attribute decisions live here so they can't drift across
 endpoints. Three cookies are managed:
 
   - ``access_token``  : httpOnly JWT, sent to all /api/* requests, short TTL
-  - ``refresh_token`` : httpOnly JWT, scoped to /api/v1/login/refresh only,
+  - ``refresh_token`` : httpOnly JWT, scoped to /api/v1/login auth endpoints,
                         long TTL. Path-scoping is defense in depth — the
-                        browser never sends the refresh cookie to any
-                        endpoint other than the refresh endpoint, so a
-                        bug in another handler can never leak it.
+                        browser never sends the refresh cookie to non-login
+                        API endpoints, while logout can still revoke it.
   - ``is_logged_in``  : NON-httpOnly marker, readable by JS purely as a UI
                         hint. Has no security significance — the server
                         never trusts it for authorization, only the real
@@ -37,11 +36,11 @@ ACCESS_COOKIE_NAME: Final = "access_token"
 REFRESH_COOKIE_NAME: Final = "refresh_token"
 LOGGED_IN_MARKER_NAME: Final = "is_logged_in"
 
-# Refresh cookie is only sent to the refresh endpoint. Everything else
-# (including /login/logout, which clears the cookie) doesn't see it
-# unless the browser is told to. Keep this in sync if the API path
-# prefix or the refresh endpoint path changes.
-_REFRESH_COOKIE_PATH: Final = f"{settings.API_V1_STR}/login/refresh"
+# Refresh cookie is only sent to login auth endpoints. This lets /login/logout
+# revoke the exact DB-backed refresh session while still keeping the refresh
+# token away from the rest of the API surface.
+_REFRESH_COOKIE_PATH: Final = f"{settings.API_V1_STR}/login"
+_LEGACY_REFRESH_COOKIE_PATH: Final = f"{settings.API_V1_STR}/login/refresh"
 _DEFAULT_COOKIE_PATH: Final = "/"
 
 
@@ -64,12 +63,19 @@ def set_access_cookie(response: Response, token: str, max_age_seconds: int) -> N
 
 
 def set_refresh_cookie(response: Response, token: str, max_age_seconds: int) -> None:
-    """Set the long-lived refresh cookie, scoped to the refresh endpoint only."""
+    """Set the long-lived refresh cookie, scoped to login auth endpoints."""
     response.set_cookie(
         key=REFRESH_COOKIE_NAME,
         value=token,
         max_age=max_age_seconds,
         path=_REFRESH_COOKIE_PATH,
+        secure=_is_secure(),
+        httponly=True,
+        samesite="lax",
+    )
+    response.delete_cookie(
+        key=REFRESH_COOKIE_NAME,
+        path=_LEGACY_REFRESH_COOKIE_PATH,
         secure=_is_secure(),
         httponly=True,
         samesite="lax",
@@ -112,6 +118,13 @@ def clear_auth_cookies(response: Response) -> None:
     response.delete_cookie(
         key=REFRESH_COOKIE_NAME,
         path=_REFRESH_COOKIE_PATH,
+        secure=_is_secure(),
+        httponly=True,
+        samesite="lax",
+    )
+    response.delete_cookie(
+        key=REFRESH_COOKIE_NAME,
+        path=_LEGACY_REFRESH_COOKIE_PATH,
         secure=_is_secure(),
         httponly=True,
         samesite="lax",

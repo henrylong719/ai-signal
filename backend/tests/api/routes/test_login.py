@@ -1,3 +1,5 @@
+import uuid
+from datetime import timedelta
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -5,13 +7,17 @@ from pwdlib.hashers.bcrypt import BcryptHasher
 from sqlmodel import Session
 
 from app.core.config import settings
-from app.core.security import get_password_hash, verify_password
+from app.core.security import decode_token, get_password_hash, verify_password
 from app.crud import create_user
-from app.models import User
+from app.models import RefreshSession, User
+from app.models.base import get_datetime_utc
 from app.schemas import UserCreate
 from app.utils import generate_password_reset_token
 from tests.utils.user import user_authentication_headers
 from tests.utils.utils import random_email, random_lower_string
+
+REFRESH_COOKIE_PATH = f"{settings.API_V1_STR}/login"
+LEGACY_REFRESH_COOKIE_PATH = f"{settings.API_V1_STR}/login/refresh"
 
 
 def test_get_access_token(client: TestClient) -> None:
@@ -216,6 +222,16 @@ def _get_set_cookie_for(response: object, name: str) -> str | None:
     return None
 
 
+def _get_set_cookies_for(response: object, name: str) -> list[str]:
+    headers: list[str] = response.headers.get_list("set-cookie")  # type: ignore[attr-defined]
+    return [raw for raw in headers if raw.split("=", 1)[0] == name]
+
+
+def _plant_refresh_cookie(client: TestClient, token: str) -> None:
+    client.cookies.delete("refresh_token", path=REFRESH_COOKIE_PATH)
+    client.cookies.set("refresh_token", token, path=REFRESH_COOKIE_PATH)
+
+
 def test_login_sets_three_cookies_with_correct_attributes(
     client: TestClient,
 ) -> None:
@@ -240,11 +256,16 @@ def test_login_sets_three_cookies_with_correct_attributes(
     assert "Path=/" in access_cookie
     assert "samesite=lax" in access_cookie.lower()
 
-    # Refresh cookie — also httpOnly, but path-scoped to the refresh
-    # endpoint only. This is defense in depth: the browser will never send
-    # this cookie to any other endpoint.
+    # Refresh cookie — also httpOnly, but path-scoped to login auth endpoints.
+    # This keeps it away from the rest of the API while letting logout revoke
+    # the DB-backed refresh session.
     assert "HttpOnly" in refresh_cookie
-    assert "Path=/api/v1/login/refresh" in refresh_cookie
+    assert f"Path={REFRESH_COOKIE_PATH}" in refresh_cookie
+    assert any(
+        f"Path={LEGACY_REFRESH_COOKIE_PATH}" in cookie_header
+        and "Max-Age=0" in cookie_header
+        for cookie_header in _get_set_cookies_for(r, "refresh_token")
+    )
 
     # Marker cookie — explicitly NOT httpOnly because the SPA reads it for
     # UI state. Has no security significance to the server.
@@ -301,14 +322,73 @@ def test_refresh_rotates_session(client: TestClient) -> None:
 
     r = fresh.post(f"{settings.API_V1_STR}/login/refresh")
     assert r.status_code == 200
-    # Rotation: the new cookies must be different from the old ones.
-    # (Content differs because the iat/exp claims are fresh.)
+    rotated_refresh = fresh.cookies.get("refresh_token")
     assert _get_set_cookie_for(r, "access_token") is not None
     assert _get_set_cookie_for(r, "refresh_token") is not None
+    assert rotated_refresh and rotated_refresh != original_refresh
 
     # The protected endpoint should still work with the rotated cookies.
     r = fresh.post(f"{settings.API_V1_STR}/login/test-token")
     assert r.status_code == 200
+
+
+def test_refresh_allows_immediate_previous_token_without_extending_refresh_cookie(
+    client: TestClient,
+) -> None:
+    """A tiny grace window prevents multi-tab refresh races from logging out
+    the user, but the previous token cannot extend the refresh session."""
+    fresh = TestClient(client.app)  # type: ignore[arg-type]
+    login_data = {
+        "username": settings.FIRST_SUPERUSER,
+        "password": settings.FIRST_SUPERUSER_PASSWORD,
+    }
+    fresh.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    original_refresh = fresh.cookies.get("refresh_token")
+    assert original_refresh
+
+    r = fresh.post(f"{settings.API_V1_STR}/login/refresh")
+    assert r.status_code == 200
+
+    _plant_refresh_cookie(fresh, original_refresh)
+    r = fresh.post(f"{settings.API_V1_STR}/login/refresh")
+    assert r.status_code == 200
+    assert _get_set_cookie_for(r, "access_token") is not None
+    assert _get_set_cookie_for(r, "refresh_token") is None
+
+
+def test_refresh_rejects_stale_token_after_rotation_grace(
+    client: TestClient, db: Session
+) -> None:
+    fresh = TestClient(client.app)  # type: ignore[arg-type]
+    login_data = {
+        "username": settings.FIRST_SUPERUSER,
+        "password": settings.FIRST_SUPERUSER_PASSWORD,
+    }
+    fresh.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    original_refresh = fresh.cookies.get("refresh_token")
+    assert original_refresh
+
+    r = fresh.post(f"{settings.API_V1_STR}/login/refresh")
+    assert r.status_code == 200
+    rotated_refresh = fresh.cookies.get("refresh_token")
+    assert rotated_refresh
+
+    payload = decode_token(original_refresh, expected_type="refresh")
+    db_refresh_session = db.get(RefreshSession, uuid.UUID(str(payload["sid"])))
+    assert db_refresh_session
+    db_refresh_session.previous_token_valid_until = get_datetime_utc() - timedelta(
+        seconds=1
+    )
+    db.add(db_refresh_session)
+    db.commit()
+
+    _plant_refresh_cookie(fresh, original_refresh)
+    r = fresh.post(f"{settings.API_V1_STR}/login/refresh")
+    assert r.status_code == 401
+
+    _plant_refresh_cookie(fresh, rotated_refresh)
+    r = fresh.post(f"{settings.API_V1_STR}/login/refresh")
+    assert r.status_code == 401
 
 
 def test_refresh_rejects_access_token_in_refresh_slot(client: TestClient) -> None:
@@ -325,8 +405,7 @@ def test_refresh_rejects_access_token_in_refresh_slot(client: TestClient) -> Non
     assert access_token
 
     # Plant the access token into the refresh cookie slot.
-    fresh.cookies.delete("refresh_token", path="/api/v1/login/refresh")
-    fresh.cookies.set("refresh_token", access_token, path="/api/v1/login/refresh")
+    _plant_refresh_cookie(fresh, access_token)
 
     r = fresh.post(f"{settings.API_V1_STR}/login/refresh")
     assert r.status_code == 401
@@ -342,7 +421,9 @@ def test_logout_clears_all_three_cookies(client: TestClient) -> None:
         "password": settings.FIRST_SUPERUSER_PASSWORD,
     }
     fresh.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    original_refresh = fresh.cookies.get("refresh_token")
     assert fresh.cookies.get("access_token")
+    assert original_refresh
 
     r = fresh.post(f"{settings.API_V1_STR}/login/logout")
     assert r.status_code == 200
@@ -351,7 +432,7 @@ def test_logout_clears_all_three_cookies(client: TestClient) -> None:
     # signals deletion.
     for name, expected_path in [
         ("access_token", "/"),
-        ("refresh_token", "/api/v1/login/refresh"),
+        ("refresh_token", REFRESH_COOKIE_PATH),
         ("is_logged_in", "/"),
     ]:
         cookie_header = _get_set_cookie_for(r, name)
@@ -360,9 +441,48 @@ def test_logout_clears_all_three_cookies(client: TestClient) -> None:
         assert f"Path={expected_path}" in cookie_header, (
             f"{name} cleared with wrong path"
         )
+    assert any(
+        f"Path={LEGACY_REFRESH_COOKIE_PATH}" in cookie_header
+        and "Max-Age=0" in cookie_header
+        for cookie_header in _get_set_cookies_for(r, "refresh_token")
+    )
 
     # Subsequent protected request should now 401.
     r = fresh.post(f"{settings.API_V1_STR}/login/test-token")
+    assert r.status_code == 401
+
+    # The server-side refresh session was revoked too; replaying the old
+    # refresh cookie cannot mint another session.
+    _plant_refresh_cookie(fresh, original_refresh)
+    r = fresh.post(f"{settings.API_V1_STR}/login/refresh")
+    assert r.status_code == 401
+
+
+def test_password_change_revokes_refresh_sessions(
+    client: TestClient, db: Session
+) -> None:
+    fresh = TestClient(client.app)  # type: ignore[arg-type]
+    email = random_email()
+    password = random_lower_string()
+    user_create = UserCreate(email=email, password=password)
+    create_user(session=db, user_create=user_create)
+
+    r = fresh.post(
+        f"{settings.API_V1_STR}/login/access-token",
+        data={"username": email, "password": password},
+    )
+    assert r.status_code == 200
+    original_refresh = fresh.cookies.get("refresh_token")
+    assert original_refresh
+
+    r = fresh.patch(
+        f"{settings.API_V1_STR}/users/me/password",
+        json={"current_password": password, "new_password": f"{password}1"},
+    )
+    assert r.status_code == 200
+
+    _plant_refresh_cookie(fresh, original_refresh)
+    r = fresh.post(f"{settings.API_V1_STR}/login/refresh")
     assert r.status_code == 401
 
 

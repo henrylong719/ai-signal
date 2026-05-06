@@ -1,10 +1,12 @@
+import uuid
 from datetime import timedelta
-from typing import Annotated, Any
+from typing import Annotated, Any, NoReturn
 
 import jwt
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlmodel import Session
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
@@ -17,6 +19,8 @@ from app.core.cookies import (
     set_logged_in_marker,
     set_refresh_cookie,
 )
+from app.models import User
+from app.models.base import get_datetime_utc
 from app.schemas import Message, NewPassword, Token, UserPublic, UserUpdate
 from app.utils import (
     generate_password_reset_token,
@@ -28,23 +32,70 @@ from app.utils import (
 router = APIRouter(tags=["login"])
 
 
-def _issue_session(response: Response, user_id: Any) -> str:
+class InvalidRefreshTokenError(ValueError):
+    pass
+
+
+def _refresh_ttl() -> timedelta:
+    return timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+
+
+def _issue_access_cookie(response: Response, user_id: Any) -> str:
+    access_ttl = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(user_id, expires_delta=access_ttl)
+    set_access_cookie(response, access_token, int(access_ttl.total_seconds()))
+    return access_token
+
+
+def _set_logged_in_marker(response: Response) -> None:
+    refresh_ttl = _refresh_ttl()
+    set_logged_in_marker(response, int(refresh_ttl.total_seconds()))
+
+
+def _raise_refresh_unauthorized(response: Response, detail: str) -> NoReturn:
+    clear_auth_cookies(response)
+    raise HTTPException(status_code=401, detail=detail)
+
+
+def _parse_refresh_payload(payload: dict[str, Any]) -> tuple[uuid.UUID, uuid.UUID, str]:
+    subject = payload.get("sub")
+    session_id = payload.get("sid")
+    token_id = payload.get("jti")
+    if not isinstance(subject, str) or not isinstance(session_id, str):
+        raise InvalidRefreshTokenError
+    if not isinstance(token_id, str) or not token_id:
+        raise InvalidRefreshTokenError
+    try:
+        return uuid.UUID(subject), uuid.UUID(session_id), token_id
+    except ValueError:
+        raise InvalidRefreshTokenError
+
+
+def _issue_session(response: Response, session: Session, user_id: uuid.UUID) -> str:
     """Mint access + refresh tokens, set all three auth cookies, return access token.
 
     Returning the access token lets the test suite continue using Bearer auth
     against endpoints other than the login flow. The frontend never reads it.
     """
-    access_ttl = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    refresh_ttl = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    refresh_ttl = _refresh_ttl()
+    refresh_token_id = security.generate_refresh_token_id()
+    db_refresh_session = crud.create_refresh_session(
+        session=session,
+        user_id=user_id,
+        token_hash=crud.hash_refresh_token_id(refresh_token_id),
+        expires_at=get_datetime_utc() + refresh_ttl,
+    )
+    refresh_token = security.create_refresh_token(
+        user_id,
+        expires_delta=refresh_ttl,
+        session_id=db_refresh_session.id,
+        token_id=refresh_token_id,
+    )
+    session.commit()
 
-    access_token = security.create_access_token(user_id, expires_delta=access_ttl)
-    refresh_token = security.create_refresh_token(user_id, expires_delta=refresh_ttl)
-
-    set_access_cookie(response, access_token, int(access_ttl.total_seconds()))
+    access_token = _issue_access_cookie(response, user_id)
     set_refresh_cookie(response, refresh_token, int(refresh_ttl.total_seconds()))
-    # Marker matches the refresh TTL — the user "stays logged in" for as long
-    # as their refresh token is valid, even if the access token expires often.
-    set_logged_in_marker(response, int(refresh_ttl.total_seconds()))
+    _set_logged_in_marker(response)
 
     return access_token
 
@@ -70,44 +121,129 @@ def login_access_token(
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
 
-    access_token = _issue_session(response, user.id)
+    access_token = _issue_session(response, session, user.id)
     return Token(access_token=access_token)
 
 
 @router.post("/login/refresh")
 def refresh_session(
     response: Response,
+    session: SessionDep,
     refresh_token: Annotated[str | None, Cookie(alias=REFRESH_COOKIE_NAME)] = None,
 ) -> Message:
     """Mint a new access token using the refresh cookie.
 
-    Rotates the refresh token too: each refresh issues a fresh refresh
-    cookie alongside the access cookie. This means a stolen refresh token
-    is single-use — the next legitimate refresh invalidates it (because
-    JWTs are stateless we can't actually invalidate the old one, but in
-    practice the legitimate user's next refresh will overwrite the cookie
-    and any subsequent attacker use will at least show stale activity).
-    Production-grade rotation requires server-side refresh-token tracking,
-    which we'd add via Redis if the project ever needed it.
+    Refresh tokens are DB-backed and rotated on each successful refresh. A
+    short previous-token grace window avoids logging users out when two browser
+    tabs refresh at almost the same time.
     """
     if not refresh_token:
-        raise HTTPException(status_code=401, detail="No refresh token")
+        _raise_refresh_unauthorized(response, "No refresh token")
     try:
         payload = security.decode_token(refresh_token, expected_type="refresh")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
+        user_id, refresh_session_id, token_id = _parse_refresh_payload(payload)
+    except (jwt.InvalidTokenError, InvalidRefreshTokenError):
+        _raise_refresh_unauthorized(response, "Invalid refresh token")
 
-    subject = payload.get("sub")
-    if not subject:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    now = get_datetime_utc()
+    token_hash = crud.hash_refresh_token_id(token_id)
+    db_refresh_session = crud.get_refresh_session_for_update(
+        session=session, session_id=refresh_session_id
+    )
+    if (
+        db_refresh_session is None
+        or db_refresh_session.user_id != user_id
+        or not crud.refresh_session_is_active(
+            refresh_session=db_refresh_session, now=now
+        )
+    ):
+        _raise_refresh_unauthorized(response, "Invalid refresh token")
 
-    _issue_session(response, subject)
-    return Message(message="Session refreshed")
+    user = session.get(User, user_id)
+    if not user or not user.is_active:
+        _raise_refresh_unauthorized(response, "Invalid refresh token")
+
+    if db_refresh_session.token_hash == token_hash:
+        refresh_ttl = _refresh_ttl()
+        new_token_id = security.generate_refresh_token_id()
+        new_token_hash = crud.hash_refresh_token_id(new_token_id)
+        new_refresh_token = security.create_refresh_token(
+            user_id,
+            expires_delta=refresh_ttl,
+            session_id=db_refresh_session.id,
+            token_id=new_token_id,
+        )
+        crud.rotate_refresh_session(
+            refresh_session=db_refresh_session,
+            old_token_hash=token_hash,
+            new_token_hash=new_token_hash,
+            expires_at=now + refresh_ttl,
+            now=now,
+        )
+        session.add(db_refresh_session)
+        session.commit()
+
+        _issue_access_cookie(response, user_id)
+        set_refresh_cookie(
+            response, new_refresh_token, int(refresh_ttl.total_seconds())
+        )
+        _set_logged_in_marker(response)
+        return Message(message="Session refreshed")
+
+    if crud.refresh_token_matches_previous(
+        refresh_session=db_refresh_session, token_hash=token_hash, now=now
+    ):
+        crud.mark_refresh_session_used(refresh_session=db_refresh_session, now=now)
+        session.add(db_refresh_session)
+        session.commit()
+
+        _issue_access_cookie(response, user_id)
+        _set_logged_in_marker(response)
+        return Message(message="Session refreshed")
+
+    crud.revoke_refresh_session(refresh_session=db_refresh_session, now=now)
+    session.add(db_refresh_session)
+    session.commit()
+    _raise_refresh_unauthorized(response, "Invalid refresh token")
+
+
+def _revoke_refresh_session_from_cookie(session: Session, refresh_token: str) -> None:
+    try:
+        payload = security.decode_token(refresh_token, expected_type="refresh")
+        user_id, refresh_session_id, token_id = _parse_refresh_payload(payload)
+    except (jwt.InvalidTokenError, InvalidRefreshTokenError):
+        return
+
+    db_refresh_session = crud.get_refresh_session_for_update(
+        session=session, session_id=refresh_session_id
+    )
+    if db_refresh_session is None or db_refresh_session.user_id != user_id:
+        return
+
+    token_hash = crud.hash_refresh_token_id(token_id)
+    now = get_datetime_utc()
+    if (
+        db_refresh_session.token_hash != token_hash
+        and not crud.refresh_token_matches_previous(
+            refresh_session=db_refresh_session, token_hash=token_hash, now=now
+        )
+    ):
+        return
+
+    crud.revoke_refresh_session(refresh_session=db_refresh_session, now=now)
+    session.add(db_refresh_session)
+    session.commit()
 
 
 @router.post("/login/logout")
-def logout(response: Response) -> Message:
-    """Clear all auth cookies. No-op if the user wasn't logged in."""
+def logout(
+    response: Response,
+    session: SessionDep,
+    refresh_token: Annotated[str | None, Cookie(alias=REFRESH_COOKIE_NAME)] = None,
+) -> Message:
+    """Revoke the current refresh session and clear all auth cookies."""
+    if refresh_token:
+        _revoke_refresh_session_from_cookie(session, refresh_token)
     clear_auth_cookies(response)
     return Message(message="Logged out")
 
@@ -164,6 +300,8 @@ def reset_password(session: SessionDep, body: NewPassword) -> Message:
         db_user=user,
         user_in=user_in_update,
     )
+    crud.revoke_refresh_sessions_for_user(session=session, user_id=user.id)
+    session.commit()
     return Message(message="Password updated successfully")
 
 

@@ -2,6 +2,7 @@ from sqlmodel import SQLModel
 
 from app.models.article import Article, SavedArticle
 from app.models.item import Item
+from app.models.refresh_session import RefreshSession
 from app.models.user import User
 from app.schemas import (
     CATEGORIES,
@@ -47,6 +48,7 @@ __all__ = [
     "ItemUpdate",
     "Message",
     "NewPassword",
+    "RefreshSession",
     "SOURCES",
     "Source",
     "SQLModel",

@@ -10,6 +10,7 @@ from app.models.article import (
 )
 from app.models.interest import UserInterest
 from app.models.item import Item
+from app.models.oauth_account import OAuthAccount
 from app.models.refresh_session import RefreshSession
 from app.models.user import User
 from app.models.user_embedding import UserEmbedding
@@ -28,6 +29,8 @@ from app.schemas import (
     ItemUpdate,
     Message,
     NewPassword,
+    OAuthAccountPublic,
+    OAuthAccountsPublic,
     Source,
     Token,
     TokenPayload,
@@ -61,6 +64,9 @@ __all__ = [
     "ItemUpdate",
     "Message",
     "NewPassword",
+    "OAuthAccount",
+    "OAuthAccountPublic",
+    "OAuthAccountsPublic",
     "SOURCES",
     "Source",
     "SQLModel",

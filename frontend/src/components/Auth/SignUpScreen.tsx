@@ -19,7 +19,10 @@ import {
   primaryButtonClass,
 } from "./AuthShared"
 import type { SignUpFormData } from "./authSchemas"
-import { SocialLoginButtons } from "./SocialLoginButtons"
+import {
+  type SocialAuthProvider,
+  SocialLoginButtons,
+} from "./SocialLoginButtons"
 
 const topics = [
   "AI Agents",
@@ -36,7 +39,7 @@ interface SignUpScreenProps {
   form: UseFormReturn<SignUpFormData>
   loading: boolean
   onSignIn: () => void
-  onSocialProviderClick: () => void
+  onSocialProviderClick: (provider: SocialAuthProvider) => void
   onSubmit: (data: SignUpFormData) => void
 }
 
@@ -154,10 +157,10 @@ export function SignUpScreen({
             </div>
           </div>
 
-          <div className="my-5 h-px w-full bg-slate-200" />
+          <div className="my-5 h-px w-full bg-slate-200 dark:bg-slate-800" />
 
           <div className="w-full">
-            <h2 className="text-sm font-semibold text-slate-700">
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               Topics of Interest (Optional)
             </h2>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -171,8 +174,8 @@ export function SignUpScreen({
                     className={cn(
                       "rounded-full border px-3 py-1 text-xs font-semibold transition sm:px-4 sm:py-1.5 sm:text-sm",
                       selected
-                        ? "border-slate-950 bg-slate-950 text-white"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+                        ? "border-slate-950 bg-slate-950 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-950"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600",
                     )}
                     key={topic}
                     onClick={() => toggleTopic(topic)}
@@ -196,11 +199,11 @@ export function SignUpScreen({
         </form>
       </Form>
 
-      <p className="mt-5 text-center text-sm text-slate-500">
+      <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
         Already have an account?{" "}
         <button
           type="button"
-          className="font-semibold text-slate-950 hover:text-blue-700"
+          className="font-semibold text-slate-950 hover:text-blue-700 dark:text-slate-100 dark:hover:text-cyan-200"
           onClick={onSignIn}
         >
           Sign In

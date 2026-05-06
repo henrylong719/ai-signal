@@ -75,7 +75,7 @@ const ChangePassword = () => {
             name="current_password"
             render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-slate-800">
+                <FormLabel className="text-sm font-medium text-slate-800 dark:text-foreground/88">
                   Current password
                 </FormLabel>
                 <FormControl>
@@ -84,7 +84,7 @@ const ChangePassword = () => {
                     autoComplete="current-password"
                     placeholder="••••••••"
                     aria-invalid={fieldState.invalid}
-                    className="h-10 rounded-md border-slate-200 bg-white pl-3.5 pr-10 text-sm shadow-sm shadow-slate-950/[0.02] transition-colors focus-visible:border-slate-400 focus-visible:ring-slate-900/10"
+                    className="h-10 rounded-md border-slate-200 bg-white pl-3.5 pr-10 text-sm shadow-sm shadow-slate-950/[0.02] transition-colors focus-visible:border-slate-400 focus-visible:ring-slate-900/10 dark:border-border dark:bg-muted/35 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:focus-visible:border-ring/55 dark:focus-visible:ring-ring/15"
                     {...field}
                   />
                 </FormControl>
@@ -98,7 +98,7 @@ const ChangePassword = () => {
             name="new_password"
             render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-slate-800">
+                <FormLabel className="text-sm font-medium text-slate-800 dark:text-foreground/88">
                   New password
                 </FormLabel>
                 <FormControl>
@@ -107,7 +107,7 @@ const ChangePassword = () => {
                     autoComplete="new-password"
                     placeholder="••••••••"
                     aria-invalid={fieldState.invalid}
-                    className="h-10 rounded-md border-slate-200 bg-white pl-3.5 pr-10 text-sm shadow-sm shadow-slate-950/[0.02] transition-colors focus-visible:border-slate-400 focus-visible:ring-slate-900/10"
+                    className="h-10 rounded-md border-slate-200 bg-white pl-3.5 pr-10 text-sm shadow-sm shadow-slate-950/[0.02] transition-colors focus-visible:border-slate-400 focus-visible:ring-slate-900/10 dark:border-border dark:bg-muted/35 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:focus-visible:border-ring/55 dark:focus-visible:ring-ring/15"
                     {...field}
                   />
                 </FormControl>
@@ -121,7 +121,7 @@ const ChangePassword = () => {
             name="confirm_password"
             render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-slate-800">
+                <FormLabel className="text-sm font-medium text-slate-800 dark:text-foreground/88">
                   Confirm new password
                 </FormLabel>
                 <FormControl>
@@ -130,7 +130,7 @@ const ChangePassword = () => {
                     autoComplete="new-password"
                     placeholder="••••••••"
                     aria-invalid={fieldState.invalid}
-                    className="h-10 rounded-md border-slate-200 bg-white pl-3.5 pr-10 text-sm shadow-sm shadow-slate-950/[0.02] transition-colors focus-visible:border-slate-400 focus-visible:ring-slate-900/10"
+                    className="h-10 rounded-md border-slate-200 bg-white pl-3.5 pr-10 text-sm shadow-sm shadow-slate-950/[0.02] transition-colors focus-visible:border-slate-400 focus-visible:ring-slate-900/10 dark:border-border dark:bg-muted/35 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:focus-visible:border-ring/55 dark:focus-visible:ring-ring/15"
                     {...field}
                   />
                 </FormControl>
@@ -143,7 +143,7 @@ const ChangePassword = () => {
             type="submit"
             loading={mutation.isPending}
             size="sm"
-            className="h-9 w-full border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-950 sm:w-auto"
+            className="h-9 w-full border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-950 sm:w-auto dark:border-border dark:bg-transparent dark:text-foreground/86 dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground"
           >
             <KeyRoundIcon className="h-4 w-4" />
             Update password

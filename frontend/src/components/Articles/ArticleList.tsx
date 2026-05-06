@@ -45,12 +45,14 @@ export function ArticleListState({
   action,
 }: ArticleListStateProps) {
   return (
-    <div className="mx-auto my-10 max-w-2xl rounded-lg border border-slate-200/80 bg-white px-6 py-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.03),0_18px_45px_rgba(15,23,42,0.035)]">
-      <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-400 ring-1 ring-slate-200/80">
+    <div className="mx-auto my-10 max-w-2xl rounded-lg border border-slate-200/80 bg-white px-6 py-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.03),0_18px_45px_rgba(15,23,42,0.035)] dark:border-border dark:bg-card/55 dark:shadow-none">
+      <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-400 ring-1 ring-slate-200/80 dark:bg-muted dark:text-muted-foreground dark:ring-border">
         {icon ?? <NewspaperIcon className="h-5 w-5 stroke-[1.5]" />}
       </div>
-      <h2 className="font-serif text-xl font-medium text-slate-950">{title}</h2>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
+      <h2 className="font-serif text-xl font-medium text-slate-950 dark:text-foreground">
+        {title}
+      </h2>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600 dark:text-muted-foreground">
         {description}
       </p>
       {action && <div className="mt-5">{action}</div>}
@@ -146,7 +148,7 @@ export function ArticleList({
       ))}
       <div
         ref={loadMoreRef}
-        className="py-8 text-center text-sm font-medium text-slate-500"
+        className="py-8 text-center text-sm font-medium text-slate-500 dark:text-muted-foreground"
       >
         {feedStatus}
       </div>

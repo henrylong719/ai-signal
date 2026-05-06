@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import {
   AlertCircleIcon,
+  LinkIcon,
   LogInIcon,
   ShieldCheckIcon,
   SlidersHorizontalIcon,
@@ -11,6 +12,7 @@ import type { ReactNode } from "react"
 
 import { ArticleListState } from "@/components/Articles/ArticleList"
 import ChangePassword from "@/components/UserSettings/ChangePassword"
+import ConnectedAccounts from "@/components/UserSettings/ConnectedAccounts"
 import DeleteAccount from "@/components/UserSettings/DeleteAccount"
 import InterestPicker from "@/components/UserSettings/InterestPicker"
 import UserInformation from "@/components/UserSettings/UserInformation"
@@ -32,7 +34,7 @@ export const Route = createFileRoute("/_layout/settings")({
 function SettingsSkeleton() {
   return (
     <div className="mx-auto w-full max-w-5xl pb-16 pt-8 sm:pb-20 sm:pt-10">
-      <header className="mb-6 border-b border-slate-200/70 pb-6">
+      <header className="mb-6 border-b border-slate-200/70 pb-6 dark:border-border">
         <div className="max-w-2xl">
           <Skeleton className="h-4 w-28 rounded" />
           <Skeleton className="mt-4 h-10 w-72 max-w-full rounded" />
@@ -83,7 +85,7 @@ function UserSettings() {
           action={
             <Link
               to="/login"
-              className="inline-flex h-9 items-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+              className="inline-flex h-9 items-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring dark:focus-visible:ring-offset-background"
             >
               Sign in
             </Link>
@@ -93,23 +95,25 @@ function UserSettings() {
     )
   }
 
+  const hasPassword = currentUser.has_password ?? true
+
   return (
     <div className="mx-auto w-full max-w-5xl pb-16 pt-8 sm:pb-20 sm:pt-10">
-      <header className="mb-6 flex flex-col gap-5 border-b border-slate-200/70 pb-6 md:flex-row md:items-end md:justify-between">
+      <header className="mb-6 flex flex-col gap-5 border-b border-slate-200/70 pb-6 md:flex-row md:items-end md:justify-between dark:border-border">
         <div className="max-w-2xl">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-            Workspace
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-muted-foreground">
+            Account
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+          <h1 className="font-display text-3xl font-semibold tracking-normal text-slate-950 sm:text-4xl dark:text-foreground">
             Account Settings
           </h1>
-          <p className="mt-3 max-w-xl text-base leading-7 text-slate-500">
+          <p className="mt-3 max-w-xl text-base leading-7 text-slate-500 dark:text-muted-foreground">
             Manage your identity, security, and the signals that shape your
             personalized feed.
           </p>
         </div>
-        <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-500 shadow-sm md:self-auto">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+        <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-500 shadow-sm md:self-auto dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
+          <span className="h-2 w-2 rounded-full bg-emerald-500/85" />
           <span className="truncate">{currentUser.email}</span>
         </div>
       </header>
@@ -123,12 +127,23 @@ function UserSettings() {
           <UserInformation />
         </SettingsSection>
 
+        {hasPassword && (
+          <SettingsSection
+            title="Password & Security"
+            description="Keep your sign-in credentials current and protected."
+            icon={<ShieldCheckIcon className="h-4 w-4 stroke-[1.8]" />}
+          >
+            <ChangePassword />
+          </SettingsSection>
+        )}
+
         <SettingsSection
-          title="Password & Security"
-          description="Keep your sign-in credentials current and protected."
-          icon={<ShieldCheckIcon className="h-4 w-4 stroke-[1.8]" />}
+          title="Sign-in Methods"
+          description="Review the ways you can access this account."
+          icon={<LinkIcon className="h-4 w-4 stroke-[1.8]" />}
+          className={hasPassword ? "lg:col-span-2" : "lg:self-start"}
         >
-          <ChangePassword />
+          <ConnectedAccounts hasPassword={hasPassword} />
         </SettingsSection>
 
         <SettingsSection
@@ -172,8 +187,10 @@ function SettingsSection({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.04)]",
-        danger ? "border-red-200/80" : "border-slate-200/80",
+        "overflow-hidden rounded-lg border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.04)] dark:bg-card/35 dark:shadow-none",
+        danger
+          ? "border-red-200/80 dark:border-red-400/20"
+          : "border-slate-200/80 dark:border-border",
         className,
       )}
     >
@@ -181,16 +198,16 @@ function SettingsSection({
         className={cn(
           "flex gap-4 border-b px-5 py-4 sm:px-6",
           danger
-            ? "border-red-100 bg-red-50/60"
-            : "border-slate-100 bg-slate-50/70",
+            ? "border-red-100 bg-red-50/60 dark:border-red-400/15 dark:bg-transparent"
+            : "border-slate-100 bg-slate-50/70 dark:border-border dark:bg-transparent",
         )}
       >
         <div
           className={cn(
             "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border",
             danger
-              ? "border-red-200 bg-white text-red-600"
-              : "border-slate-200 bg-white text-slate-600",
+              ? "border-red-200 bg-white text-red-600 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-300"
+              : "border-slate-200 bg-white text-slate-600 dark:border-border dark:bg-muted/35 dark:text-muted-foreground",
           )}
         >
           {icon}
@@ -199,7 +216,9 @@ function SettingsSection({
           <h2
             className={cn(
               "text-base font-semibold tracking-tight",
-              danger ? "text-red-950" : "text-slate-950",
+              danger
+                ? "text-red-950 dark:text-red-100"
+                : "text-slate-950 dark:text-foreground",
             )}
           >
             {title}
@@ -207,7 +226,9 @@ function SettingsSection({
           <p
             className={cn(
               "mt-1 text-sm leading-6",
-              danger ? "text-red-700/75" : "text-slate-500",
+              danger
+                ? "text-red-700/75 dark:text-red-200/70"
+                : "text-slate-500 dark:text-muted-foreground",
             )}
           >
             {description}

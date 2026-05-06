@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_layout/article-sources/$s")({
 function ArticleSourceSkeleton() {
   return (
     <div className="mx-auto w-full max-w-5xl pb-16 pt-10 sm:pb-20 sm:pt-12">
-      <header className="mb-7 border-b border-slate-200/80 pb-7">
+      <header className="mb-7 border-b border-slate-200/80 pb-7 dark:border-border">
         <Skeleton className="h-9 w-32 rounded-md" />
         <div className="mt-8 max-w-2xl">
           <Skeleton className="h-4 w-24 rounded" />
@@ -27,7 +27,7 @@ function ArticleSourceSkeleton() {
         </div>
       </header>
 
-      <div className="max-w-4xl rounded-lg border border-slate-200/80 bg-white px-5 sm:px-6">
+      <div className="max-w-4xl rounded-lg border border-slate-200/80 bg-white px-5 sm:px-6 dark:border-border dark:bg-card/35">
         <ArticleCardSkeleton />
         <ArticleCardSkeleton />
         <ArticleCardSkeleton />
@@ -79,7 +79,7 @@ function ArticlesSources() {
             <Link
               to="/all-article-sources"
               state={backToAllSourcesState}
-              className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
+              className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-foreground/86 dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
             >
               <ArrowLeftIcon className="mr-2 h-4 w-4" />
               Back to sources
@@ -100,7 +100,7 @@ function ArticlesSources() {
             <Link
               to="/all-article-sources"
               state={backToAllSourcesState}
-              className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
+              className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-foreground/86 dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
             >
               <ArrowLeftIcon className="mr-2 h-4 w-4" />
               Back to sources
@@ -116,30 +116,30 @@ function ArticlesSources() {
       <Link
         to="/all-article-sources"
         state={backToAllSourcesState}
-        className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
+        className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-foreground/86 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
       >
         <ArrowLeftIcon className="mr-2 h-4 w-4" />
         Back to sources
       </Link>
 
-      <header className="mb-7 mt-8 flex flex-col gap-5 border-b border-slate-200/80 pb-7 md:flex-row md:items-end md:justify-between">
+      <header className="mb-7 mt-8 flex flex-col gap-5 border-b border-slate-200/80 pb-7 md:flex-row md:items-end md:justify-between dark:border-border">
         <div className="max-w-2xl">
-          <p className="mb-3 text-xs font-semibold uppercase text-slate-500">
+          <p className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-muted-foreground">
             Source
           </p>
-          <h1 className="font-display text-3xl font-semibold text-slate-950 sm:text-4xl">
+          <h1 className="font-display text-3xl font-semibold text-slate-950 sm:text-4xl dark:text-foreground">
             {capitalize(source.name)}
           </h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-500">
+          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-500 dark:text-muted-foreground">
             {source.description}
           </p>
         </div>
         <div className="flex flex-wrap gap-2 self-start md:self-auto">
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm">
-            <RadioTowerIcon className="h-4 w-4 stroke-[1.8] text-slate-400" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
+            <RadioTowerIcon className="h-4 w-4 stroke-[1.8] text-slate-400 dark:text-muted-foreground" />
             {source.source_type}
           </div>
-          <div className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm">
+          <div className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
             {source.topic}
           </div>
         </div>

@@ -21,6 +21,18 @@ export type ArticlesPublic = {
     count: number;
 };
 
+/**
+ * Wire shape of the backfill report.
+ *
+ * Mirrors ``services.embeddings.BackfillReport`` but as a Pydantic
+ * BaseModel so FastAPI serializes it cleanly without a custom encoder.
+ */
+export type BackfillResponse = {
+    processed: number;
+    remaining: number;
+    batches: number;
+};
+
 export type Body_login_login_access_token = {
     grant_type?: (string | null);
     username: string;
@@ -91,6 +103,19 @@ export type Message = {
 export type NewPassword = {
     token: string;
     new_password: string;
+};
+
+export type OAuthAccountPublic = {
+    provider: string;
+    email: string;
+    email_verified: boolean;
+    display_name?: (string | null);
+    avatar_url?: (string | null);
+    created_at: string;
+};
+
+export type OAuthAccountsPublic = {
+    data: Array<OAuthAccountPublic>;
 };
 
 export type PrivateUserCreate = {
@@ -175,6 +200,7 @@ export type UserPublic = {
     is_superuser?: boolean;
     full_name?: (string | null);
     id: string;
+    has_password?: boolean;
     created_at?: (string | null);
 };
 
@@ -212,6 +238,14 @@ export type ValidationError = {
     };
 };
 
+export type AdminEmbedPendingArticlesData = {
+    accessToken?: (string | null);
+    batchSize?: number;
+    maxBatches?: number;
+};
+
+export type AdminEmbedPendingArticlesResponse = (BackfillResponse);
+
 export type ArticlesReadArticlesData = {
     category?: ('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other' | null);
     limit?: number;
@@ -222,19 +256,25 @@ export type ArticlesReadArticlesData = {
 
 export type ArticlesReadArticlesResponse = (ArticlesPublic);
 
+export type ArticlesReadForYouData = {
+    accessToken?: (string | null);
+    limit?: number;
+    skip?: number;
+};
+
+export type ArticlesReadForYouResponse = (ForYouArticlesPublic);
+
 export type ArticlesReadSourcesData = {
     sourceType?: ('official' | 'independent' | 'community' | 'research' | 'media' | 'newsletter' | null);
 };
 
 export type ArticlesReadSourcesResponse = (SourcesPublic);
 
-export type ArticlesReadForYouArticlesData = {
-    accessToken?: (string | null);
-    limit?: number;
-    skip?: number;
+export type ArticlesReadArticleData = {
+    id: string;
 };
 
-export type ArticlesReadForYouArticlesResponse = (ForYouArticlesPublic);
+export type ArticlesReadArticleResponse = (ArticlePublic);
 
 export type ArticlesReadSavedArticlesData = {
     accessToken?: (string | null);
@@ -277,12 +317,6 @@ export type ArticlesDismissArticleData = {
 };
 
 export type ArticlesDismissArticleResponse = (void);
-
-export type ArticlesReadArticleData = {
-    id: string;
-};
-
-export type ArticlesReadArticleResponse = (ArticlePublic);
 
 export type IngestTriggerIngestData = {
     accessToken?: (string | null);
@@ -339,6 +373,22 @@ export type ItemsDeleteItemData = {
 };
 
 export type ItemsDeleteItemResponse = (Message);
+
+export type LoginStartOauthLoginData = {
+    provider: string;
+};
+
+export type LoginStartOauthLoginResponse = (unknown);
+
+export type LoginOauthCallbackData = {
+    code?: (string | null);
+    error?: (string | null);
+    oauthState?: (string | null);
+    provider: string;
+    state?: (string | null);
+};
+
+export type LoginOauthCallbackResponse = (unknown);
 
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;
@@ -429,6 +479,12 @@ export type UsersUpdatePasswordMeData = {
 };
 
 export type UsersUpdatePasswordMeResponse = (Message);
+
+export type UsersReadUserOauthAccountsData = {
+    accessToken?: (string | null);
+};
+
+export type UsersReadUserOauthAccountsResponse = (OAuthAccountsPublic);
 
 export type UsersRegisterUserData = {
     requestBody: UserRegister;

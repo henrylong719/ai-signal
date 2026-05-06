@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 
 from app import crud
 from app.core.config import settings
-from app.core.security import verify_password
+from app.core.security import get_password_hash, verify_password
 from app.models import User
 from app.schemas import UserCreate
 from tests.utils.user import create_random_user
@@ -33,6 +33,62 @@ def test_get_users_normal_user_me(
     assert current_user["is_active"] is True
     assert current_user["is_superuser"] is False
     assert current_user["email"] == settings.EMAIL_TEST_USER
+
+
+def test_get_user_oauth_accounts_preserves_provider_email_snapshot(
+    client: TestClient,
+    db: Session,
+) -> None:
+    password = random_lower_string()
+    original_email = random_email()
+    updated_email = random_email()
+    provider_email = "provider@example.com"
+    user = crud.create_user(
+        session=db,
+        user_create=UserCreate(email=original_email, password=password),
+    )
+    crud.create_oauth_account(
+        session=db,
+        user_id=user.id,
+        provider="google",
+        provider_user_id="settings-google-user-1",
+        email=provider_email,
+        email_verified=True,
+        display_name="Google User",
+        avatar_url="https://example.com/avatar.png",
+    )
+    db.commit()
+
+    login_response = client.post(
+        f"{settings.API_V1_STR}/login/access-token",
+        data={"username": original_email, "password": password},
+    )
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    update_response = client.patch(
+        f"{settings.API_V1_STR}/users/me",
+        headers=headers,
+        json={"email": updated_email},
+    )
+    assert update_response.status_code == 200
+
+    response = client.get(
+        f"{settings.API_V1_STR}/users/me/oauth-accounts",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"] == [
+        {
+            "provider": "google",
+            "email": provider_email,
+            "email_verified": True,
+            "display_name": "Google User",
+            "avatar_url": "https://example.com/avatar.png",
+            "created_at": response.json()["data"][0]["created_at"],
+        }
+    ]
 
 
 def test_create_user_new_email(
@@ -263,6 +319,42 @@ def test_update_password_me(
         settings.FIRST_SUPERUSER_PASSWORD, user_db.hashed_password
     )
     assert verified
+
+
+def test_update_password_me_requires_current_password_for_password_user(
+    client: TestClient, normal_user_token_headers: dict[str, str]
+) -> None:
+    data = {
+        "new_password": random_lower_string(),
+    }
+    r = client.patch(
+        f"{settings.API_V1_STR}/users/me/password",
+        headers=normal_user_token_headers,
+        json=data,
+    )
+    assert r.status_code == 422
+
+
+def test_social_only_user_cannot_login_with_password_until_password_set(
+    client: TestClient,
+    db: Session,
+) -> None:
+    email = random_email()
+    password = random_lower_string()
+    user = User(
+        email=email,
+        hashed_password=get_password_hash(password),
+        has_password=False,
+    )
+    db.add(user)
+    db.commit()
+
+    r = client.post(
+        f"{settings.API_V1_STR}/login/access-token",
+        data={"username": email, "password": password},
+    )
+
+    assert r.status_code == 400
 
 
 def test_update_password_me_incorrect_password(

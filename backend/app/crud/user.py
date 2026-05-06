@@ -19,11 +19,12 @@ def create_user(*, session: Session, user_create: UserCreate) -> User:
 
 def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
     user_data = user_in.model_dump(exclude_unset=True)
-    extra_data = {}
+    extra_data: dict[str, Any] = {}
     if "password" in user_data:
         password = user_data["password"]
         hashed_password = get_password_hash(password)
         extra_data["hashed_password"] = hashed_password
+        extra_data["has_password"] = True
     db_user.sqlmodel_update(user_data, update=extra_data)
     session.add(db_user)
     session.commit()
@@ -47,6 +48,9 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
     if not db_user:
         # Prevent timing attacks by running password verification even when the
         # user does not exist.
+        verify_password(password, DUMMY_HASH)
+        return None
+    if not db_user.has_password:
         verify_password(password, DUMMY_HASH)
         return None
     verified, updated_password_hash = verify_password(password, db_user.hashed_password)

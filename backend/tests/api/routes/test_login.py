@@ -1,15 +1,17 @@
 import uuid
 from datetime import timedelta
+from typing import Any
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from pwdlib.hashers.bcrypt import BcryptHasher
-from sqlmodel import Session
+from sqlmodel import Session, select
 
+from app.api.routes.login import OAUTH_STATE_COOKIE_NAME, OAuthIdentity
 from app.core.config import settings
 from app.core.security import decode_token, get_password_hash, verify_password
 from app.crud import create_user
-from app.models import RefreshSession, User
+from app.models import OAuthAccount, RefreshSession, User
 from app.models.base import get_datetime_utc
 from app.schemas import UserCreate
 from app.utils import generate_password_reset_token
@@ -18,6 +20,22 @@ from tests.utils.utils import random_email, random_lower_string
 
 REFRESH_COOKIE_PATH = f"{settings.API_V1_STR}/login"
 LEGACY_REFRESH_COOKIE_PATH = f"{settings.API_V1_STR}/login/refresh"
+
+
+def _configure_google_oauth() -> Any:
+    return patch.multiple(
+        "app.core.config.settings",
+        GOOGLE_OAUTH_CLIENT_ID="google-client-id",
+        GOOGLE_OAUTH_CLIENT_SECRET="google-client-secret",
+    )
+
+
+def _configure_github_oauth() -> Any:
+    return patch.multiple(
+        "app.core.config.settings",
+        GITHUB_OAUTH_CLIENT_ID="github-client-id",
+        GITHUB_OAUTH_CLIENT_SECRET="github-client-secret",
+    )
 
 
 def test_get_access_token(client: TestClient) -> None:
@@ -30,6 +48,145 @@ def test_get_access_token(client: TestClient) -> None:
     assert r.status_code == 200
     assert "access_token" in tokens
     assert tokens["access_token"]
+
+
+def test_start_google_oauth_redirects_and_sets_state_cookie(
+    client: TestClient,
+) -> None:
+    with _configure_google_oauth():
+        r = client.get(
+            f"{settings.API_V1_STR}/login/google",
+            follow_redirects=False,
+        )
+
+    assert r.status_code == 307
+    assert r.headers["location"].startswith(
+        "https://accounts.google.com/o/oauth2/v2/auth?"
+    )
+    assert "client_id=google-client-id" in r.headers["location"]
+    assert "scope=openid+email+profile" in r.headers["location"]
+    assert _get_set_cookie_for(r, OAUTH_STATE_COOKIE_NAME) is not None
+
+
+def test_google_oauth_callback_creates_user_and_session(
+    client: TestClient,
+    db: Session,
+) -> None:
+    state = "valid-oauth-state"
+    client.cookies.set(
+        OAUTH_STATE_COOKIE_NAME,
+        state,
+        path=REFRESH_COOKIE_PATH,
+    )
+    identity = OAuthIdentity(
+        provider="google",
+        provider_user_id="google-user-1",
+        email=random_email(),
+        email_verified=True,
+        display_name="Google User",
+        avatar_url="https://example.com/avatar.png",
+    )
+
+    with (
+        _configure_google_oauth(),
+        patch(
+            "app.api.routes.login._fetch_oauth_identity",
+            return_value=identity,
+        ),
+    ):
+        r = client.get(
+            f"{settings.API_V1_STR}/login/google/callback",
+            params={"code": "provider-code", "state": state},
+            follow_redirects=False,
+        )
+
+    assert r.status_code == 303
+    assert r.headers["location"] == f"{settings.FRONTEND_HOST}/"
+    assert _get_set_cookie_for(r, "access_token") is not None
+    assert _get_set_cookie_for(r, "refresh_token") is not None
+    assert _get_set_cookie_for(r, "is_logged_in") is not None
+
+    user = db.exec(select(User).where(User.email == identity.email)).first()
+    assert user is not None
+    assert user.has_password is False
+    account = db.exec(
+        select(OAuthAccount).where(
+            OAuthAccount.provider == "google",
+            OAuthAccount.provider_user_id == identity.provider_user_id,
+        )
+    ).first()
+    assert account is not None
+    assert account.user_id == user.id
+
+
+def test_github_oauth_callback_links_existing_user_by_email(
+    client: TestClient,
+    db: Session,
+) -> None:
+    email = random_email()
+    existing_user = create_user(
+        session=db,
+        user_create=UserCreate(
+            email=email,
+            full_name="Existing User",
+            password=random_lower_string(),
+            is_active=True,
+            is_superuser=False,
+        ),
+    )
+    state = "valid-github-state"
+    client.cookies.set(
+        OAUTH_STATE_COOKIE_NAME,
+        state,
+        path=REFRESH_COOKIE_PATH,
+    )
+    identity = OAuthIdentity(
+        provider="github",
+        provider_user_id="12345",
+        email=email,
+        email_verified=True,
+        display_name="GitHub User",
+        avatar_url=None,
+    )
+
+    with (
+        _configure_github_oauth(),
+        patch(
+            "app.api.routes.login._fetch_oauth_identity",
+            return_value=identity,
+        ),
+    ):
+        r = client.get(
+            f"{settings.API_V1_STR}/login/github/callback",
+            params={"code": "provider-code", "state": state},
+            follow_redirects=False,
+        )
+
+    assert r.status_code == 303
+    account = db.exec(
+        select(OAuthAccount).where(
+            OAuthAccount.provider == "github",
+            OAuthAccount.provider_user_id == identity.provider_user_id,
+        )
+    ).first()
+    assert account is not None
+    assert account.user_id == existing_user.id
+
+
+def test_oauth_callback_rejects_invalid_state(client: TestClient) -> None:
+    with (
+        _configure_google_oauth(),
+        patch("app.api.routes.login._fetch_oauth_identity") as fetch_identity,
+    ):
+        r = client.get(
+            f"{settings.API_V1_STR}/login/google/callback",
+            params={"code": "provider-code", "state": "bad-state"},
+            follow_redirects=False,
+        )
+
+    assert r.status_code == 303
+    assert r.headers["location"].startswith(f"{settings.FRONTEND_HOST}/login?")
+    fetch_identity.assert_not_called()
 
 
 def test_get_access_token_incorrect_password(client: TestClient) -> None:

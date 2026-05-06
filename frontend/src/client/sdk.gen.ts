@@ -3,7 +3,45 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadForYouArticlesData, ArticlesReadForYouArticlesResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutData, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AdminEmbedPendingArticlesData, AdminEmbedPendingArticlesResponse, ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadForYouData, ArticlesReadForYouResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginStartOauthLoginData, LoginStartOauthLoginResponse, LoginOauthCallbackData, LoginOauthCallbackResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutData, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersReadUserOauthAccountsData, UsersReadUserOauthAccountsResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+
+export class AdminService {
+    /**
+     * Embed Pending Articles
+     * Encode the next chunk of articles missing embeddings.
+     *
+     * Bounded per call so the request returns in seconds even if there
+     * are thousands of pending articles. Operators handle "embed
+     * everything" by calling repeatedly or by running the CLI script.
+     *
+     * The endpoint is synchronous: it blocks until the work is done and
+     * then returns the counts. Failures propagate as HTTP 500 so the
+     * operator sees what broke (a missing model file, an OOM, etc.) —
+     * not a silent partial success.
+     * @param data The data for the request.
+     * @param data.batchSize
+     * @param data.maxBatches
+     * @param data.accessToken
+     * @returns BackfillResponse Successful Response
+     * @throws ApiError
+     */
+    public static embedPendingArticles(data: AdminEmbedPendingArticlesData = {}): CancelablePromise<AdminEmbedPendingArticlesResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/admin/embed-articles',
+            cookies: {
+                access_token: data.accessToken
+            },
+            query: {
+                batch_size: data.batchSize,
+                max_batches: data.maxBatches
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class ArticlesService {
     /**
@@ -36,6 +74,42 @@ export class ArticlesService {
     }
     
     /**
+     * Read For You
+     * Personalized feed for the current user.
+     *
+     * The candidate pool is the most-recent N articles minus already-saved
+     * and dismissed ones (see ``services.for_you.rank_for_you``). Scoring
+     * happens in Python; only the requested page slice is returned.
+     *
+     * The ``count`` returned is the total scored pool size — the number of
+     * articles the recommender would have ranked for this user — not the
+     * DB-wide article count. This is the right shape for the frontend's
+     * infinite-scroll pagination.
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @param data.accessToken
+     * @returns ForYouArticlesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readForYou(data: ArticlesReadForYouData = {}): CancelablePromise<ArticlesReadForYouResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/articles/for-you',
+            cookies: {
+                access_token: data.accessToken
+            },
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
      * Read Sources
      * Retrieve configured article sources.
      * @param data The data for the request.
@@ -57,25 +131,19 @@ export class ArticlesService {
     }
     
     /**
-     * Read For You Articles
-     * Get current user's personalized article feed.
+     * Read Article
+     * Get article by ID.
      * @param data The data for the request.
-     * @param data.skip
-     * @param data.limit
-     * @param data.accessToken
-     * @returns ForYouArticlesPublic Successful Response
+     * @param data.id
+     * @returns ArticlePublic Successful Response
      * @throws ApiError
      */
-    public static readForYouArticles(data: ArticlesReadForYouArticlesData = {}): CancelablePromise<ArticlesReadForYouArticlesResponse> {
+    public static readArticle(data: ArticlesReadArticleData): CancelablePromise<ArticlesReadArticleResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/articles/for-you',
-            cookies: {
-                access_token: data.accessToken
-            },
-            query: {
-                skip: data.skip,
-                limit: data.limit
+            url: '/api/v1/articles/{id}',
+            path: {
+                id: data.id
             },
             errors: {
                 422: 'Validation Error'
@@ -236,27 +304,6 @@ export class ArticlesService {
             },
             cookies: {
                 access_token: data.accessToken
-            },
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Read Article
-     * Get article by ID.
-     * @param data The data for the request.
-     * @param data.id
-     * @returns ArticlePublic Successful Response
-     * @throws ApiError
-     */
-    public static readArticle(data: ArticlesReadArticleData): CancelablePromise<ArticlesReadArticleResponse> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/articles/{id}',
-            path: {
-                id: data.id
             },
             errors: {
                 422: 'Validation Error'
@@ -470,6 +517,58 @@ export class ItemsService {
 }
 
 export class LoginService {
+    /**
+     * Start Oauth Login
+     * @param data The data for the request.
+     * @param data.provider
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static startOauthLogin(data: LoginStartOauthLoginData): CancelablePromise<LoginStartOauthLoginResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/login/{provider}',
+            path: {
+                provider: data.provider
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Oauth Callback
+     * @param data The data for the request.
+     * @param data.provider
+     * @param data.code
+     * @param data.state
+     * @param data.error
+     * @param data.oauthState
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static oauthCallback(data: LoginOauthCallbackData): CancelablePromise<LoginOauthCallbackResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/login/{provider}/callback',
+            path: {
+                provider: data.provider
+            },
+            cookies: {
+                oauth_state: data.oauthState
+            },
+            query: {
+                code: data.code,
+                state: data.state,
+                error: data.error
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
     /**
      * Login Access Token
      * Authenticate a user and start a cookie-backed session.
@@ -787,6 +886,27 @@ export class UsersService {
             },
             body: data.requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read User Oauth Accounts
+     * List social sign-in providers connected to the current user.
+     * @param data The data for the request.
+     * @param data.accessToken
+     * @returns OAuthAccountsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readUserOauthAccounts(data: UsersReadUserOauthAccountsData = {}): CancelablePromise<UsersReadUserOauthAccountsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/users/me/oauth-accounts',
+            cookies: {
+                access_token: data.accessToken
+            },
             errors: {
                 422: 'Validation Error'
             }

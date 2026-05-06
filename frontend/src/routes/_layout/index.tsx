@@ -70,7 +70,7 @@ function Dashboard() {
           className="scroll-mt-16 sm:scroll-mt-[72px]"
           aria-hidden="true"
         />
-        <div className="sticky top-16 z-40 -mx-4 border-b border-slate-200/80 bg-white/95 px-4 pt-6 backdrop-blur sm:top-[72px] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
+        <div className="sticky top-16 z-40 -mx-4 border-b border-slate-200/80 bg-white/95 px-4 pt-6 backdrop-blur sm:top-[72px] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 dark:border-border dark:bg-background/92">
           <div className="flex items-center">
             <MobileSidebar />
             <div className="flex gap-8 sm:gap-10">
@@ -79,15 +79,15 @@ function Dashboard() {
                   key={tab.value}
                   type="button"
                   onClick={() => handleTabChange(tab.value)}
-                  className={`relative rounded-sm pb-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-4 ${
+                  className={`relative rounded-sm pb-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-4 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background ${
                     activeTab === tab.value
-                      ? "text-slate-950"
-                      : "text-slate-500 hover:text-slate-800"
+                      ? "text-slate-950 dark:text-foreground"
+                      : "text-slate-500 hover:text-slate-800 dark:text-muted-foreground dark:hover:text-foreground/86"
                   }`}
                 >
                   {tab.label}
                   {activeTab === tab.value && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-slate-950" />
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-slate-950 dark:bg-primary" />
                   )}
                 </button>
               ))}
@@ -112,7 +112,7 @@ function Dashboard() {
               action={
                 <Link
                   to="/login"
-                  className="inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
+                  className="inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                 >
                   Sign in
                 </Link>

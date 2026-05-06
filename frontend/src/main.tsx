@@ -8,7 +8,7 @@ import { createRouter, RouterProvider } from "@tanstack/react-router"
 import { StrictMode } from "react"
 import ReactDOM from "react-dom/client"
 import { ApiError, OpenAPI } from "./client"
-import { ThemeProvider } from "./components/theme-provider"
+import { ThemeProvider, useTheme } from "./components/theme-provider"
 import { Toaster } from "./components/ui/sonner"
 import "./index.css"
 import { authInterceptor } from "./lib/auth-interceptor"
@@ -53,12 +53,20 @@ declare module "@tanstack/react-router" {
   }
 }
 
+function AppToaster() {
+  const { resolvedTheme } = useTheme()
+
+  return (
+    <Toaster theme={resolvedTheme} richColors closeButton position="top-right" />
+  )
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
-        <Toaster theme="light" richColors closeButton position="top-right" />
+        <AppToaster />
       </QueryClientProvider>
     </ThemeProvider>
   </StrictMode>,

@@ -39,9 +39,23 @@ class UpdatePassword(SQLModel):
 
 class UserPublic(UserBase):
     id: uuid.UUID
+    has_password: bool = True
     created_at: datetime | None = None
 
 
 class UsersPublic(SQLModel):
     data: list[UserPublic]
     count: int
+
+
+class OAuthAccountPublic(SQLModel):
+    provider: str
+    email: str
+    email_verified: bool
+    display_name: str | None = None
+    avatar_url: str | None = None
+    created_at: datetime
+
+
+class OAuthAccountsPublic(SQLModel):
+    data: list[OAuthAccountPublic]

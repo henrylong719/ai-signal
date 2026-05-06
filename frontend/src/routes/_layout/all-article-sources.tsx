@@ -47,7 +47,7 @@ function SourceGroupSkeleton() {
             {SOURCE_SKELETON_ITEMS.map((item) => (
               <div
                 key={`${group}-${item}`}
-                className="flex min-h-36 flex-col justify-between gap-4 rounded-lg border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:flex-row sm:items-start"
+                className="flex min-h-36 flex-col justify-between gap-4 rounded-lg border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:flex-row sm:items-start dark:border-border dark:bg-card/35 dark:shadow-none"
               >
                 <div className="min-w-0 flex-1">
                   <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -118,29 +118,29 @@ function AllArticleSources() {
 
   return (
     <div className="mx-auto w-full max-w-5xl pb-16 pt-10 sm:pb-20 sm:pt-12">
-      <header className="mb-7 flex flex-col gap-5 border-b border-slate-200/80 pb-7 md:flex-row md:items-end md:justify-between">
+      <header className="mb-7 flex flex-col gap-5 border-b border-slate-200/80 pb-7 md:flex-row md:items-end md:justify-between dark:border-border">
         <div className="max-w-2xl">
-          <p className="mb-3 text-xs font-semibold uppercase text-slate-500">
+          <p className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-muted-foreground">
             Directory
           </p>
-          <h1 className="font-display text-3xl font-semibold text-slate-950 sm:text-4xl">
+          <h1 className="font-display text-3xl font-semibold text-slate-950 sm:text-4xl dark:text-foreground">
             Sources
           </h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-500">
+          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-500 dark:text-muted-foreground">
             Explore the official publications, research feeds, media outlets,
             newsletters, independent writers, and community sites behind AI
             Signal.
           </p>
         </div>
-        <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm md:self-auto">
-          <RadioTowerIcon className="h-4 w-4 stroke-[1.8] text-slate-400" />
+        <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm md:self-auto dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
+          <RadioTowerIcon className="h-4 w-4 stroke-[1.8] text-slate-400 dark:text-muted-foreground" />
           <span>
             {isLoading ? "Loading sources" : `${sourceCount} sources`}
           </span>
         </div>
       </header>
 
-      <div className="mb-6 rounded-lg border border-slate-200/80 bg-white p-2 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+      <div className="mb-6 rounded-lg border border-slate-200/80 bg-white p-2 shadow-[0_1px_2px_rgba(15,23,42,0.03)] dark:border-border dark:bg-transparent dark:shadow-none">
         <div className="flex flex-wrap gap-2">
           {SOURCE_TYPES.map((type) => (
             <button
@@ -148,10 +148,10 @@ function AllArticleSources() {
               key={type}
               onClick={() => setSourceFilter(type)}
               className={cn(
-                "min-h-9 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2",
+                "min-h-9 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background",
                 sourceFilter === type
-                  ? "border-slate-950 bg-slate-950 text-white shadow-sm"
-                  : "border-slate-200/70 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950",
+                  ? "border-slate-950 bg-slate-950 text-white shadow-sm dark:border-primary dark:bg-primary dark:text-primary-foreground"
+                  : "border-slate-200/70 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent/70 dark:hover:text-foreground",
               )}
             >
               {capitalize(type)}
@@ -182,7 +182,7 @@ function AllArticleSources() {
                 <button
                   type="button"
                   onClick={() => setSourceFilter("all")}
-                  className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
+                  className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-foreground/86 dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                 >
                   Show all sources
                 </button>
@@ -195,10 +195,10 @@ function AllArticleSources() {
               group.items && (
                 <section key={group.type}>
                   <div className="mb-3 flex items-center justify-between gap-4 px-1">
-                    <h2 className="text-sm font-semibold text-slate-950">
+                    <h2 className="text-sm font-semibold text-slate-950 dark:text-foreground">
                       {capitalize(group.type)}
                     </h2>
-                    <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500">
+                    <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500 dark:border-border dark:bg-transparent dark:text-muted-foreground">
                       {group.items.length}
                     </span>
                   </div>
@@ -213,26 +213,26 @@ function AllArticleSources() {
                           allArticleSourcesFilter: sourceFilter,
                           allArticleSourcesScrollY: window.scrollY,
                         })}
-                        className="group block min-h-36 rounded-lg border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-all hover:border-slate-300 hover:bg-slate-50/70 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_rgba(15,23,42,0.05)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
+                        className="group block min-h-36 rounded-lg border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-all hover:border-slate-300 hover:bg-slate-50/70 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_rgba(15,23,42,0.05)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-card/35 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-card/65 dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
                             <div className="mb-2 flex flex-wrap items-center gap-2">
-                              <h3 className="text-base font-semibold text-slate-950">
+                              <h3 className="text-base font-semibold text-slate-950 dark:text-foreground">
                                 {source.name}
                               </h3>
-                              <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-500">
+                              <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-500 dark:border-border dark:bg-transparent dark:text-muted-foreground">
                                 {source.source_type}
                               </span>
-                              <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-500">
+                              <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-500 dark:border-border dark:bg-transparent dark:text-muted-foreground">
                                 {source.topic}
                               </span>
                             </div>
-                            <p className="line-clamp-2 text-sm leading-6 text-slate-500">
+                            <p className="line-clamp-2 text-sm leading-6 text-slate-500 dark:text-muted-foreground">
                               {source.description}
                             </p>
                           </div>
-                          <div className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors group-hover:text-slate-950 sm:flex">
+                          <div className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors group-hover:text-slate-950 sm:flex dark:border-border dark:bg-muted/35 dark:text-muted-foreground dark:shadow-none dark:group-hover:text-foreground">
                             <ArrowRightIcon className="h-4 w-4 stroke-[1.7]" />
                           </div>
                         </div>

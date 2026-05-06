@@ -47,16 +47,16 @@ const DeleteConfirmation = () => {
         <Button
           variant="outline"
           size="sm"
-          className="h-9 w-full border-red-200 bg-white px-4 font-medium text-red-600 shadow-sm hover:bg-red-50 hover:text-red-700 sm:w-auto"
+          className="h-9 w-full border-red-200 bg-white px-4 font-medium text-red-600 shadow-sm hover:bg-red-50 hover:text-red-700 sm:w-auto dark:border-red-400/25 dark:bg-transparent dark:text-red-300 dark:shadow-none dark:hover:bg-red-400/10 dark:hover:text-red-200"
         >
           <Trash2Icon className="h-4 w-4" />
           Delete account
         </Button>
       </DialogTrigger>
-      <DialogContent className="rounded-lg border-red-100">
+      <DialogContent className="rounded-lg border-red-100 dark:border-red-400/25">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader className="pr-6">
-            <DialogTitle className="text-slate-950">
+            <DialogTitle className="text-slate-950 dark:text-foreground">
               Delete account?
             </DialogTitle>
             <DialogDescription className="leading-6">

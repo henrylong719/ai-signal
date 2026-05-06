@@ -108,7 +108,7 @@ export default function InterestPicker() {
 
   if (isError) {
     return (
-      <div className="max-w-2xl text-sm text-slate-500">
+      <div className="max-w-2xl text-sm text-slate-500 dark:text-muted-foreground">
         Could not load your interests. Refresh the page to try again.
       </div>
     )
@@ -116,17 +116,17 @@ export default function InterestPicker() {
 
   return (
     <div className="space-y-6">
-      <p className="max-w-2xl text-sm leading-6 text-slate-500">
+      <p className="max-w-2xl text-sm leading-6 text-slate-500 dark:text-muted-foreground">
         Pick categories and add specific topics to personalize your For You
         feed.
       </p>
 
       <div className="grid gap-7 lg:grid-cols-[minmax(0,1.08fr)_minmax(20rem,0.92fr)]">
         <section className="min-w-0">
-          <h3 className="text-sm font-semibold text-slate-950">
+          <h3 className="text-sm font-semibold text-slate-950 dark:text-foreground">
             Topic Preferences
           </h3>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
+          <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-muted-foreground">
             Choose the broad areas you want to see more often.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -140,10 +140,10 @@ export default function InterestPicker() {
                   aria-pressed={selected}
                   className={cn(
                     "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background",
                     selected
-                      ? "border-slate-950 bg-slate-950 text-white shadow-sm hover:bg-slate-800"
-                      : "border-slate-200 bg-slate-50/80 text-slate-600 hover:border-slate-300 hover:bg-white hover:text-slate-950",
+                      ? "border-slate-950 bg-slate-950 text-white shadow-sm hover:bg-slate-800 dark:border-primary dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88"
+                      : "border-slate-200 bg-slate-50/80 text-slate-600 hover:border-slate-300 hover:bg-white hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground",
                   )}
                 >
                   <CheckIcon
@@ -160,24 +160,24 @@ export default function InterestPicker() {
         </section>
 
         <section className="min-w-0">
-          <h3 className="text-sm font-semibold text-slate-950">
+          <h3 className="text-sm font-semibold text-slate-950 dark:text-foreground">
             Specific Tags
           </h3>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
+          <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-muted-foreground">
             Add topics, companies, or technologies. Press Enter to add.
           </p>
-          <div className="mt-4 flex min-h-11 flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white p-2 shadow-sm shadow-slate-950/[0.02] transition-colors focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-slate-900/10">
+          <div className="mt-4 flex min-h-11 flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white p-2 shadow-sm shadow-slate-950/[0.02] transition-colors focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-slate-900/10 dark:border-border dark:bg-muted/35 dark:shadow-none dark:focus-within:border-ring/55 dark:focus-within:ring-ring/15">
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-sm font-medium text-slate-700"
+                className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-sm font-medium text-slate-700 dark:border-border dark:bg-accent/70 dark:text-foreground/86"
               >
                 {capitalize(tag)}
                 <button
                   type="button"
                   onClick={() => removeTag(tag)}
                   aria-label={`Remove ${tag}`}
-                  className="rounded-full p-0.5 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                  className="rounded-full p-0.5 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground dark:focus-visible:ring-ring"
                 >
                   <XIcon className="h-3 w-3 stroke-[2]" />
                 </button>
@@ -198,17 +198,17 @@ export default function InterestPicker() {
                     : ""
               }
               maxLength={MAX_TAG_LENGTH}
-              className="min-h-7 min-w-[9rem] flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none disabled:cursor-not-allowed"
+              className="min-h-7 min-w-[9rem] flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none disabled:cursor-not-allowed dark:text-foreground dark:placeholder:text-muted-foreground"
             />
           </div>
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-2 text-xs text-slate-400 dark:text-muted-foreground/75">
             {tags.length}/{MAX_TAGS} tags
           </p>
         </section>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-slate-400">
+      <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between dark:border-border">
+        <p className="text-xs text-slate-400 dark:text-muted-foreground/75">
           Preferences update your personalized feed after saving.
         </p>
         <LoadingButton
@@ -216,7 +216,7 @@ export default function InterestPicker() {
           loading={isSaving}
           disabled={!isDirty || isSaving}
           size="sm"
-          className="h-9 w-full bg-slate-950 px-4 font-medium text-white shadow-sm hover:bg-slate-800 sm:w-auto"
+          className="h-9 w-full bg-slate-950 px-4 font-medium text-white shadow-sm hover:bg-slate-800 sm:w-auto dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88"
         >
           <CheckIcon className="h-4 w-4" />
           Save preferences
@@ -249,7 +249,7 @@ function InterestPickerSkeleton() {
           <Skeleton className="mt-4 h-12 w-full rounded-md" />
         </section>
       </div>
-      <div className="border-t border-slate-100 pt-5">
+      <div className="border-t border-slate-100 pt-5 dark:border-border">
         <Skeleton className="h-6 w-24" />
       </div>
     </div>

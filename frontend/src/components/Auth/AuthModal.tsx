@@ -21,7 +21,7 @@ function AuthModal() {
         <Button
           variant="ghost"
           size="sm"
-          className="inline-flex h-9 rounded-full border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-slate-950/15"
+          className="inline-flex h-9 rounded-full border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-slate-950/15 dark:border-border dark:bg-muted/45 dark:text-foreground/86 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35"
         >
           Sign In
         </Button>
@@ -29,7 +29,7 @@ function AuthModal() {
       <DialogContent
         showCloseButton={false}
         overlayClassName="z-[70] bg-black/35"
-        className="z-[80] max-h-[calc(100svh-1.5rem)] overflow-y-auto border-0 bg-white p-0 text-slate-950 shadow-xl dark:bg-white dark:text-slate-950 sm:max-w-[520px] sm:rounded-[4px]"
+        className="z-[80] max-h-[calc(100svh-1.5rem)] overflow-y-auto border-0 bg-white p-0 text-slate-950 shadow-xl dark:bg-background dark:text-foreground sm:max-w-[520px] sm:rounded-[4px]"
       >
         <DialogTitle className="sr-only">AI Signal authentication</DialogTitle>
         <DialogDescription className="sr-only">
@@ -37,7 +37,7 @@ function AuthModal() {
         </DialogDescription>
         <AuthFlow
           closeControl={
-            <DialogClose className="absolute right-5 top-5 z-10 rounded-sm p-1.5 text-zinc-500 transition hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400">
+            <DialogClose className="absolute right-5 top-5 z-10 rounded-sm p-1.5 text-zinc-500 transition hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-muted-foreground dark:hover:text-foreground dark:focus-visible:ring-ring">
               <XIcon className="size-5 stroke-[1.6]" />
               <span className="sr-only">Close</span>
             </DialogClose>

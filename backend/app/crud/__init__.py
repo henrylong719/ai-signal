@@ -39,11 +39,17 @@ from app.crud.item import (
     get_items,
     update_item,
 )
+from app.crud.oauth_account import (
+    create_oauth_account,
+    get_oauth_account,
+    update_oauth_account_profile,
+)
 from app.crud.refresh_session import (
     create_refresh_session,
     get_refresh_session_for_update,
     hash_refresh_token_id,
     refresh_session_is_active,
+    revoke_refresh_sessions_for_user,
 )
 from app.crud.user import authenticate, create_user, get_user_by_email, update_user
 from app.crud.user_embedding import (
@@ -60,6 +66,7 @@ __all__ = [
     "count_saved_articles",
     "create_article",
     "create_item",
+    "create_oauth_account",
     "create_user",
     "delete_article",
     "delete_item",
@@ -82,6 +89,7 @@ __all__ = [
     "get_saved_signals",
     "get_item",
     "get_items",
+    "get_oauth_account",
     "get_user_by_email",
     "get_user_embedding",
     "record_event",
@@ -91,10 +99,12 @@ __all__ = [
     "update_article",
     "update_article_embeddings",
     "update_item",
+    "update_oauth_account_profile",
     "update_user",
     "upsert_user_embedding",
     "create_refresh_session",
     "hash_refresh_token_id",
     "refresh_session_is_active",
+    "revoke_refresh_sessions_for_user",
     "get_refresh_session_for_update",
 ]

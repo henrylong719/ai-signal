@@ -1,7 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { ReactNode } from "react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
+import { OpenAPI } from "@/client"
 import useAuth from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { cn } from "@/lib/utils"
@@ -14,6 +15,7 @@ import {
 import type { AuthMode } from "./authTypes"
 import { SignInScreen } from "./SignInScreen"
 import { SignUpScreen } from "./SignUpScreen"
+import type { SocialAuthProvider } from "./SocialLoginButtons"
 
 export type { AuthMode } from "./authTypes"
 
@@ -22,9 +24,6 @@ interface AuthFlowProps {
   closeControl?: ReactNode
   initialMode?: AuthMode
 }
-
-const providerUnavailable =
-  "Social sign-in needs backend OAuth configuration before it can be enabled."
 
 export function AuthFlow({
   className,
@@ -35,6 +34,21 @@ export function AuthFlow({
   const [remember, setRemember] = useState(false)
   const { loginMutation, signUpMutation } = useAuth()
   const { showErrorToast } = useCustomToast()
+  const socialErrorShown = useRef(false)
+
+  useEffect(() => {
+    const socialError = new URLSearchParams(window.location.search).get(
+      "social_error",
+    )
+    if (socialError && !socialErrorShown.current) {
+      socialErrorShown.current = true
+      showErrorToast(socialError)
+
+      const nextUrl = new URL(window.location.href)
+      nextUrl.searchParams.delete("social_error")
+      window.history.replaceState(null, "", nextUrl)
+    }
+  }, [showErrorToast])
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -58,8 +72,8 @@ export function AuthFlow({
     },
   })
 
-  const unavailableProvider = () => {
-    showErrorToast(providerUnavailable)
+  const startSocialLogin = (provider: SocialAuthProvider) => {
+    window.location.href = `${OpenAPI.BASE}/api/v1/login/${provider}`
   }
 
   const submitLogin = (data: LoginFormData) => {
@@ -77,7 +91,7 @@ export function AuthFlow({
   return (
     <section
       className={cn(
-        "relative flex w-full flex-col items-center bg-white px-6 py-8 text-slate-950 sm:px-10 sm:py-8",
+        "relative flex w-full flex-col items-center bg-white px-6 py-8 text-slate-950 sm:px-10 sm:py-8 dark:bg-slate-950 dark:text-slate-100",
         className,
       )}
     >
@@ -88,7 +102,7 @@ export function AuthFlow({
           form={loginForm}
           loading={loginMutation.isPending}
           onCreateAccount={() => setMode("sign-up")}
-          onSocialProviderClick={unavailableProvider}
+          onSocialProviderClick={startSocialLogin}
           onSubmit={submitLogin}
           remember={remember}
           setRemember={setRemember}
@@ -98,7 +112,7 @@ export function AuthFlow({
           form={signUpForm}
           loading={signUpMutation.isPending}
           onSignIn={() => setMode("sign-in")}
-          onSocialProviderClick={unavailableProvider}
+          onSocialProviderClick={startSocialLogin}
           onSubmit={submitSignUp}
         />
       )}

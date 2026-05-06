@@ -19,13 +19,16 @@ import {
   primaryButtonClass,
 } from "./AuthShared"
 import type { LoginFormData } from "./authSchemas"
-import { SocialLoginButtons } from "./SocialLoginButtons"
+import {
+  type SocialAuthProvider,
+  SocialLoginButtons,
+} from "./SocialLoginButtons"
 
 interface SignInScreenProps {
   form: UseFormReturn<LoginFormData>
   loading: boolean
   onCreateAccount: () => void
-  onSocialProviderClick: () => void
+  onSocialProviderClick: (provider: SocialAuthProvider) => void
   onSubmit: (data: LoginFormData) => void
   remember: boolean
   setRemember: (remember: boolean) => void
@@ -106,7 +109,7 @@ export function SignInScreen({
 
             <RouterLink
               to="/recover-password"
-              className="text-sm font-normal text-blue-600 hover:text-blue-700"
+              className="text-sm font-normal text-blue-600 hover:text-blue-700 dark:text-cyan-300 dark:hover:text-cyan-200"
             >
               Forgot password?
             </RouterLink>
@@ -124,11 +127,11 @@ export function SignInScreen({
         </form>
       </Form>
 
-      <p className="mt-5 text-center text-sm text-slate-500">
+      <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
         Don&apos;t have an account?{" "}
         <button
           type="button"
-          className="font-semibold text-slate-950 hover:text-blue-700"
+          className="font-semibold text-slate-950 hover:text-blue-700 dark:text-slate-100 dark:hover:text-cyan-200"
           onClick={onCreateAccount}
         >
           Create one

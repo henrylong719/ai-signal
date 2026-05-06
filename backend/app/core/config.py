@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     FRONTEND_HOST: str = "http://localhost:5173"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
+    GOOGLE_OAUTH_CLIENT_ID: str | None = None
+    GOOGLE_OAUTH_CLIENT_SECRET: str | None = None
+    GITHUB_OAUTH_CLIENT_ID: str | None = None
+    GITHUB_OAUTH_CLIENT_SECRET: str | None = None
 
     BACKEND_CORS_ORIGINS: Annotated[
         list[AnyUrl] | str, BeforeValidator(parse_cors)

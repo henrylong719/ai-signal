@@ -12,9 +12,11 @@ from app.api.deps import (
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
-from app.models import Item, User
+from app.models import Item, OAuthAccount, User
 from app.schemas import (
     Message,
+    OAuthAccountPublic,
+    OAuthAccountsPublic,
     UpdatePassword,
     UserCreate,
     UserPublic,
@@ -111,10 +113,12 @@ def update_password_me(
         raise HTTPException(status_code=400, detail="Incorrect password")
     if body.current_password == body.new_password:
         raise HTTPException(
-            status_code=400, detail="New password cannot be the same as the current one"
+            status_code=400,
+            detail="New password cannot be the same as the current one",
         )
     hashed_password = get_password_hash(body.new_password)
     current_user.hashed_password = hashed_password
+    current_user.has_password = True
     session.add(current_user)
     crud.revoke_refresh_sessions_for_user(session=session, user_id=current_user.id)
     session.commit()
@@ -127,6 +131,25 @@ def read_user_me(current_user: CurrentUser) -> Any:
     Get current user.
     """
     return current_user
+
+
+@router.get("/me/oauth-accounts", response_model=OAuthAccountsPublic)
+def read_user_oauth_accounts(
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> Any:
+    """
+    List social sign-in providers connected to the current user.
+    """
+    statement = (
+        select(OAuthAccount)
+        .where(OAuthAccount.user_id == current_user.id)
+        .order_by(col(OAuthAccount.created_at))
+    )
+    accounts = session.exec(statement).all()
+    return OAuthAccountsPublic(
+        data=[OAuthAccountPublic.model_validate(account) for account in accounts]
+    )
 
 
 @router.delete("/me", response_model=Message)

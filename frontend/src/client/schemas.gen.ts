@@ -107,6 +107,30 @@ export const ArticlesPublicSchema = {
     title: 'ArticlesPublic'
 } as const;
 
+export const BackfillResponseSchema = {
+    properties: {
+        processed: {
+            type: 'integer',
+            title: 'Processed'
+        },
+        remaining: {
+            type: 'integer',
+            title: 'Remaining'
+        },
+        batches: {
+            type: 'integer',
+            title: 'Batches'
+        }
+    },
+    type: 'object',
+    required: ['processed', 'remaining', 'batches'],
+    title: 'BackfillResponse',
+    description: `Wire shape of the backfill report.
+
+Mirrors \`\`services.embeddings.BackfillReport\`\` but as a Pydantic
+BaseModel so FastAPI serializes it cleanly without a custom encoder.`
+} as const;
+
 export const Body_login_login_access_tokenSchema = {
     properties: {
         grant_type: {
@@ -456,6 +480,68 @@ export const NewPasswordSchema = {
     title: 'NewPassword'
 } as const;
 
+export const OAuthAccountPublicSchema = {
+    properties: {
+        provider: {
+            type: 'string',
+            title: 'Provider'
+        },
+        email: {
+            type: 'string',
+            title: 'Email'
+        },
+        email_verified: {
+            type: 'boolean',
+            title: 'Email Verified'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name'
+        },
+        avatar_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Avatar Url'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['provider', 'email', 'email_verified', 'created_at'],
+    title: 'OAuthAccountPublic'
+} as const;
+
+export const OAuthAccountsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/OAuthAccountPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        }
+    },
+    type: 'object',
+    required: ['data'],
+    title: 'OAuthAccountsPublic'
+} as const;
+
 export const PrivateUserCreateSchema = {
     properties: {
         email: {
@@ -748,6 +834,11 @@ export const UserPublicSchema = {
             type: 'string',
             format: 'uuid',
             title: 'Id'
+        },
+        has_password: {
+            type: 'boolean',
+            title: 'Has Password',
+            default: true
         },
         created_at: {
             anyOf: [

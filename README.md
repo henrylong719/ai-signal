@@ -1,43 +1,49 @@
 # AI Signal
 
-AI Signal is a full-stack AI engineering news dashboard. It collects article metadata from trusted AI blogs, research labs, engineering teams, newsletters, and community sources, then organizes those articles into a focused feed for builders who want to follow practical AI updates.
+AI Signal is a full-stack AI news and research dashboard for builders. It ingests articles from curated AI labs, engineering blogs, newsletters, media outlets, release feeds, and research sources, then organizes them into a focused feed with search, source/category filters, saved articles, and personalized recommendations.
 
-The app is built around discovery rather than replacing original sources. Articles link back to the original post, paper, repository, or announcement.
+The app is designed for discovery. Article cards keep the original source front and center, and outbound reads redirect to the source article instead of replacing it.
 
 ## Features
 
-- Curated AI article feed with infinite scrolling
-- Filtering by topic category, source, and search query
-- Source directory for official, independent, community, and research feeds
-- Saved articles for signed-in users
-- Authentication, account settings, and admin user management
-- RSS ingestion endpoint for importing articles from configured sources
+- Latest article feed with infinite scrolling
+- Personalized For You feed for signed-in users
+- Recommendation signals from saved articles, outbound clicks, dismissed articles, selected categories, and custom interest tags
+- Semantic ranking with pgvector article embeddings and cached user interest vectors
+- Search, category feeds, and source-specific feeds
+- Source directory grouped across official, independent, community, research, media, and newsletter feeds
+- Saved articles page
+- Authentication, account settings, password recovery, and admin user management
+- Superuser RSS/Atom ingestion endpoint for configured sources
+- Superuser article embedding backfill endpoint and CLI script
 - Generated TypeScript API client from the FastAPI OpenAPI schema
-- For You page prepared for future personalized recommendations
 
 ## Tech Stack
 
 **Frontend**
 
-- React
+- React 19
 - TypeScript
 - Vite
 - TanStack Router
 - TanStack Query
 - Tailwind CSS
 - Radix UI
+- Biome
 - Playwright
+- Bun workspace scripts
 
 **Backend**
 
 - FastAPI
 - SQLModel
-- PostgreSQL
+- PostgreSQL with pgvector
 - Alembic
 - Pydantic Settings
+- sentence-transformers
 - uv
 
-**Infrastructure**
+**Local Infrastructure**
 
 - Docker Compose
 - Traefik for local/prod-style routing
@@ -48,27 +54,31 @@ The app is built around discovery rather than replacing original sources. Articl
 
 ```text
 .
-├── backend/              # FastAPI app, SQLModel models, API routes, migrations, tests
-├── frontend/             # React/Vite app, routes, components, generated API client
+├── backend/              # FastAPI app, models, routes, migrations, services, tests
+├── frontend/             # React/Vite app, routes, components, hooks, generated client
 ├── scripts/              # Root helper scripts, including API client generation
-├── compose.yml           # Docker Compose services
+├── compose.yml           # Main Docker Compose services
 ├── compose.override.yml  # Local development Compose overrides
+├── compose.traefik.yml   # Traefik production-style companion config
 ├── package.json          # Bun workspace scripts for the frontend
-└── pyproject.toml        # uv workspace configuration for the backend
+└── bun.lock              # Bun lockfile
 ```
 
 ## Prerequisites
 
-- [Bun](https://bun.sh/) for frontend dependencies and scripts
+- [Bun](https://bun.sh/) for frontend dependencies and workspace scripts
 - [uv](https://docs.astral.sh/uv/) for backend dependencies
-- [Docker](https://www.docker.com/) for PostgreSQL and full-stack local services
+- [Docker](https://www.docker.com/) for PostgreSQL/pgvector and full-stack local services
 
 ## Environment
 
-The backend reads configuration from the root `.env` file. At minimum, local development needs values for:
+The backend reads configuration from the root `.env` file. The frontend reads `frontend/.env`.
+
+Important local values:
 
 ```env
-PROJECT_NAME=AI Signal
+PROJECT_NAME=ai-signal
+ENVIRONMENT=local
 SECRET_KEY=changethis
 FIRST_SUPERUSER=admin@example.com
 FIRST_SUPERUSER_PASSWORD=changethis
@@ -78,10 +88,16 @@ POSTGRES_DB=app
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=changethis
 FRONTEND_HOST=http://localhost:5173
-BACKEND_CORS_ORIGINS=http://localhost:5173
+BACKEND_CORS_ORIGINS=http://localhost,http://localhost:5173
 ```
 
-Change the secret values before deploying anywhere outside local development.
+Frontend API URL:
+
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+Change secret values before deploying anywhere outside local development.
 
 ## Quick Start
 
@@ -93,7 +109,7 @@ cd backend
 uv sync
 ```
 
-Start PostgreSQL from the repository root:
+Start PostgreSQL with pgvector from the repository root:
 
 ```bash
 docker compose up -d db
@@ -121,7 +137,7 @@ bun run dev
 
 Open the app at `http://localhost:5173`.
 
-The API is available at `http://localhost:8000`, and the OpenAPI docs are available at `http://localhost:8000/docs`.
+The API is available at `http://localhost:8000`, and OpenAPI docs are available at `http://localhost:8000/docs`.
 
 ## Docker Compose
 
@@ -135,8 +151,10 @@ Useful local services:
 
 - Frontend: `http://localhost:5173`
 - Backend API: `http://localhost:8000`
+- API docs: `http://localhost:8000/docs`
 - Adminer: `http://localhost:8080`
 - Mailcatcher: `http://localhost:1080`
+- Traefik dashboard: `http://localhost:8090`
 
 To stop the stack:
 
@@ -158,6 +176,7 @@ Frontend commands from the repository root:
 bun run dev
 bun run lint
 bun run test
+bun run test:ui
 cd frontend && bun run build
 ```
 
@@ -175,25 +194,49 @@ Regenerate the frontend API client after backend OpenAPI changes:
 bash ./scripts/generate-client.sh
 ```
 
-## Article Ingestion
+That script exports the FastAPI OpenAPI schema, regenerates `frontend/src/client`, and runs the frontend lint command.
 
-Article sources are configured in `backend/app/schemas/source.py`. The protected ingestion endpoint imports from those RSS/Atom feeds:
+## Articles and Sources
+
+Sources are configured in `backend/app/schemas/source.py`. Each source has an RSS/Atom URL, default category, source type, topic, and description.
+
+The superuser-only ingestion endpoint imports from all configured sources:
 
 ```http
 POST /api/v1/ingest
 ```
 
-The endpoint requires a superuser account.
+Article API highlights:
+
+- `GET /api/v1/articles/` for latest articles with optional `category`, `source`, and `search` filters
+- `GET /api/v1/articles/for-you` for the signed-in user's personalized feed
+- `GET /api/v1/articles/sources/` for configured source metadata
+- `GET /api/v1/articles/saved/` and `GET /api/v1/articles/saved/ids` for saved articles
+- `POST /api/v1/articles/{article_id}/save` and `DELETE /api/v1/articles/{article_id}/save`
+- `GET /api/v1/articles/{article_id}/go` to log a signed-in click and redirect to the original URL
+- `POST /api/v1/articles/{article_id}/dismiss` to hide an article from For You
+
+## Personalization
+
+The For You feed combines explicit interests, saved-article tags and sources, clicked tags and sources, article recency, and optional semantic similarity.
+
+Embeddings use `sentence-transformers/all-MiniLM-L6-v2` dimensions and are stored in pgvector columns. Article embeddings can be backfilled through the superuser endpoint:
+
+```http
+POST /api/v1/admin/embed-articles
+```
+
+For large backfills, use the backend CLI script in `backend/app/script/backfill_embeddings.py`.
+
+User interest preferences are managed through:
+
+```http
+GET /api/v1/users/me/interests
+PUT /api/v1/users/me/interests
+```
 
 ## Documentation
 
 - Backend details: [backend/README.md](backend/README.md)
 - Frontend details: [frontend/README.md](frontend/README.md)
 - Local development notes: [development.md](development.md)
-
-## Roadmap
-
-- Personalized recommendations for the For You page
-- Better interest and topic preference signals
-- More source quality controls
-- Richer article ranking and discovery tools

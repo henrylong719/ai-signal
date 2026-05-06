@@ -25,7 +25,7 @@ def count_articles(
         escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         pattern = f"%{escaped}%"
         statement = statement.where(
-            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))
+            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))  # type: ignore[union-attr]
         )
     return session.exec(statement).one()
 
@@ -48,7 +48,7 @@ def get_articles(
         escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         pattern = f"%{escaped}%"
         statement = statement.where(
-            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))
+            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))  # type: ignore[union-attr]
         )
     statement = (
         statement.order_by(
@@ -161,7 +161,7 @@ def get_saved_signals(
     """
     statement = (
         select(Article.source, Article.tags)
-        .join(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
+        .join(SavedArticle, Article.id == SavedArticle.article_id)  # type: ignore[arg-type]
         .where(SavedArticle.user_id == user_id)
     )
     sources: set[str] = set()
@@ -171,6 +171,29 @@ def get_saved_signals(
         if article_tags:
             tags.update(article_tags)
     return frozenset(tags), frozenset(sources)
+
+
+def get_saved_article_embeddings(
+    *, session: Session, user_id: uuid.UUID
+) -> list[list[float]]:
+    """Fetch the embeddings of every article the user has saved.
+
+    Used to build the user's interest vector — see
+    ``services/embeddings.py:compute_and_save_user_vector``. Articles
+    without embeddings (not yet backfilled) are skipped silently;
+    embedding-less articles simply contribute nothing to the user
+    vector, which is the right behavior because we have no semantic
+    signal from them.
+    """
+    statement = (
+        select(Article.embedding)
+        .join(SavedArticle, Article.id == SavedArticle.article_id)  # type: ignore[arg-type]
+        .where(
+            SavedArticle.user_id == user_id,
+            Article.embedding.is_not(None),  # type: ignore[union-attr]
+        )
+    )
+    return [list(row) for row in session.exec(statement).all() if row is not None]
 
 
 def get_recent_articles_excluding(
@@ -200,3 +223,67 @@ def get_recent_articles_excluding(
         col(Article.fetched_at).desc(),
     ).limit(limit)
     return session.exec(statement).all()
+
+
+# ---------------------------------------------------------------------------
+# Embedding backfill
+# ---------------------------------------------------------------------------
+
+
+def count_pending_embeddings(*, session: Session) -> int:
+    """How many articles still need an embedding."""
+    statement = (
+        select(func.count())
+        .select_from(Article)
+        .where(col(Article.embedding).is_(None))
+    )
+    return session.exec(statement).one()
+
+
+def get_pending_embedding_articles(
+    *, session: Session, limit: int = 32
+) -> Sequence[Article]:
+    """Fetch the next batch of articles that need embeddings.
+
+    Ordered by ``published_at desc`` so backfill processes recent
+    content first — those are the articles the For-You recommender is
+    most likely to surface in candidate pools.
+
+    We do NOT use ``SELECT ... FOR UPDATE`` to lock these rows. If two
+    backfill processes run concurrently they may pick up the same
+    articles and re-encode them; that's wasted work but not a
+    correctness problem (Postgres' default isolation handles the
+    concurrent UPDATEs cleanly via last-write-wins on a deterministic
+    column). At our scale, simpler beats clever.
+    """
+    statement = (
+        select(Article)
+        .where(col(Article.embedding).is_(None))
+        .order_by(col(Article.published_at).desc().nullslast())
+        .limit(limit)
+    )
+    return session.exec(statement).all()
+
+
+def update_article_embeddings(
+    *,
+    session: Session,
+    embeddings: dict[uuid.UUID, list[float]],
+) -> None:
+    """Persist a batch of computed embeddings to the articles table.
+
+    Single transaction per call — either the whole batch lands or none
+    of it does. The backfill orchestrator calls this once per batch,
+    not once per article, so the transaction overhead is amortized.
+    """
+    if not embeddings:
+        return
+    for article_id, vector in embeddings.items():
+        article = session.get(Article, article_id)
+        if article is None:
+            # Could happen if an article was deleted between the SELECT
+            # and the UPDATE. Just skip it; nothing to write to.
+            continue
+        article.embedding = vector
+        session.add(article)
+    session.commit()

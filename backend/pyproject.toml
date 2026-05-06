@@ -20,7 +20,25 @@ dependencies = [
     "pyjwt<3.0.0,>=2.8.0",
     "pwdlib[argon2,bcrypt]>=0.3.0",
     "feedparser>=6.0.12",
+    "pgvector>=0.3.0,<1.0.0",
+    # sentence-transformers 3.x is happy with torch 2.2-2.4; 4.x bumps the
+    # torch floor to ~2.5 which dropped Intel Mac wheels. Pinning to 3.x
+    # keeps Intel Mac development working. Re-evaluate when Apple Silicon
+    # is the only supported macOS, which it effectively is for new installs.
+    "sentence-transformers>=3.0.0,<4.0.0",
+    # torch 2.2.x is the last release with Intel Mac (x86_64) wheels.
+    # Pinning here rather than letting sentence-transformers pull the
+    # latest avoids the resolver picking a torch with no compatible
+    # wheel. Linux and Apple Silicon wheels are still fine on 2.2.x.
+    "torch>=2.2.0,<2.3.0",
 ]
+
+# torch is pulled in transitively by sentence-transformers. The default
+# install grabs the GPU-capable wheel (~2GB). For Docker images and CI,
+# pinning to CPU-only wheels (https://download.pytorch.org/whl/cpu) cuts
+# this to ~200MB. Configure via the `tool.uv.sources` table when you're
+# ready to optimize image size — it's a deployment concern, not a code
+# correctness one.
 
 [dependency-groups]
 dev = [

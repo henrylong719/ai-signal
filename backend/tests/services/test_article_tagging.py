@@ -23,7 +23,9 @@ def test_normalize_excerpt_strips_html_and_prefers_latin_duplicate_content() -> 
     assert "\u89c6\u89c9\u751f\u6210\u6a21\u578b" not in normalized
 
 
-def test_normalize_excerpt_preserves_non_latin_content_without_latin_duplicate() -> None:
+def test_normalize_excerpt_preserves_non_latin_content_without_latin_duplicate() -> (
+    None
+):
     raw_excerpt = (
         "<p>\u6458\u8981\uff1a\u89c6\u89c9\u751f\u6210\u6a21\u578b"
         "\u9700\u8981\u7ed3\u6784\u548c\u56e0\u679c\u7406\u89e3\u3002</p>"

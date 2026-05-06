@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
 from sqlmodel import Field, SQLModel
@@ -16,6 +17,12 @@ _published_at_column = Column(DateTime(timezone=True), nullable=True)
 # Postgres ENUM created in migration e3f4a5b6c7d8.
 ArticleEventType = Literal["clicked", "dismissed"]
 ARTICLE_EVENT_TYPES: tuple[ArticleEventType, ...] = ("clicked", "dismissed")
+
+# Embedding dimension. Matches sentence-transformers/all-MiniLM-L6-v2 and
+# the migration in a5b6c7d8e9f0_add_pgvector_and_article_embedding.py.
+# If we ever swap embedding models, this constant + the migration are
+# the two places to change.
+EMBEDDING_DIM = 384
 
 
 class Article(ArticleBase, table=True):
@@ -44,6 +51,20 @@ class Article(ArticleBase, table=True):
     fetched_at: datetime = Field(
         default_factory=get_datetime_utc,
         sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+
+    # 384-dim semantic embedding. Nullable: not every article needs an
+    # embedding immediately. The For-You scorer skips articles without
+    # one in its semantic-similarity term and lets the other signals
+    # (interests, recency, source affinity) handle them.
+    #
+    # `exclude=True` on the Field keeps embeddings out of every Pydantic
+    # serialization — clients should never see 384 floats in API
+    # responses. The DB column still exists and is queryable in CRUD code.
+    embedding: Any | None = Field(
+        default=None,
+        sa_column=Column(Vector(EMBEDDING_DIM), nullable=True),
+        exclude=True,
     )
 
     __table_args__ = (

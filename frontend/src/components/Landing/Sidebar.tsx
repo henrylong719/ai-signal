@@ -1,5 +1,5 @@
-import { MenuIcon, SparklesIcon } from "lucide-react"
-import { type CSSProperties, useLayoutEffect, useRef, useState } from "react"
+import { MenuIcon, SparklesIcon } from 'lucide-react';
+import { type CSSProperties, useLayoutEffect, useRef, useState } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -7,14 +7,14 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
-import useAuth from "@/hooks/useAuth"
-import ArticleSource from "./ArticleSource"
-import RecentBookmarks from "./RecentBookmarks"
-import RecommendedTopics from "./RecommendedTopics"
+} from '@/components/ui/sheet';
+import useAuth from '@/hooks/useAuth';
+import ArticleSource from './ArticleSource';
+import RecentBookmarks from './RecentBookmarks';
+import RecommendedTopics from './RecommendedTopics';
 
 function SidebarSections() {
-  const { user } = useAuth()
+  const { user } = useAuth();
 
   return (
     <>
@@ -22,7 +22,7 @@ function SidebarSections() {
       <ArticleSource />
       {user && <RecentBookmarks />}
     </>
-  )
+  );
 }
 
 export function MobileSidebar() {
@@ -58,35 +58,35 @@ export function MobileSidebar() {
         </SheetContent>
       </Sheet>
     </div>
-  )
+  );
 }
 
 export function Sidebar() {
-  const sidebarRef = useRef<HTMLElement>(null)
-  const [sidebarHeight, setSidebarHeight] = useState(0)
+  const sidebarRef = useRef<HTMLElement>(null);
+  const [sidebarHeight, setSidebarHeight] = useState(0);
 
   useLayoutEffect(() => {
-    const sidebar = sidebarRef.current
+    const sidebar = sidebarRef.current;
 
     if (!sidebar) {
-      return
+      return;
     }
 
     const updateHeight = () => {
-      setSidebarHeight(Math.ceil(sidebar.getBoundingClientRect().height))
+      setSidebarHeight(Math.ceil(sidebar.getBoundingClientRect().height));
+    };
+
+    updateHeight();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
     }
 
-    updateHeight()
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(sidebar);
 
-    if (typeof ResizeObserver === "undefined") {
-      return
-    }
-
-    const observer = new ResizeObserver(updateHeight)
-    observer.observe(sidebar)
-
-    return () => observer.disconnect()
-  }, [])
+    return () => observer.disconnect();
+  }, []);
 
   // When the rail is taller than the viewport, the negative top lets it
   // scroll with the page until its bottom edge reaches the viewport.
@@ -94,8 +94,8 @@ export function Sidebar() {
     top:
       sidebarHeight > 0
         ? `min(6.5rem, calc(100vh - ${sidebarHeight}px - 2rem))`
-        : "6.5rem",
-  }
+        : '6.5rem',
+  };
 
   return (
     <aside
@@ -131,5 +131,5 @@ export function Sidebar() {
         <SidebarSections />
       </div>
     </aside>
-  )
+  );
 }

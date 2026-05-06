@@ -1,10 +1,11 @@
+import logging
 import uuid
 from typing import Any
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import RedirectResponse
-from sqlmodel import SQLModel
+from sqlmodel import Session, SQLModel
 
 from app import crud
 from app.api.deps import CurrentUser, OptionalCurrentUser, SessionDep
@@ -21,9 +22,33 @@ from app.schemas.source import (
     SourcesPublic,
     SourceType,
 )
+from app.services.embeddings import compute_and_save_user_vector
 from app.services.for_you import rank_for_you
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/articles", tags=["articles"])
+
+
+def _refresh_user_vector(session: Session, user_id: uuid.UUID) -> None:
+    """Best-effort recompute of the cached user interest vector.
+
+    Called from every write path that changes user signal (save/unsave
+    article, click through, dismiss is excluded — see the
+    user_embeddings migration for why). Failures are logged and
+    swallowed so an embedding-pipeline issue (model not loaded, etc.)
+    can't break the user-facing write operation. The next read either
+    rebuilds the cache or falls back to live computation, so a missed
+    cache update is recoverable.
+    """
+    try:
+        compute_and_save_user_vector(session=session, user_id=user_id)
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "Failed to refresh user interest vector for %s; will fall back to "
+            "live recompute on next /for-you request",
+            user_id,
+        )
 
 
 @router.get("/", response_model=ArticlesPublic)
@@ -53,6 +78,52 @@ def read_articles(
     return ArticlesPublic(data=articles_public, count=count)
 
 
+@router.get("/for-you", response_model=ForYouArticlesPublic)
+def read_for_you(
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+) -> Any:
+    """Personalized feed for the current user.
+
+    The candidate pool is the most-recent N articles minus already-saved
+    and dismissed ones (see ``services.for_you.rank_for_you``). Scoring
+    happens in Python; only the requested page slice is returned.
+
+    The ``count`` returned is the total scored pool size — the number of
+    articles the recommender would have ranked for this user — not the
+    DB-wide article count. This is the right shape for the frontend's
+    infinite-scroll pagination.
+    """
+    items, total = rank_for_you(
+        session=session, user_id=current_user.id, skip=skip, limit=limit
+    )
+    data = [
+        ForYouArticlePublic(
+            **ArticlePublic.model_validate(
+                _db_article(session, item.scored.article.id)
+            ).model_dump(),
+            reason=item.reason,
+        )
+        for item in items
+    ]
+    return ForYouArticlesPublic(data=data, count=total)
+
+
+def _db_article(session, article_id):  # type: ignore[no-untyped-def]
+    """Refetch the SQLModel Article for response building.
+
+    The recommender works with stripped-down ``CandidateArticle`` objects
+    (no fetched_at, no excerpt). Once we know which articles to surface,
+    we read them back as full models so ArticlePublic serialization works.
+    There's a small tax here — N round-trips for the page size — but it
+    keeps the recommender's input dataclass minimal and testable. If
+    this becomes a bottleneck, the fix is one bulk query.
+    """
+    return crud.get_article(session=session, article_id=article_id)
+
+
 @router.get("/sources/", response_model=SourcesPublic)
 def read_sources(
     source_type: SourceType | None = Query(default=None),
@@ -74,28 +145,15 @@ def read_sources(
     return SourcesPublic(data=sources, count=len(sources))
 
 
-@router.get("/for-you", response_model=ForYouArticlesPublic)
-def read_for_you_articles(
-    session: SessionDep,
-    current_user: CurrentUser,
-    skip: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=200),
-) -> Any:
-    """Get current user's personalized article feed."""
-    items, count = rank_for_you(
-        session=session,
-        user_id=current_user.id,
-        skip=skip,
-        limit=limit,
-    )
-    articles = []
-    for item in items:
-        article = crud.get_article(session=session, article_id=item.scored.article.id)
-        if article:
-            article_public = ForYouArticlePublic.model_validate(article)
-            article_public.reason = item.reason
-            articles.append(article_public)
-    return ForYouArticlesPublic(data=articles, count=count)
+@router.get("/{id}", response_model=ArticlePublic)
+def read_article(session: SessionDep, id: uuid.UUID) -> Any:
+    """
+    Get article by ID.
+    """
+    article = crud.get_article(session=session, article_id=id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return article
 
 
 # --- Saved articles ---
@@ -156,6 +214,10 @@ def save_article(
     if existing:
         raise HTTPException(status_code=409, detail="Article already saved")
     crud.save_article(session=session, user_id=current_user.id, article_id=article_id)
+    # Saving an article is the strongest behavioral signal we have —
+    # update the cached user vector so the next /for-you request
+    # reflects this new interest immediately.
+    _refresh_user_vector(session, current_user.id)
     return {"message": "Article saved"}
 
 
@@ -172,6 +234,9 @@ def unsave_article(
     if not existing:
         raise HTTPException(status_code=404, detail="Saved article not found")
     crud.unsave_article(session=session, saved_article=existing)
+    # Unsaving is the inverse signal — the user is telling us they no
+    # longer want this article weighted toward their interests.
+    _refresh_user_vector(session, current_user.id)
     return {"message": "Article unsaved"}
 
 
@@ -215,6 +280,11 @@ def go_to_article(
                 article_id=article_id,
                 event_type="clicked",
             )
+            # Click is now part of the user's behavioral signal — refresh
+            # the cached interest vector. This is also wrapped in the
+            # outer try/except so any failure here is swallowed too;
+            # navigation is still the contract.
+            _refresh_user_vector(session, user.id)
         except Exception:  # noqa: BLE001
             session.rollback()
 
@@ -242,14 +312,3 @@ def dismiss_article(
         article_id=article_id,
         event_type="dismissed",
     )
-
-
-@router.get("/{id}", response_model=ArticlePublic)
-def read_article(session: SessionDep, id: uuid.UUID) -> Any:
-    """
-    Get article by ID.
-    """
-    article = crud.get_article(session=session, article_id=id)
-    if not article:
-        raise HTTPException(status_code=404, detail="Article not found")
-    return article

@@ -1,9 +1,17 @@
 from sqlmodel import SQLModel
 
-from app.models.article import Article, SavedArticle
+from app.models.article import (
+    ARTICLE_EVENT_TYPES,
+    EMBEDDING_DIM,
+    Article,
+    ArticleEvent,
+    ArticleEventType,
+    SavedArticle,
+)
+from app.models.interest import UserInterest
 from app.models.item import Item
-from app.models.refresh_session import RefreshSession
 from app.models.user import User
+from app.models.user_embedding import UserEmbedding
 from app.schemas import (
     CATEGORIES,
     SOURCES,
@@ -32,7 +40,11 @@ from app.schemas import (
 )
 
 __all__ = [
+    "ARTICLE_EVENT_TYPES",
+    "EMBEDDING_DIM",
     "Article",
+    "ArticleEvent",
+    "ArticleEventType",
     "SavedArticle",
     "ArticleBase",
     "ArticleCreate",
@@ -48,7 +60,6 @@ __all__ = [
     "ItemUpdate",
     "Message",
     "NewPassword",
-    "RefreshSession",
     "SOURCES",
     "Source",
     "SQLModel",
@@ -57,6 +68,8 @@ __all__ = [
     "UpdatePassword",
     "User",
     "UserCreate",
+    "UserEmbedding",
+    "UserInterest",
     "UserPublic",
     "UserRegister",
     "UsersPublic",

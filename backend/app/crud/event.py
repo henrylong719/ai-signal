@@ -10,7 +10,7 @@ import uuid
 from collections.abc import Sequence
 
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlmodel import Session, col, select
+from sqlmodel import Session, select
 
 from app.models.article import ARTICLE_EVENT_TYPES, ArticleEvent, ArticleEventType
 from app.models.base import get_datetime_utc
@@ -49,11 +49,11 @@ def record_event(
     stmt = stmt.on_conflict_do_update(
         index_elements=["user_id", "article_id", "event_type"],
         set_={
-            "count": ArticleEvent.count + 1,
+            "count": ArticleEvent.count + 1,  # type: ignore[arg-type]
             "last_at": now,
         },
     )
-    session.exec(stmt)
+    session.exec(stmt)  # type: ignore[call-overload]
     session.commit()
 
 
@@ -109,7 +109,7 @@ def get_clicked_signals(
 
     statement = (
         select(Article.source, Article.tags)
-        .join(ArticleEvent, col(Article.id) == col(ArticleEvent.article_id))
+        .join(ArticleEvent, Article.id == ArticleEvent.article_id)  # type: ignore[arg-type]
         .where(
             ArticleEvent.user_id == user_id,
             ArticleEvent.event_type == "clicked",
@@ -122,3 +122,26 @@ def get_clicked_signals(
         if article_tags:
             tags.update(article_tags)
     return frozenset(tags), frozenset(sources)
+
+
+def get_clicked_article_embeddings(
+    *, session: Session, user_id: uuid.UUID
+) -> list[list[float]]:
+    """Fetch the embeddings of every article the user has clicked through to.
+
+    Mirror of ``crud.article.get_saved_article_embeddings`` — see there
+    for the design notes. Articles without embeddings are skipped
+    silently.
+    """
+    from app.models import Article  # local import to avoid circular
+
+    statement = (
+        select(Article.embedding)
+        .join(ArticleEvent, Article.id == ArticleEvent.article_id)  # type: ignore[arg-type]
+        .where(
+            ArticleEvent.user_id == user_id,
+            ArticleEvent.event_type == "clicked",
+            Article.embedding.is_not(None),  # type: ignore[union-attr]
+        )
+    )
+    return [list(row) for row in session.exec(statement).all() if row is not None]

@@ -1,20 +1,44 @@
 """GET / PUT /users/me/interests — explicit onboarding signal management."""
 
+import logging
+import uuid
 from datetime import datetime
 from typing import cast
 
 from fastapi import APIRouter
+from sqlmodel import Session
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep
 from app.schemas import UserInterestPublic, UserInterestUpdate
 from app.schemas.source import Category
+from app.services.embeddings import compute_and_save_user_vector
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/users/me/interests", tags=["interests"])
 
 
 def _stored_categories_to_public(categories: list[str]) -> list[Category]:
     return [cast(Category, category) for category in categories]
+
+
+def _refresh_user_vector(session: Session, user_id: uuid.UUID) -> None:
+    """Best-effort recompute of the cached user interest vector.
+
+    Mirrors ``app.api.routes.article._refresh_user_vector``. Duplication
+    is intentional: embedding-pipeline failures here must not break the
+    interest-update operation, and centralising the helper would mean
+    importing it across modules where the import graph is already busy.
+    """
+    try:
+        compute_and_save_user_vector(session=session, user_id=user_id)
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "Failed to refresh user interest vector for %s after interests "
+            "update; will fall back to live recompute on next /for-you request",
+            user_id,
+        )
 
 
 def _to_public(
@@ -31,7 +55,7 @@ def _to_public(
     return UserInterestPublic(
         categories=list(categories or []),
         tags=list(tags or []),
-        updated_at=updated_at,
+        updated_at=updated_at,  # type: ignore[arg-type]
     )
 
 
@@ -71,6 +95,9 @@ def update_interests(
         categories=list(body.categories),
         tags=body.normalized_tags(),
     )
+    # Stated interests are an input to the user vector — refresh now so
+    # the next /for-you request reflects the new preferences.
+    _refresh_user_vector(session, current_user.id)
     return _to_public(
         categories=_stored_categories_to_public(row.categories),
         tags=row.tags,

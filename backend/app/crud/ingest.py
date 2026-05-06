@@ -1,10 +1,13 @@
 import asyncio
+import logging
+import uuid
 import html
 from datetime import datetime, timezone
 from typing import Any
 
 import feedparser  # type: ignore[import-untyped]
 import httpx
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.result import Result
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +18,8 @@ from app.models.base import get_datetime_utc
 from app.schemas.source import SOURCES, Source
 from app.services.article_tagging import normalize_excerpt, tag_article
 from app.services.rss_images import extract_image_url
+
+logger = logging.getLogger(__name__)
 
 IngestResult = dict[str, int | list[str]]
 
@@ -50,10 +55,57 @@ def _published_at(entry: dict[str, Any]) -> datetime | None:
     )
 
 
+async def _embed_inserted_articles(
+    session: AsyncSession, article_ids: list[uuid.UUID]
+) -> int:
+    """Encode the just-inserted articles inline. Best-effort.
+
+    Bridges the async ingest path to the sync embedding service via
+    ``asyncio.to_thread`` so the event loop stays responsive while the
+    encoder is busy. Failures are logged and swallowed: the backfill
+    will pick up any articles that didn't get embedded here, so an
+    embedding failure must never block ingestion of fresh content.
+
+    Returns the count of articles that were successfully embedded.
+    """
+    if not article_ids:
+        return 0
+
+    # Local import keeps torch/sentence-transformers off the ingest
+    # module-load path, matching the pattern in services/embeddings.py.
+    from app.services.embeddings import article_embedding_text, embed_texts
+
+    # Re-fetch the just-inserted rows so we have the canonical text
+    # fields (post any DB-side normalization). Since we have the IDs
+    # this is a single bounded query.
+    stmt = select(Article).where(Article.id.in_(article_ids))  # type: ignore[attr-defined]
+    result = await session.execute(stmt)
+    articles = list(result.scalars().all())
+
+    if not articles:
+        return 0
+
+    texts = [article_embedding_text(a) for a in articles]
+    # Encode in a worker thread — torch is sync and CPU-bound. Without
+    # to_thread, encoding hundreds of articles would block the event
+    # loop and stall any concurrent ingestion of other sources.
+    vectors = await asyncio.to_thread(embed_texts, texts)
+
+    # Write the embeddings back. We use the same async session — the
+    # per-row UPDATEs join the open transaction and commit together.
+    for article, vector in zip(articles, vectors, strict=True):
+        article.embedding = vector
+        session.add(article)
+    await session.commit()
+
+    return len(articles)
+
+
 async def ingest_all() -> IngestResult:
     inserted = 0
     skipped = 0
     errors: list[str] = []
+    inserted_ids: list[uuid.UUID] = []
     article_table = Article.metadata.tables["articles"]
 
     async with httpx.AsyncClient() as client:
@@ -63,12 +115,8 @@ async def ingest_all() -> IngestResult:
         for source, entries in results:
             for entry in entries:
                 url = entry.get("link")
-                raw_title = entry.get("title")
-                if not url or not raw_title:
-                    continue
-
-                title = _clean_text(raw_title)
-                if not title:
+                title = entry.get("title")
+                if not url or not title:
                     continue
 
                 excerpt = normalize_excerpt(entry.get("summary")) or None
@@ -101,11 +149,32 @@ async def ingest_all() -> IngestResult:
                 )
 
                 result: Result[tuple[Any]] = await session.execute(stmt)
-                if result.scalar_one_or_none() is not None:
+                new_id = result.scalar_one_or_none()
+                if new_id is not None:
                     inserted += 1
+                    inserted_ids.append(new_id)
                 else:
                     skipped += 1
 
         await session.commit()
 
-    return {"inserted": inserted, "skipped": skipped, "errors": errors}
+        # Inline embedding of just-inserted rows. Wrapped in try/except
+        # so any failure here (model load error, OOM, etc.) doesn't fail
+        # the ingest run — the new articles are already durably stored,
+        # they just won't have embeddings until backfill picks them up.
+        embedded = 0
+        try:
+            embedded = await _embed_inserted_articles(session, inserted_ids)
+        except Exception:  # noqa: BLE001
+            logger.exception(
+                "Inline embedding failed for %d article(s); they will be "
+                "embedded on the next backfill run",
+                len(inserted_ids),
+            )
+
+    return {
+        "inserted": inserted,
+        "skipped": skipped,
+        "embedded": embedded,
+        "errors": errors,
+    }

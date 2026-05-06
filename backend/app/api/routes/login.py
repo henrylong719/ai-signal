@@ -19,6 +19,13 @@ from app.core.cookies import (
     set_logged_in_marker,
     set_refresh_cookie,
 )
+from app.crud.refresh_session import (
+    mark_refresh_session_used,
+    refresh_token_matches_previous,
+    revoke_refresh_session,
+    revoke_refresh_sessions_for_user,
+    rotate_refresh_session,
+)
 from app.models import User
 from app.models.base import get_datetime_utc
 from app.schemas import Message, NewPassword, Token, UserPublic, UserUpdate
@@ -173,7 +180,7 @@ def refresh_session(
             session_id=db_refresh_session.id,
             token_id=new_token_id,
         )
-        crud.rotate_refresh_session(
+        rotate_refresh_session(
             refresh_session=db_refresh_session,
             old_token_hash=token_hash,
             new_token_hash=new_token_hash,
@@ -190,10 +197,10 @@ def refresh_session(
         _set_logged_in_marker(response)
         return Message(message="Session refreshed")
 
-    if crud.refresh_token_matches_previous(
+    if refresh_token_matches_previous(
         refresh_session=db_refresh_session, token_hash=token_hash, now=now
     ):
-        crud.mark_refresh_session_used(refresh_session=db_refresh_session, now=now)
+        mark_refresh_session_used(refresh_session=db_refresh_session, now=now)
         session.add(db_refresh_session)
         session.commit()
 
@@ -201,7 +208,7 @@ def refresh_session(
         _set_logged_in_marker(response)
         return Message(message="Session refreshed")
 
-    crud.revoke_refresh_session(refresh_session=db_refresh_session, now=now)
+    revoke_refresh_session(refresh_session=db_refresh_session, now=now)
     session.add(db_refresh_session)
     session.commit()
     _raise_refresh_unauthorized(response, "Invalid refresh token")
@@ -224,13 +231,13 @@ def _revoke_refresh_session_from_cookie(session: Session, refresh_token: str) ->
     now = get_datetime_utc()
     if (
         db_refresh_session.token_hash != token_hash
-        and not crud.refresh_token_matches_previous(
+        and not refresh_token_matches_previous(
             refresh_session=db_refresh_session, token_hash=token_hash, now=now
         )
     ):
         return
 
-    crud.revoke_refresh_session(refresh_session=db_refresh_session, now=now)
+    revoke_refresh_session(refresh_session=db_refresh_session, now=now)
     session.add(db_refresh_session)
     session.commit()
 
@@ -300,7 +307,7 @@ def reset_password(session: SessionDep, body: NewPassword) -> Message:
         db_user=user,
         user_in=user_in_update,
     )
-    crud.revoke_refresh_sessions_for_user(session=session, user_id=user.id)
+    revoke_refresh_sessions_for_user(session=session, user_id=user.id)
     session.commit()
     return Message(message="Password updated successfully")
 

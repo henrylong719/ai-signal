@@ -7,6 +7,7 @@ from app.crud.article import (
     get_article,
     get_article_by_url,
     get_articles,
+    get_articles_by_ids,
     get_pending_embedding_articles,
     get_recent_articles_excluding,
     get_saved_article,
@@ -38,6 +39,12 @@ from app.crud.item import (
     get_items,
     update_item,
 )
+from app.crud.refresh_session import (
+    create_refresh_session,
+    get_refresh_session_for_update,
+    hash_refresh_token_id,
+    refresh_session_is_active,
+)
 from app.crud.user import authenticate, create_user, get_user_by_email, update_user
 from app.crud.user_embedding import (
     delete_user_embedding,
@@ -60,6 +67,7 @@ __all__ = [
     "get_article",
     "get_article_by_url",
     "get_articles",
+    "get_articles_by_ids",
     "get_clicked_article_embeddings",
     "get_clicked_signals",
     "get_event_article_ids",
@@ -85,4 +93,8 @@ __all__ = [
     "update_item",
     "update_user",
     "upsert_user_embedding",
+    "create_refresh_session",
+    "hash_refresh_token_id",
+    "refresh_session_is_active",
+    "get_refresh_session_for_update",
 ]

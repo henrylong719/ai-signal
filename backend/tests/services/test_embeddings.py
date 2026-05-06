@@ -16,6 +16,10 @@ enough to write meaningful semantic-similarity assertions.
 from __future__ import annotations
 
 import math
+import sys
+import threading
+import time
+import types
 import uuid
 from collections.abc import Iterator
 from datetime import datetime, timezone
@@ -25,7 +29,6 @@ import pytest
 
 from app.models import Article
 from app.services import embeddings as emb
-
 
 _DIM = 8
 
@@ -174,6 +177,40 @@ def test_embed_texts_batches_in_one_encoder_call(_fake_encoder: FakeEncoder) -> 
 def test_embed_texts_handles_empty_input() -> None:
     """Empty list should return empty list without invoking the encoder."""
     assert emb.embed_texts([]) == []
+
+
+def test_get_encoder_loads_once_under_concurrent_calls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Concurrent requests should share one lazy SentenceTransformer load."""
+    load_calls: list[str] = []
+
+    class FakeSentenceTransformer(FakeEncoder):
+        def __init__(self, model_name: str) -> None:
+            super().__init__()
+            load_calls.append(model_name)
+            time.sleep(0.02)
+
+    fake_module = types.SimpleNamespace(SentenceTransformer=FakeSentenceTransformer)
+    monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
+    emb.set_encoder_for_testing(None)
+
+    barrier = threading.Barrier(8)
+    results: list[emb.Encoder] = []
+
+    def load_encoder() -> None:
+        barrier.wait()
+        results.append(emb._get_encoder())
+
+    threads = [threading.Thread(target=load_encoder) for _ in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert load_calls == [emb.MODEL_NAME]
+    assert len(results) == 8
+    assert all(result is results[0] for result in results)
 
 
 def test_embed_article_uses_composed_text() -> None:

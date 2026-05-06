@@ -144,6 +144,12 @@ def test_rank_for_you_excludes_negative_signals_and_paginates_after_scoring(
         "get_recent_articles_excluding",
         fake_candidates,
     )
+    monkeypatch.setattr(app_crud, "get_user_embedding", lambda **kwargs: None)
+    monkeypatch.setattr(
+        for_you,
+        "compute_and_save_user_vector",
+        lambda **kwargs: None,
+    )
 
     fake_session: Any = object()
 

@@ -1,10 +1,12 @@
 import uuid
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app import crud
+from app.api.routes import article as article_routes
 from app.core.config import settings
 from app.models import Article, User
 from app.schemas import ArticleCreate, UserCreate
@@ -143,6 +145,56 @@ def test_read_for_you_articles(
     assert content["count"] >= 1
     assert len(content["data"]) >= 1
     assert "reason" in content["data"][0]
+
+
+def test_read_for_you_refetches_page_articles_in_one_bulk_query(
+    db: Session,
+    monkeypatch,
+) -> None:
+    first = _create_article(db, title="First ranked")
+    second = _create_article(db, title="Second ranked")
+    captured_article_ids: list[uuid.UUID] = []
+
+    items = [
+        SimpleNamespace(
+            scored=SimpleNamespace(article=SimpleNamespace(id=second.id)),
+            reason="Because you follow RAG",
+        ),
+        SimpleNamespace(
+            scored=SimpleNamespace(article=SimpleNamespace(id=first.id)),
+            reason="Because you follow models",
+        ),
+    ]
+
+    def fake_rank_for_you(**kwargs):
+        assert kwargs["skip"] == 0
+        assert kwargs["limit"] == 2
+        return items, 2
+
+    def fake_get_articles_by_ids(**kwargs):
+        captured_article_ids.extend(kwargs["article_ids"])
+        return [first, second]
+
+    def fail_get_article(**_kwargs):
+        raise AssertionError("read_for_you should bulk-fetch page articles")
+
+    monkeypatch.setattr(article_routes, "rank_for_you", fake_rank_for_you)
+    monkeypatch.setattr(article_routes.crud, "get_articles_by_ids", fake_get_articles_by_ids)
+    monkeypatch.setattr(article_routes.crud, "get_article", fail_get_article)
+
+    response = article_routes.read_for_you(
+        session=db,
+        current_user=SimpleNamespace(id=uuid.uuid4()),
+        skip=0,
+        limit=2,
+    )
+
+    assert captured_article_ids == [second.id, first.id]
+    assert [article.id for article in response.data] == [second.id, first.id]
+    assert [article.reason for article in response.data] == [
+        "Because you follow RAG",
+        "Because you follow models",
+    ]
 
 
 def test_read_for_you_excludes_saved_and_dismissed_articles(

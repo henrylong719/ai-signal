@@ -10,6 +10,7 @@ from app.models.article import (
 )
 from app.models.interest import UserInterest
 from app.models.item import Item
+from app.models.refresh_session import RefreshSession
 from app.models.user import User
 from app.models.user_embedding import UserEmbedding
 from app.schemas import (
@@ -75,4 +76,5 @@ __all__ = [
     "UsersPublic",
     "UserUpdate",
     "UserUpdateMe",
+    "RefreshSession",
 ]

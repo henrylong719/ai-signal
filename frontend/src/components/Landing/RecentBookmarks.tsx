@@ -4,6 +4,7 @@ import { BookmarkIcon, ChevronRightIcon } from "lucide-react"
 import { ArticlesService } from "@/client"
 import { Skeleton } from "@/components/ui/skeleton"
 import { isLoggedIn } from "@/hooks/useAuth"
+import { redirectHref } from "@/lib/article-urls"
 
 const RecentBookmarks = () => {
   const loggedIn = isLoggedIn()
@@ -52,8 +53,8 @@ const RecentBookmarks = () => {
                 0{index + 1}
               </span>
               <div>
-                <Link
-                  to={article.url}
+                <a
+                  href={redirectHref(article.id)}
                   target="_blank"
                   rel="noreferrer"
                   className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
@@ -61,7 +62,7 @@ const RecentBookmarks = () => {
                   <h4 className="mb-1.5 font-serif font-medium leading-snug text-slate-950 transition-colors group-hover:text-slate-700">
                     {article.title}
                   </h4>
-                </Link>
+                </a>
                 <div className="flex items-center gap-1.5 text-xs text-slate-400">
                   <span className="text-slate-600">{article.source}</span>
                 </div>

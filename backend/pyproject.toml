@@ -21,6 +21,9 @@ dependencies = [
     "pwdlib[argon2,bcrypt]>=0.3.0",
     "feedparser>=6.0.12",
     "pgvector>=0.3.0,<1.0.0",
+    # torch 2.2.x macOS wheels were compiled against NumPy 1.x. NumPy 2.x
+    # can import but fails at runtime when sentence-transformers encodes.
+    "numpy>=1.26.0,<2.0.0",
     # sentence-transformers 3.x is happy with torch 2.2-2.4; 4.x bumps the
     # torch floor to ~2.5 which dropped Intel Mac wheels. Pinning to 3.x
     # keeps Intel Mac development working. Re-evaluate when Apple Silicon

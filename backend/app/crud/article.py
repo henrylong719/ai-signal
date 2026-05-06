@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import Sequence
+from typing import cast
 
 from sqlmodel import Session, col, func, or_, select
 
@@ -25,7 +26,7 @@ def count_articles(
         escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         pattern = f"%{escaped}%"
         statement = statement.where(
-            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))  # type: ignore[union-attr]
+            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))
         )
     return session.exec(statement).one()
 
@@ -48,7 +49,7 @@ def get_articles(
         escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         pattern = f"%{escaped}%"
         statement = statement.where(
-            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))  # type: ignore[union-attr]
+            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))
         )
     statement = (
         statement.order_by(
@@ -63,6 +64,15 @@ def get_articles(
 
 def get_article(*, session: Session, article_id: uuid.UUID) -> Article | None:
     return session.get(Article, article_id)
+
+
+def get_articles_by_ids(
+    *, session: Session, article_ids: Sequence[uuid.UUID]
+) -> Sequence[Article]:
+    if not article_ids:
+        return []
+    statement = select(Article).where(col(Article.id).in_(article_ids))
+    return session.exec(statement).all()
 
 
 def get_article_by_url(*, session: Session, url: str) -> Article | None:
@@ -161,7 +171,7 @@ def get_saved_signals(
     """
     statement = (
         select(Article.source, Article.tags)
-        .join(SavedArticle, Article.id == SavedArticle.article_id)  # type: ignore[arg-type]
+        .join(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
         .where(SavedArticle.user_id == user_id)
     )
     sources: set[str] = set()
@@ -186,14 +196,18 @@ def get_saved_article_embeddings(
     signal from them.
     """
     statement = (
-        select(Article.embedding)
-        .join(SavedArticle, Article.id == SavedArticle.article_id)  # type: ignore[arg-type]
+        select(col(Article.embedding))
+        .join(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
         .where(
             SavedArticle.user_id == user_id,
-            Article.embedding.is_not(None),  # type: ignore[union-attr]
+            col(Article.embedding).is_not(None),
         )
     )
-    return [list(row) for row in session.exec(statement).all() if row is not None]
+    return [
+        list(cast(Sequence[float], row))
+        for row in session.exec(statement).all()
+        if row is not None
+    ]
 
 
 def get_recent_articles_excluding(

@@ -99,29 +99,21 @@ def read_for_you(
     items, total = rank_for_you(
         session=session, user_id=current_user.id, skip=skip, limit=limit
     )
+    article_ids = [item.scored.article.id for item in items]
+    articles_by_id = {
+        article.id: article
+        for article in crud.get_articles_by_ids(session=session, article_ids=article_ids)
+    }
     data = [
         ForYouArticlePublic(
             **ArticlePublic.model_validate(
-                _db_article(session, item.scored.article.id)
+                articles_by_id[item.scored.article.id]
             ).model_dump(),
             reason=item.reason,
         )
         for item in items
     ]
     return ForYouArticlesPublic(data=data, count=total)
-
-
-def _db_article(session, article_id):  # type: ignore[no-untyped-def]
-    """Refetch the SQLModel Article for response building.
-
-    The recommender works with stripped-down ``CandidateArticle`` objects
-    (no fetched_at, no excerpt). Once we know which articles to surface,
-    we read them back as full models so ArticlePublic serialization works.
-    There's a small tax here — N round-trips for the page size — but it
-    keeps the recommender's input dataclass minimal and testable. If
-    this becomes a bottleneck, the fix is one bulk query.
-    """
-    return crud.get_article(session=session, article_id=article_id)
 
 
 @router.get("/sources/", response_model=SourcesPublic)

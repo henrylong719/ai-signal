@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import dataclasses
 import math
+import threading
 import uuid
 from collections.abc import Iterable
 from typing import Any, Protocol
@@ -56,6 +57,7 @@ class Encoder(Protocol):
 # Module-level singleton. None until the first ``_get_encoder()`` call.
 # Test code calls ``set_encoder_for_testing(...)`` to bypass real loading.
 _encoder: Encoder | None = None
+_encoder_lock = threading.Lock()
 
 
 def _get_encoder() -> Encoder:
@@ -68,17 +70,20 @@ def _get_encoder() -> Encoder:
     """
     global _encoder
     if _encoder is None:
-        # Local import — see module docstring.
-        from sentence_transformers import SentenceTransformer
+        with _encoder_lock:
+            if _encoder is None:
+                # Local import — see module docstring.
+                from sentence_transformers import SentenceTransformer
 
-        _encoder = SentenceTransformer(MODEL_NAME)
+                _encoder = SentenceTransformer(MODEL_NAME)
     return _encoder
 
 
 def set_encoder_for_testing(encoder: Encoder | None) -> None:
     """Inject a fake encoder. Pass None to clear and force re-load on next use."""
     global _encoder
-    _encoder = encoder
+    with _encoder_lock:
+        _encoder = encoder
 
 
 # ---------------------------------------------------------------------------

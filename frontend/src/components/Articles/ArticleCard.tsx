@@ -48,23 +48,23 @@ export function ArticleCard({
   const showActions = isLoggedIn()
 
   return (
-    <div
+    <article
       className={cn(
-        "group flex flex-col gap-4 border-b border-slate-100 py-6 last:border-0 sm:py-8",
+        "group -mx-3 border-b border-slate-200/70 px-3 py-7 transition-colors last:border-0 hover:bg-slate-50/60 sm:-mx-4 sm:px-4 sm:py-8",
         className,
       )}
     >
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         {reason && (
-          <div className="text-xs font-sans uppercase tracking-wide text-slate-400">
+          <div className="inline-flex w-fit rounded-full border border-cyan-100 bg-cyan-50 px-2.5 py-1 text-[11px] font-medium uppercase text-cyan-900">
             {reason}
           </div>
         )}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500 font-sans">
-            <span className="text-slate-900">{article.source}</span>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2 text-xs font-medium text-slate-500">
+            <span className="truncate text-slate-900">{article.source}</span>
             <span className="text-slate-300">&bull;</span>
-            <span>
+            <span className="shrink-0">
               {article.published_at
                 ? DateTime.fromISO(article.published_at).toLocaleString(
                     DateTime.DATE_MED,
@@ -73,13 +73,13 @@ export function ArticleCard({
             </span>
           </div>
           {showActions && (
-            <div className="-mr-1 flex shrink-0 items-center gap-1 text-slate-400">
+            <div className="-mt-1 -mr-1 flex shrink-0 items-center gap-1 text-slate-400">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
                     onClick={onBookmark}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
                     aria-label={
                       isBookmarked ? "Remove saved article" : "Save article"
                     }
@@ -104,7 +104,7 @@ export function ArticleCard({
                     <button
                       type="button"
                       onClick={onDismiss}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
                       aria-label="Show less like this"
                     >
                       <ThumbsDown className="h-4.5 w-4.5 stroke-[1.6]" />
@@ -119,29 +119,31 @@ export function ArticleCard({
           )}
         </div>
 
-        <div className="flex flex-row items-start justify-between gap-4 md:gap-6">
-          <div className="min-w-0 flex-1 md:flex md:h-40 md:flex-3 md:flex-col md:justify-between">
+        <div className="flex flex-row items-start justify-between gap-4 sm:gap-6">
+          <div className="min-w-0 flex-1">
             <a
               href={href}
               target="_blank"
               rel="noreferrer"
-              className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+              className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-4"
             >
               <div>
                 <h3
                   className={cn(
-                    "font-serif font-medium leading-snug text-slate-900 transition-colors group-hover:text-slate-600",
-                    featured ? "text-2xl sm:text-3xl" : "text-lg sm:text-xl",
+                    "font-serif font-medium leading-tight text-slate-950 transition-colors group-hover:text-slate-700",
+                    featured
+                      ? "text-2xl sm:text-[2rem]"
+                      : "text-[1.25rem] sm:text-[1.45rem]",
                   )}
                 >
                   {article.title}
                 </h3>
                 <p
                   className={cn(
-                    "min-w-0 flex-1 font-serif leading-relaxed text-slate-500",
+                    "mt-2 min-w-0 max-w-2xl leading-7 text-slate-600",
                     featured
-                      ? "mt-1 line-clamp-3 text-base sm:text-lg"
-                      : "line-clamp-2 text-sm sm:text-base md:line-clamp-3",
+                      ? "line-clamp-3 text-base sm:text-lg"
+                      : "line-clamp-2 text-sm sm:text-[0.95rem] md:line-clamp-3",
                   )}
                 >
                   {article.excerpt}
@@ -149,13 +151,13 @@ export function ArticleCard({
               </div>
             </a>
 
-            <div className="mt-3 hidden sm:block">
+            <div className="mt-4 hidden sm:block">
               <div className="flex flex-wrap gap-2">
                 {article.tags?.map((tag) => (
                   <Badge
                     key={tag}
                     variant="secondary"
-                    className="font-sans font-normal text-xs text-slate-600 bg-slate-100 border-transparent hover:bg-slate-200 px-2 py-0.5 cursor-pointer"
+                    className="border-slate-200/70 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)] transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950"
                   >
                     {capitalize(tag)}
                   </Badge>
@@ -165,23 +167,23 @@ export function ArticleCard({
           </div>
 
           {article.image_url && (
-            <div className="aspect-4/3 w-28 shrink-0 overflow-hidden rounded-sm sm:w-36 md:aspect-16/10 md:w-full md:flex-1">
+            <div className="aspect-[4/3] w-24 shrink-0 overflow-hidden rounded-md bg-slate-100 sm:w-40 lg:w-48">
               <a
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-4"
               >
                 <img
                   src={article.image_url}
                   alt={article.title}
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                 />
               </a>
             </div>
           )}
         </div>
       </div>
-    </div>
+    </article>
   )
 }

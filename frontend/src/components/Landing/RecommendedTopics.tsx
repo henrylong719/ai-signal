@@ -7,11 +7,11 @@ import { Badge } from "../ui/badge"
 const RecommendedTopics = () => {
   return (
     <div>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="text-slate-400 group-hover:text-slate-900 transition-colors ">
-          <Sparkles className="w-5 h-5 stroke-[1.5]" />
+      <div className="mb-4 flex items-center gap-2.5">
+        <div className="text-slate-400">
+          <Sparkles className="h-4 w-4 stroke-[1.6]" />
         </div>
-        <span className="font-medium text-slate-400 font-sans text-sm">
+        <span className="text-sm font-semibold text-slate-500">
           Recommended topics
         </span>
       </div>
@@ -21,11 +21,11 @@ const RecommendedTopics = () => {
             key={cat}
             to="/category-feed/$cat"
             params={{ cat }}
-            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
           >
             <Badge
               variant="secondary"
-              className="font-sans font-normal text-sm text-slate-900 bg-slate-100 border-transparent hover:bg-slate-200 px-6 py-2 cursor-pointer"
+              className="cursor-pointer border-slate-200/80 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950"
             >
               {capitalize(cat)}
             </Badge>

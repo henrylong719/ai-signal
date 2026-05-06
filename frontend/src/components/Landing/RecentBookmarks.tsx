@@ -18,37 +18,37 @@ const RecentBookmarks = () => {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="text-slate-400 group-hover:text-slate-900 transition-colors ">
-          <BookmarkIcon className="w-5 h-5 stroke-[1.5]" />
+      <div className="mb-4 flex items-center gap-2.5">
+        <div className="text-slate-400">
+          <BookmarkIcon className="h-4 w-4 stroke-[1.6]" />
         </div>
-        <span className="font-medium text-slate-400 font-sans text-sm">
+        <span className="text-sm font-semibold text-slate-500">
           Your saved articles
         </span>
       </div>
-      <div className="space-y-5 mt-2">
+      <div className="mt-2 space-y-5">
         {isLoading ? (
           ["a", "b", "c"].map((key) => (
-            <div key={key} className="flex gap-4 items-start">
-              <Skeleton className="h-8 w-6 rounded" />
+            <div key={key} className="flex items-start gap-4">
+              <Skeleton className="h-8 w-6 rounded bg-slate-100" />
               <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-full rounded" />
-                <Skeleton className="h-3 w-24 rounded" />
+                <Skeleton className="h-4 w-full rounded bg-slate-100" />
+                <Skeleton className="h-3 w-24 rounded bg-slate-100" />
               </div>
             </div>
           ))
         ) : isError ? (
-          <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-500">
+          <p className="rounded-lg border border-slate-100 bg-white p-3 text-sm text-slate-500">
             Could not load saved articles.
           </p>
         ) : articles.length === 0 ? (
-          <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-500">
+          <p className="rounded-lg border border-slate-100 bg-white p-3 text-sm text-slate-500">
             Saved articles will appear here.
           </p>
         ) : (
           articles.map((article, index) => (
-            <div key={article.id} className="group flex gap-4 items-start">
-              <span className="font-serif text-2xl font-medium text-slate-200 group-hover:text-slate-300 transition-colors leading-none mt-1">
+            <div key={article.id} className="group flex items-start gap-4">
+              <span className="mt-1 font-serif text-2xl font-medium leading-none text-slate-200 transition-colors group-hover:text-slate-300">
                 0{index + 1}
               </span>
               <div>
@@ -56,13 +56,13 @@ const RecentBookmarks = () => {
                   to={article.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                  className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
                 >
-                  <h4 className="font-serif font-medium text-slate-900 group-hover:text-slate-600 leading-snug mb-1.5">
+                  <h4 className="mb-1.5 font-serif font-medium leading-snug text-slate-950 transition-colors group-hover:text-slate-700">
                     {article.title}
                   </h4>
                 </Link>
-                <div className="text-xs text-slate-400 flex items-center gap-1.5 font-sans">
+                <div className="flex items-center gap-1.5 text-xs text-slate-400">
                   <span className="text-slate-600">{article.source}</span>
                 </div>
               </div>
@@ -73,7 +73,7 @@ const RecentBookmarks = () => {
 
       <Link
         to="/saved-articles"
-        className="mt-4 inline-flex items-center rounded-sm text-xs font-sans font-medium text-slate-400 hover:text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+        className="mt-4 inline-flex items-center rounded-sm text-xs font-semibold text-slate-500 transition-colors hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
       >
         See all saved articles{" "}
         <ChevronRightIcon className="w-3 h-3 ml-0.5 stroke-2" />

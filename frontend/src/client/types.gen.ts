@@ -30,6 +30,33 @@ export type Body_login_login_access_token = {
     client_secret?: (string | null);
 };
 
+/**
+ * Article + recommendation reason label.
+ *
+ * The reason is built server-side from the dominant scoring component
+ * (see ``services.recommender.reason_for``). Optional because pure-recency
+ * recommendations may not justify a badge.
+ */
+export type ForYouArticlePublic = {
+    url: string;
+    title: string;
+    source: string;
+    excerpt?: (string | null);
+    image_url?: (string | null);
+    author?: (string | null);
+    category: 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other';
+    tags?: Array<(string)>;
+    published_at?: (string | null);
+    id: string;
+    fetched_at: string;
+    reason?: (string | null);
+};
+
+export type ForYouArticlesPublic = {
+    data: Array<ForYouArticlePublic>;
+    count: number;
+};
+
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -201,11 +228,13 @@ export type ArticlesReadSourcesData = {
 
 export type ArticlesReadSourcesResponse = (SourcesPublic);
 
-export type ArticlesReadArticleData = {
-    id: string;
+export type ArticlesReadForYouArticlesData = {
+    accessToken?: (string | null);
+    limit?: number;
+    skip?: number;
 };
 
-export type ArticlesReadArticleResponse = (ArticlePublic);
+export type ArticlesReadForYouArticlesResponse = (ForYouArticlesPublic);
 
 export type ArticlesReadSavedArticlesData = {
     accessToken?: (string | null);
@@ -248,6 +277,12 @@ export type ArticlesDismissArticleData = {
 };
 
 export type ArticlesDismissArticleResponse = (void);
+
+export type ArticlesReadArticleData = {
+    id: string;
+};
+
+export type ArticlesReadArticleResponse = (ArticlePublic);
 
 export type IngestTriggerIngestData = {
     accessToken?: (string | null);
@@ -316,6 +351,10 @@ export type LoginRefreshSessionData = {
 };
 
 export type LoginRefreshSessionResponse = (Message);
+
+export type LoginLogoutData = {
+    refreshToken?: (string | null);
+};
 
 export type LoginLogoutResponse = (Message);
 

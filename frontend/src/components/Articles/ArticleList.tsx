@@ -45,12 +45,12 @@ export function ArticleListState({
   action,
 }: ArticleListStateProps) {
   return (
-    <div className="my-8 rounded-lg border border-slate-100 bg-slate-50/70 px-6 py-10 text-center">
-      <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-400 shadow-xs ring-1 ring-slate-100">
+    <div className="mx-auto my-10 max-w-2xl rounded-lg border border-slate-200/80 bg-white px-6 py-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.03),0_18px_45px_rgba(15,23,42,0.035)]">
+      <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-400 ring-1 ring-slate-200/80">
         {icon ?? <NewspaperIcon className="h-5 w-5 stroke-[1.5]" />}
       </div>
-      <h2 className="font-serif text-xl font-medium text-slate-900">{title}</h2>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+      <h2 className="font-serif text-xl font-medium text-slate-950">{title}</h2>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
         {description}
       </p>
       {action && <div className="mt-5">{action}</div>}
@@ -133,7 +133,7 @@ export function ArticleList({
   }
 
   return (
-    <div>
+    <div className="pb-2">
       {visibleArticles.map((article) => (
         <ArticleCard
           article={article}
@@ -146,7 +146,7 @@ export function ArticleList({
       ))}
       <div
         ref={loadMoreRef}
-        className="py-8 text-center text-sm text-slate-500"
+        className="py-8 text-center text-sm font-medium text-slate-500"
       >
         {feedStatus}
       </div>

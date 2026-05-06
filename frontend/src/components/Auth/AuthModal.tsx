@@ -21,7 +21,7 @@ function AuthModal() {
         <Button
           variant="ghost"
           size="sm"
-          className="hidden font-normal sm:inline-flex"
+          className="inline-flex h-9 rounded-full border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-slate-950/15"
         >
           Sign In
         </Button>

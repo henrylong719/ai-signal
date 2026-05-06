@@ -164,6 +164,129 @@ export const Body_login_login_access_tokenSchema = {
     title: 'Body_login-login_access_token'
 } as const;
 
+export const ForYouArticlePublicSchema = {
+    properties: {
+        url: {
+            type: 'string',
+            title: 'Url'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        source: {
+            type: 'string',
+            maxLength: 64,
+            title: 'Source'
+        },
+        excerpt: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Excerpt'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
+        },
+        author: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Author'
+        },
+        category: {
+            type: 'string',
+            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other'],
+            title: 'Category'
+        },
+        tags: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Tags'
+        },
+        published_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Published At'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        fetched_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Fetched At'
+        },
+        reason: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Reason'
+        }
+    },
+    type: 'object',
+    required: ['url', 'title', 'source', 'category', 'id', 'fetched_at'],
+    title: 'ForYouArticlePublic',
+    description: `Article + recommendation reason label.
+
+The reason is built server-side from the dominant scoring component
+(see \`\`services.recommender.reason_for\`\`). Optional because pure-recency
+recommendations may not justify a badge.`
+} as const;
+
+export const ForYouArticlesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ForYouArticlePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ForYouArticlesPublic'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {

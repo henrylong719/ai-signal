@@ -33,13 +33,16 @@ export function MobileSidebar() {
           <button
             type="button"
             aria-label="Open explore menu"
-            className="mr-4 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+            className="mr-4 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
           >
             <MenuIcon className="h-5 w-5 stroke-[1.7]" />
           </button>
         </SheetTrigger>
 
-        <SheetContent side="left" className="w-[88vw] max-w-sm overflow-y-auto">
+        <SheetContent
+          side="left"
+          className="w-[88vw] max-w-sm overflow-y-auto bg-white"
+        >
           <SheetHeader className="border-b border-slate-100 px-5 py-5">
             <SheetTitle className="flex items-center gap-2 text-slate-950">
               <SparklesIcon className="h-4 w-4 stroke-[1.8] text-slate-400" />
@@ -90,15 +93,15 @@ export function Sidebar() {
   const sidebarStyle: CSSProperties = {
     top:
       sidebarHeight > 0
-        ? `min(3rem, calc(100vh - ${sidebarHeight}px - 2rem))`
-        : "3rem",
+        ? `min(6.5rem, calc(100vh - ${sidebarHeight}px - 2rem))`
+        : "6.5rem",
   }
 
   return (
     <aside
       ref={sidebarRef}
       style={sidebarStyle}
-      className="flex-0 hidden space-y-10 self-start border-l border-slate-100 pb-8 pt-8 md:flex-2 lg:sticky lg:col-span-4 lg:block lg:pl-10"
+      className="hidden self-start border-l border-slate-200/70 pb-8 pt-8 lg:sticky lg:block lg:w-[340px] lg:pl-10"
     >
       {/* Today's Digest Card */}
       {/* <div className="bg-slate-50 rounded-xl p-6 border-0">
@@ -124,7 +127,9 @@ export function Sidebar() {
         </Link>
       </div> */}
 
-      <SidebarSections />
+      <div className="space-y-10">
+        <SidebarSections />
+      </div>
     </aside>
   )
 }

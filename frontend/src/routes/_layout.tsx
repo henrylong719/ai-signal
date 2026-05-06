@@ -14,13 +14,13 @@ export const Route = createFileRoute("/_layout")({
 
 function Layout() {
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-white text-slate-950">
       {/* <AppSidebar /> */}
 
       {/* <SidebarInset> */}
       <Header />
-      <main className="px-4 sm:px-6 md:px-8">
-        <div className="mx-auto">
+      <main className="px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1480px]">
           <Outlet />
         </div>
       </main>

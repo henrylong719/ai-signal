@@ -27,7 +27,7 @@ export function SavedArticleList() {
         action={
           <Link
             to="/login"
-            className="inline-flex h-9 items-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+            className="inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
           >
             Sign in
           </Link>
@@ -68,7 +68,7 @@ export function SavedArticleList() {
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white px-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.04)] sm:px-6">
+    <div className="border-y border-slate-200/80 bg-white">
       {articles.map((article) => (
         <ArticleCard
           article={article}

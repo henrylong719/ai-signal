@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadForYouArticlesData, ArticlesReadForYouArticlesResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutData, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class ArticlesService {
     /**
@@ -57,19 +57,25 @@ export class ArticlesService {
     }
     
     /**
-     * Read Article
-     * Get article by ID.
+     * Read For You Articles
+     * Get current user's personalized article feed.
      * @param data The data for the request.
-     * @param data.id
-     * @returns ArticlePublic Successful Response
+     * @param data.skip
+     * @param data.limit
+     * @param data.accessToken
+     * @returns ForYouArticlesPublic Successful Response
      * @throws ApiError
      */
-    public static readArticle(data: ArticlesReadArticleData): CancelablePromise<ArticlesReadArticleResponse> {
+    public static readForYouArticles(data: ArticlesReadForYouArticlesData = {}): CancelablePromise<ArticlesReadForYouArticlesResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/articles/{id}',
-            path: {
-                id: data.id
+            url: '/api/v1/articles/for-you',
+            cookies: {
+                access_token: data.accessToken
+            },
+            query: {
+                skip: data.skip,
+                limit: data.limit
             },
             errors: {
                 422: 'Validation Error'
@@ -230,6 +236,27 @@ export class ArticlesService {
             },
             cookies: {
                 access_token: data.accessToken
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Article
+     * Get article by ID.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns ArticlePublic Successful Response
+     * @throws ApiError
+     */
+    public static readArticle(data: ArticlesReadArticleData): CancelablePromise<ArticlesReadArticleResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/articles/{id}',
+            path: {
+                id: data.id
             },
             errors: {
                 422: 'Validation Error'
@@ -472,14 +499,9 @@ export class LoginService {
      * Refresh Session
      * Mint a new access token using the refresh cookie.
      *
-     * Rotates the refresh token too: each refresh issues a fresh refresh
-     * cookie alongside the access cookie. This means a stolen refresh token
-     * is single-use — the next legitimate refresh invalidates it (because
-     * JWTs are stateless we can't actually invalidate the old one, but in
-     * practice the legitimate user's next refresh will overwrite the cookie
-     * and any subsequent attacker use will at least show stale activity).
-     * Production-grade rotation requires server-side refresh-token tracking,
-     * which we'd add via Redis if the project ever needed it.
+     * Refresh tokens are DB-backed and rotated on each successful refresh. A
+     * short previous-token grace window avoids logging users out when two browser
+     * tabs refresh at almost the same time.
      * @param data The data for the request.
      * @param data.refreshToken
      * @returns Message Successful Response
@@ -500,14 +522,22 @@ export class LoginService {
     
     /**
      * Logout
-     * Clear all auth cookies. No-op if the user wasn't logged in.
+     * Revoke the current refresh session and clear all auth cookies.
+     * @param data The data for the request.
+     * @param data.refreshToken
      * @returns Message Successful Response
      * @throws ApiError
      */
-    public static logout(): CancelablePromise<LoginLogoutResponse> {
+    public static logout(data: LoginLogoutData = {}): CancelablePromise<LoginLogoutResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/login/logout'
+            url: '/api/v1/login/logout',
+            cookies: {
+                refresh_token: data.refreshToken
+            },
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
     

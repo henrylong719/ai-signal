@@ -63,27 +63,31 @@ function Dashboard() {
   }
 
   return (
-    <div className="flex">
-      <div className="px-4 sm:px-6 lg:px-8 flex-auto md:flex-5">
-        <div ref={feedTopRef} className="scroll-mt-20" aria-hidden="true" />
-        <div className="sticky top-16 z-40 border-b border-slate-200 bg-white pt-6 sm:top-20">
+    <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-12">
+      <div className="min-w-0">
+        <div
+          ref={feedTopRef}
+          className="scroll-mt-16 sm:scroll-mt-[72px]"
+          aria-hidden="true"
+        />
+        <div className="sticky top-16 z-40 -mx-4 border-b border-slate-200/80 bg-white/95 px-4 pt-6 backdrop-blur sm:top-[72px] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
           <div className="flex items-center">
             <MobileSidebar />
-            <div className="flex gap-10">
+            <div className="flex gap-8 sm:gap-10">
               {tabs.map((tab) => (
                 <button
                   key={tab.value}
                   type="button"
                   onClick={() => handleTabChange(tab.value)}
-                  className={`relative rounded-sm pb-5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${
+                  className={`relative rounded-sm pb-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-4 ${
                     activeTab === tab.value
-                      ? "text-slate-900"
-                      : "text-slate-400 hover:text-slate-600"
+                      ? "text-slate-950"
+                      : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
                   {tab.label}
                   {activeTab === tab.value && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-900 rounded-full" />
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-slate-950" />
                   )}
                 </button>
               ))}
@@ -108,7 +112,7 @@ function Dashboard() {
               action={
                 <Link
                   to="/login"
-                  className="inline-flex h-9 items-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                  className="inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2"
                 >
                   Sign in
                 </Link>

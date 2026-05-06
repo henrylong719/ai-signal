@@ -1,41 +1,56 @@
-import { Link, useNavigate } from "@tanstack/react-router"
-import { SearchIcon } from "lucide-react"
-import { useForm } from "react-hook-form"
-import useAuth from "@/hooks/useAuth"
-import AuthModal from "../Auth/AuthModal"
-import { Form, FormControl, FormField, FormItem } from "../ui/form"
-import { HeaderActionsMenu } from "./HeaderActionsMenu"
+import { Link, useNavigate } from '@tanstack/react-router';
+import { SearchIcon } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import useAuth from '@/hooks/useAuth';
+import AuthModal from '../Auth/AuthModal';
+import { Form, FormControl, FormField, FormItem } from '../ui/form';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '../ui/sheet';
+import { HeaderActionsMenu } from './HeaderActionsMenu';
 
 interface SearchFormInputs {
-  query: string
+  query: string;
 }
 
 const Header = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
-  const { user } = useAuth()
+  const { user } = useAuth();
 
   const searchForm = useForm<SearchFormInputs>({
     defaultValues: {
-      query: "",
+      query: '',
     },
-  })
+  });
+  const mobileSearchForm = useForm<SearchFormInputs>({
+    defaultValues: {
+      query: '',
+    },
+  });
 
   const onSubmit = (data: SearchFormInputs) => {
     if (data.query.trim()) {
-      navigate({ to: "/search-feed/$q", params: { q: data.query.trim() } })
+      navigate({ to: '/search-feed/$q', params: { q: data.query.trim() } });
+      setMobileSearchOpen(false);
     }
-  }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
-      <div className="mx-auto h-20 flex items-center justify-between px-10 sm:px-12 md:px-14 lg:px-16">
-        <div className="flex items-center gap-8">
+      <div className="mx-auto flex h-16 items-center justify-between px-8 sm:h-20 md:px-10 lg:px-16">
+        <div className="flex min-w-0 items-center gap-4 sm:gap-8">
           <Link
             to="/"
             className="flex items-center gap-2 rounded-sm group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
           >
-            <span className="font-serif font-semibold text-3xl tracking-tight">
+            <span className="font-Georgia truncate text-2xl font-semibold tracking-tight sm:text-3xl">
               AI Signal
             </span>
           </Link>
@@ -67,12 +82,56 @@ const Header = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Sheet open={mobileSearchOpen} onOpenChange={setMobileSearchOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                aria-label="Search"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 sm:hidden"
+              >
+                <SearchIcon className="h-5 w-5 stroke-[1.7]" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="top" className="px-4 pb-5 pt-4">
+              <SheetHeader className="px-0 pb-3 pt-0">
+                <SheetTitle className="text-left text-base">
+                  Search AI Signal
+                </SheetTitle>
+              </SheetHeader>
+              <Form {...mobileSearchForm}>
+                <form
+                  onSubmit={mobileSearchForm.handleSubmit(onSubmit)}
+                  className="relative"
+                >
+                  <FormField
+                    control={mobileSearchForm.control}
+                    name="query"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <div className="relative">
+                            <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-slate-400 stroke-[1.5]" />
+                            <input
+                              type="text"
+                              placeholder="Search articles..."
+                              className="h-10 w-full rounded-full border border-slate-200 bg-white pl-9 pr-4 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-slate-300 focus:ring-2 focus:ring-slate-900/10"
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </form>
+              </Form>
+            </SheetContent>
+          </Sheet>
           {user ? <HeaderActionsMenu /> : <AuthModal />}
         </div>
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

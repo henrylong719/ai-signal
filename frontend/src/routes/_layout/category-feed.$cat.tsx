@@ -27,7 +27,7 @@ function CategoryFeed() {
         </p>
       </header>
 
-      <div className="sticky top-20 z-40 -mx-6 mb-6 overflow-x-auto border-y border-slate-200 bg-white/90 px-6 py-2 backdrop-blur md:-mx-8 md:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="sticky top-16 z-40 -mx-4 mb-6 overflow-x-auto border-y border-slate-200 bg-white/90 px-4 py-2 backdrop-blur sm:top-20 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="flex w-max min-w-full gap-2">
           {CATEGORIES.map((tab) => (
             <Link

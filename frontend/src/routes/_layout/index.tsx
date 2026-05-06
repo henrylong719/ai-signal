@@ -5,7 +5,7 @@ import {
   ArticleList,
   ArticleListState,
 } from "@/components/Articles/ArticleList"
-import { Sidebar } from "@/components/Landing/Sidebar"
+import { MobileSidebar, Sidebar } from "@/components/Landing/Sidebar"
 import { useArticleFeed } from "@/hooks/useArticleFeed"
 import { isLoggedIn } from "@/hooks/useAuth"
 import { useForYouFeed } from "@/hooks/useForYouFeed"
@@ -66,25 +66,28 @@ function Dashboard() {
     <div className="flex">
       <div className="px-4 sm:px-6 lg:px-8 flex-auto md:flex-5">
         <div ref={feedTopRef} className="scroll-mt-20" aria-hidden="true" />
-        <div className="border-b border-slate-200 pt-6 sticky top-20 bg-white z-40">
-          <div className="flex gap-10">
-            {tabs.map((tab) => (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => handleTabChange(tab.value)}
-                className={`relative rounded-sm pb-5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${
-                  activeTab === tab.value
-                    ? "text-slate-900"
-                    : "text-slate-400 hover:text-slate-600"
-                }`}
-              >
-                {tab.label}
-                {activeTab === tab.value && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-900 rounded-full" />
-                )}
-              </button>
-            ))}
+        <div className="sticky top-16 z-40 border-b border-slate-200 bg-white pt-6 sm:top-20">
+          <div className="flex items-center">
+            <MobileSidebar />
+            <div className="flex gap-10">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => handleTabChange(tab.value)}
+                  className={`relative rounded-sm pb-5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${
+                    activeTab === tab.value
+                      ? "text-slate-900"
+                      : "text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  {tab.label}
+                  {activeTab === tab.value && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-900 rounded-full" />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

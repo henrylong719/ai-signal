@@ -19,7 +19,7 @@ function Layout() {
 
       {/* <SidebarInset> */}
       <Header />
-      <main className="px-6 md:px-8">
+      <main className="px-4 sm:px-6 md:px-8">
         <div className="mx-auto">
           <Outlet />
         </div>

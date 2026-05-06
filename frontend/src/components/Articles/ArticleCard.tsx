@@ -50,7 +50,7 @@ export function ArticleCard({
   return (
     <div
       className={cn(
-        "group flex flex-col gap-4 py-8 border-b border-slate-100 last:border-0",
+        "group flex flex-col gap-4 border-b border-slate-100 py-6 last:border-0 sm:py-8",
         className,
       )}
     >
@@ -119,8 +119,8 @@ export function ArticleCard({
           )}
         </div>
 
-        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-          <div className="flex flex-col justify-between md:h-40 md:flex-3">
+        <div className="flex flex-row items-start justify-between gap-4 md:gap-6">
+          <div className="min-w-0 flex-1 md:flex md:h-40 md:flex-3 md:flex-col md:justify-between">
             <a
               href={href}
               target="_blank"
@@ -130,16 +130,18 @@ export function ArticleCard({
               <div>
                 <h3
                   className={cn(
-                    "font-serif font-medium text-slate-900 group-hover:text-slate-600 transition-colors leading-snug",
-                    featured ? "text-3xl" : "text-xl",
+                    "font-serif font-medium leading-snug text-slate-900 transition-colors group-hover:text-slate-600",
+                    featured ? "text-2xl sm:text-3xl" : "text-lg sm:text-xl",
                   )}
                 >
                   {article.title}
                 </h3>
                 <p
                   className={cn(
-                    "min-w-0 flex-1 text-slate-500 font-serif leading-relaxed",
-                    featured ? "text-lg mt-1" : "text-base line-clamp-3",
+                    "min-w-0 flex-1 font-serif leading-relaxed text-slate-500",
+                    featured
+                      ? "mt-1 line-clamp-3 text-base sm:text-lg"
+                      : "line-clamp-2 text-sm sm:text-base md:line-clamp-3",
                   )}
                 >
                   {article.excerpt}
@@ -147,7 +149,7 @@ export function ArticleCard({
               </div>
             </a>
 
-            <div className="mt-3">
+            <div className="mt-3 hidden sm:block">
               <div className="flex flex-wrap gap-2">
                 {article.tags?.map((tag) => (
                   <Badge
@@ -163,7 +165,7 @@ export function ArticleCard({
           </div>
 
           {article.image_url && (
-            <div className="aspect-16/10 w-full shrink-0 overflow-hidden rounded-sm md:flex-1">
+            <div className="aspect-4/3 w-28 shrink-0 overflow-hidden rounded-sm sm:w-36 md:aspect-16/10 md:w-full md:flex-1">
               <a
                 href={href}
                 target="_blank"

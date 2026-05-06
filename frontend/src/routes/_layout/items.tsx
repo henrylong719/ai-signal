@@ -55,11 +55,18 @@ function ItemsTable() {
 
 function Items() {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-16 pt-8 sm:pb-20 sm:pt-10">
+      <div className="flex flex-col gap-4 border-b border-slate-200/70 pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Items</h1>
-          <p className="text-muted-foreground">Create and manage your items</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Workspace
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+            Items
+          </h1>
+          <p className="mt-3 max-w-xl text-base leading-7 text-slate-500">
+            Create and manage your items.
+          </p>
         </div>
         <AddItem />
       </div>

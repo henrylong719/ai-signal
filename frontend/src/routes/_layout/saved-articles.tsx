@@ -1,17 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router"
-import { BookmarkIcon } from "lucide-react"
-import { SavedArticleList } from "@/components/Articles/SavedArticleList"
+import { createFileRoute } from '@tanstack/react-router';
+import { BookmarkIcon } from 'lucide-react';
+import { SavedArticleList } from '@/components/Articles/SavedArticleList';
 
-export const Route = createFileRoute("/_layout/saved-articles")({
+export const Route = createFileRoute('/_layout/saved-articles')({
   component: SavedArticles,
   head: () => ({
     meta: [
       {
-        title: "Your library",
+        title: 'Your library',
       },
     ],
   }),
-})
+});
 
 function SavedArticles() {
   return (
@@ -38,5 +38,5 @@ function SavedArticles() {
         <SavedArticleList />
       </div>
     </div>
-  )
+  );
 }

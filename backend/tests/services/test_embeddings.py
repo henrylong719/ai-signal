@@ -316,10 +316,17 @@ def test_cosine_similarity_handles_zero_vector_safely() -> None:
     assert emb.cosine_similarity(z, a) == 0.0
 
 
-def test_cosine_similarity_handles_mismatched_lengths() -> None:
+def test_cosine_similarity_handles_empty_vectors_as_no_signal() -> None:
+    assert emb.cosine_similarity([], [1.0, 0.0]) == 0.0
+    assert emb.cosine_similarity([1.0, 0.0], []) == 0.0
+
+
+def test_cosine_similarity_raises_on_mismatched_lengths() -> None:
     a = [1.0, 0.0]
     b = [1.0, 0.0, 0.0]
-    assert emb.cosine_similarity(a, b) == 0.0
+
+    with pytest.raises(ValueError, match="lengths 2 and 3"):
+        emb.cosine_similarity(a, b)
 
 
 def test_cosine_similarities_returns_one_score_per_article() -> None:
@@ -332,6 +339,13 @@ def test_cosine_similarities_returns_one_score_per_article() -> None:
 
     assert len(sims) == 2
     assert all(-1.0 <= s <= 1.0 for s in sims.values())
+
+
+def test_cosine_similarities_propagates_dimension_mismatch() -> None:
+    articles = {uuid.uuid4(): [1.0, 0.0, 0.0]}
+
+    with pytest.raises(ValueError, match="lengths 2 and 3"):
+        emb.cosine_similarities([1.0, 0.0], articles)
 
 
 # ---------------------------------------------------------------------------

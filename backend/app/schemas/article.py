@@ -61,3 +61,4 @@ class ForYouArticlePublic(ArticlePublic):
 class ForYouArticlesPublic(SQLModel):
     data: list[ForYouArticlePublic]
     count: int
+    candidate_pool_cap: int

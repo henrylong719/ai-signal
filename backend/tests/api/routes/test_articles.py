@@ -232,6 +232,7 @@ def test_read_for_you_articles(
     assert response.status_code == 200
     content = response.json()
     assert content["count"] >= 1
+    assert content["candidate_pool_cap"] == article_routes._CANDIDATE_POOL_SIZE
     assert len(content["data"]) >= 1
     assert "reason" in content["data"][0]
 
@@ -378,6 +379,78 @@ def test_saved_article_routes_cover_create_list_ids_and_delete(
     assert missing.json()["detail"] == "Saved article not found"
 
 
+def test_read_saved_articles_preserves_saved_order_when_bulk_fetching(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first_saved = _create_article(db, title="Saved first")
+    second_saved = _create_article(db, title="Saved second")
+    saved_rows = [
+        SimpleNamespace(article_id=second_saved.id),
+        SimpleNamespace(article_id=first_saved.id),
+    ]
+    captured_article_ids: list[uuid.UUID] = []
+
+    monkeypatch.setattr(article_routes.crud, "count_saved_articles", lambda **_: 2)
+    monkeypatch.setattr(article_routes.crud, "get_saved_articles", lambda **_: saved_rows)
+
+    def fake_get_articles_by_ids(**kwargs):
+        captured_article_ids.extend(kwargs["article_ids"])
+        return [first_saved, second_saved]
+
+    def fail_get_article(**_kwargs):
+        raise AssertionError("read_saved_articles should bulk-fetch articles")
+
+    monkeypatch.setattr(
+        article_routes.crud, "get_articles_by_ids", fake_get_articles_by_ids
+    )
+    monkeypatch.setattr(article_routes.crud, "get_article", fail_get_article)
+
+    response = article_routes.read_saved_articles(
+        session=db,
+        current_user=SimpleNamespace(id=uuid.uuid4()),
+        skip=0,
+        limit=2,
+    )
+
+    assert captured_article_ids == [second_saved.id, first_saved.id]
+    assert [article.id for article in response.data] == [
+        second_saved.id,
+        first_saved.id,
+    ]
+    assert response.count == 2
+
+
+def test_read_saved_articles_skips_saved_rows_for_deleted_articles(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    existing = _create_article(db, title="Still exists")
+    missing_id = uuid.uuid4()
+    saved_rows = [
+        SimpleNamespace(article_id=missing_id),
+        SimpleNamespace(article_id=existing.id),
+    ]
+
+    monkeypatch.setattr(article_routes.crud, "count_saved_articles", lambda **_: 2)
+    monkeypatch.setattr(article_routes.crud, "get_saved_articles", lambda **_: saved_rows)
+    monkeypatch.setattr(
+        article_routes.crud,
+        "get_articles_by_ids",
+        lambda **_: [existing],
+    )
+
+    response = article_routes.read_saved_articles(
+        session=db,
+        current_user=SimpleNamespace(id=uuid.uuid4()),
+        skip=0,
+        limit=2,
+    )
+
+    assert [article.id for article in response.data] == [existing.id]
+    assert response.count == 2
+
+
 def test_save_article_returns_404_for_missing_article(
     client: TestClient,
     db: Session,
@@ -462,6 +535,41 @@ def test_go_to_article_redirects_and_records_click_for_authenticated_user(
         event_type="clicked",
     )
     assert [event.article_id for event in events].count(article.id) == 1
+
+
+def test_user_vector_refresh_failure_does_not_break_article_signal_endpoints(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, headers = _create_authenticated_user(client, db)
+    article = _create_article(db, url=f"https://example.com/read/{uuid.uuid4()}")
+
+    def fail_refresh(**_kwargs):
+        raise RuntimeError("embedding refresh unavailable")
+
+    monkeypatch.setattr(article_routes, "compute_and_save_user_vector", fail_refresh)
+
+    saved = client.post(
+        f"{settings.API_V1_STR}/articles/{article.id}/save",
+        headers=headers,
+    )
+    unsaved = client.delete(
+        f"{settings.API_V1_STR}/articles/{article.id}/save",
+        headers=headers,
+    )
+    clicked = client.get(
+        f"{settings.API_V1_STR}/articles/{article.id}/go",
+        headers=headers,
+        follow_redirects=False,
+    )
+
+    assert saved.status_code == 201
+    assert saved.json() == {"message": "Article saved"}
+    assert unsaved.status_code == 200
+    assert unsaved.json() == {"message": "Article unsaved"}
+    assert clicked.status_code == 302
+    assert clicked.headers["location"] == article.url
 
 
 def test_go_to_article_rejects_missing_or_invalid_destination(

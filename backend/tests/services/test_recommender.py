@@ -78,7 +78,15 @@ def test_explicit_match_weights_saved_above_clicked_above_stated() -> None:
     clicked_score = explicit_match_score(article, only_clicked)
     saved_score = explicit_match_score(article, only_saved)
 
+    assert stated_score > 0
     assert stated_score < clicked_score < saved_score
+
+
+def test_explicit_match_uses_interest_tags_without_categories() -> None:
+    article = _article(category="other", tags=("rag", "evals"))
+    profile = UserProfile(interest_tags=frozenset({"rag"}))
+
+    assert explicit_match_score(article, profile) > 0
 
 
 def test_source_affinity_is_one_for_saved_sources() -> None:

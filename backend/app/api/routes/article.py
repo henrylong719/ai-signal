@@ -24,7 +24,7 @@ from app.schemas.source import (
 )
 from app.services.article_search import search_articles
 from app.services.embeddings import compute_and_save_user_vector
-from app.services.for_you import rank_for_you
+from app.services.for_you import _CANDIDATE_POOL_SIZE, rank_for_you
 
 logger = logging.getLogger(__name__)
 
@@ -32,24 +32,16 @@ router = APIRouter(prefix="/articles", tags=["articles"])
 
 
 def _refresh_user_vector(session: Session, user_id: uuid.UUID) -> None:
-    """Best-effort recompute of the cached user interest vector.
+    """Recompute the cached user interest vector.
 
     Called from every write path that changes user signal (save/unsave
     article, click through, dismiss is excluded — see the
-    user_embeddings migration for why). Failures are logged and
-    swallowed so an embedding-pipeline issue (model not loaded, etc.)
-    can't break the user-facing write operation. The next read either
-    rebuilds the cache or falls back to live computation, so a missed
-    cache update is recoverable.
+    user_embeddings migration for why). Failures propagate; callers own
+    the policy for whether to swallow/log or fail the user-facing
+    operation. The next read either rebuilds the cache or falls back to
+    live computation, so a missed cache update is recoverable.
     """
-    try:
-        compute_and_save_user_vector(session=session, user_id=user_id)
-    except Exception:  # noqa: BLE001
-        logger.exception(
-            "Failed to refresh user interest vector for %s; will fall back to "
-            "live recompute on next /for-you request",
-            user_id,
-        )
+    compute_and_save_user_vector(session=session, user_id=user_id)
 
 
 @router.get("/", response_model=ArticlesPublic)
@@ -113,7 +105,11 @@ def read_for_you(
         )
         for item in items
     ]
-    return ForYouArticlesPublic(data=data, count=total)
+    return ForYouArticlesPublic(
+        data=data,
+        count=total,
+        candidate_pool_cap=_CANDIDATE_POOL_SIZE,
+    )
 
 
 @router.get("/sources/", response_model=SourcesPublic)
@@ -161,11 +157,18 @@ def read_saved_articles(
     saved = crud.get_saved_articles(
         session=session, user_id=current_user.id, skip=skip, limit=limit
     )
-    articles = []
-    for s in saved:
-        article = crud.get_article(session=session, article_id=s.article_id)
-        if article:
-            articles.append(ArticlePublic.model_validate(article))
+    articles_by_id = {
+        article.id: article
+        for article in crud.get_articles_by_ids(
+            session=session,
+            article_ids=[s.article_id for s in saved],
+        )
+    }
+    articles = [
+        ArticlePublic.model_validate(articles_by_id[s.article_id])
+        for s in saved
+        if s.article_id in articles_by_id
+    ]
     return SavedArticlesPublic(data=articles, count=count)
 
 
@@ -209,7 +212,14 @@ def save_article(
     # Saving an article is the strongest behavioral signal we have —
     # update the cached user vector so the next /for-you request
     # reflects this new interest immediately.
-    _refresh_user_vector(session, current_user.id)
+    try:
+        _refresh_user_vector(session, current_user.id)
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "Failed to refresh user interest vector for %s; will fall back to "
+            "live recompute on next /for-you request",
+            current_user.id,
+        )
     return {"message": "Article saved"}
 
 
@@ -228,7 +238,14 @@ def unsave_article(
     crud.unsave_article(session=session, saved_article=existing)
     # Unsaving is the inverse signal — the user is telling us they no
     # longer want this article weighted toward their interests.
-    _refresh_user_vector(session, current_user.id)
+    try:
+        _refresh_user_vector(session, current_user.id)
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            "Failed to refresh user interest vector for %s; will fall back to "
+            "live recompute on next /for-you request",
+            current_user.id,
+        )
     return {"message": "Article unsaved"}
 
 
@@ -279,6 +296,11 @@ def go_to_article(
             _refresh_user_vector(session, user.id)
         except Exception:  # noqa: BLE001
             session.rollback()
+            logger.exception(
+                "Failed to record click signal or refresh user vector for %s; "
+                "redirecting anyway",
+                user.id,
+            )
 
     return RedirectResponse(url=article.url, status_code=302)
 

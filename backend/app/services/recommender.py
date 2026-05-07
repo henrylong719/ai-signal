@@ -212,7 +212,7 @@ def explicit_match_score(article: CandidateArticle, profile: UserProfile) -> flo
     category_score = 1.0 if article.category in profile.interest_categories else 0.0
 
     article_tags = set(article.tags)
-    started_overlap = _jaccard(article_tags, profile.interest_categories)
+    started_overlap = _jaccard(article_tags, profile.interest_tags)
     clicked_overlap = _jaccard(article_tags, profile.clicked_tags)
     saved_overlap = _jaccard(article_tags, profile.saved_tags)
     # Weights 1:2:3 normalized to /6. Saved > clicked > started.

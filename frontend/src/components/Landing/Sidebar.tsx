@@ -1,5 +1,5 @@
-import { MenuIcon, SparklesIcon } from "lucide-react"
-import { type CSSProperties, useLayoutEffect, useRef, useState } from "react"
+import { MenuIcon, SparklesIcon } from 'lucide-react'
+import { type CSSProperties, useLayoutEffect, useRef, useState } from 'react'
 import {
   Sheet,
   SheetContent,
@@ -7,11 +7,11 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
-import useAuth from "@/hooks/useAuth"
-import ArticleSource from "./ArticleSource"
-import RecentBookmarks from "./RecentBookmarks"
-import RecommendedTopics from "./RecommendedTopics"
+} from '@/components/ui/sheet'
+import useAuth from '@/hooks/useAuth'
+import ArticleSource from './ArticleSource'
+import RecentBookmarks from './RecentBookmarks'
+import RecommendedTopics from './RecommendedTopics'
 
 function SidebarSections() {
   const { user } = useAuth()
@@ -78,7 +78,7 @@ export function Sidebar() {
 
     updateHeight()
 
-    if (typeof ResizeObserver === "undefined") {
+    if (typeof ResizeObserver === 'undefined') {
       return
     }
 
@@ -94,7 +94,7 @@ export function Sidebar() {
     top:
       sidebarHeight > 0
         ? `min(6.5rem, calc(100vh - ${sidebarHeight}px - 2rem))`
-        : "6.5rem",
+        : '6.5rem',
   }
 
   return (

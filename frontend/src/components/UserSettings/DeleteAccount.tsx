@@ -1,4 +1,4 @@
-import DeleteConfirmation from "./DeleteConfirmation"
+import DeleteConfirmation from './DeleteConfirmation'
 
 const DeleteAccount = () => {
   return (

@@ -34,6 +34,7 @@ dependencies = [
     # latest avoids the resolver picking a torch with no compatible
     # wheel. Linux and Apple Silicon wheels are still fine on 2.2.x.
     "torch>=2.2.0,<2.3.0",
+    "apscheduler>=3.10,<4.0"
 ]
 
 # torch is pulled in transitively by sentence-transformers. The default

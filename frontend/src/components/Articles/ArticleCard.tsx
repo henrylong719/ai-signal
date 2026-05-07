@@ -1,16 +1,16 @@
-import { Link } from "@tanstack/react-router"
-import { BookmarkIcon, ThumbsDown } from "lucide-react"
-import { DateTime } from "luxon"
-import type { ArticlePublic } from "@/client"
+import { Link } from '@tanstack/react-router'
+import { BookmarkIcon, ThumbsDown } from 'lucide-react'
+import { DateTime } from 'luxon'
+import type { ArticlePublic } from '@/client'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { isLoggedIn } from "@/hooks/useAuth"
-import { redirectHref } from "@/lib/article-urls"
-import { capitalize, cn } from "@/lib/utils"
-import { Badge } from "../ui/badge"
+} from '@/components/ui/tooltip'
+import { isLoggedIn } from '@/hooks/useAuth'
+import { redirectHref } from '@/lib/article-urls'
+import { capitalize, cn } from '@/lib/utils'
+import { Badge } from '../ui/badge'
 
 interface ArticleCardProps {
   article: ArticlePublic
@@ -51,7 +51,7 @@ export function ArticleCard({
   return (
     <article
       className={cn(
-        "group -mx-3 border-b border-slate-200/70 px-3 py-7 transition-colors last:border-0 hover:bg-slate-50/60 sm:-mx-4 sm:px-4 sm:py-8 dark:border-border dark:hover:bg-card/45",
+        'group -mx-3 border-b border-slate-200/70 px-3 py-7 transition-colors last:border-0 hover:bg-slate-50/60 sm:-mx-4 sm:px-4 sm:py-8 dark:border-border dark:hover:bg-card/45',
         className,
       )}
     >
@@ -80,7 +80,7 @@ export function ArticleCard({
                 ? DateTime.fromISO(article.published_at).toLocaleString(
                     DateTime.DATE_MED,
                   )
-                : ""}
+                : ''}
             </span>
           </div>
           {showActions && (
@@ -92,21 +92,21 @@ export function ArticleCard({
                     onClick={onBookmark}
                     className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                     aria-label={
-                      isBookmarked ? "Remove saved article" : "Save article"
+                      isBookmarked ? 'Remove saved article' : 'Save article'
                     }
                     aria-pressed={isBookmarked}
                   >
                     <BookmarkIcon
                       className={cn(
-                        "h-4.5 w-4.5 stroke-[1.6]",
+                        'h-4.5 w-4.5 stroke-[1.6]',
                         isBookmarked &&
-                          "fill-slate-900 text-slate-900 dark:fill-foreground dark:text-foreground",
+                          'fill-slate-900 text-slate-900 dark:fill-foreground dark:text-foreground',
                       )}
                     />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  {isBookmarked ? "Remove saved article" : "Save article"}
+                  {isBookmarked ? 'Remove saved article' : 'Save article'}
                 </TooltipContent>
               </Tooltip>
 
@@ -142,20 +142,20 @@ export function ArticleCard({
               <div>
                 <h3
                   className={cn(
-                    "font-serif font-medium leading-tight text-slate-950 transition-colors group-hover:text-slate-700 dark:text-foreground dark:group-hover:text-foreground/78",
+                    'font-serif font-medium leading-tight text-slate-950 transition-colors group-hover:text-slate-700 dark:text-foreground dark:group-hover:text-foreground/78',
                     featured
-                      ? "text-2xl sm:text-[2rem]"
-                      : "text-[1.25rem] sm:text-[1.45rem]",
+                      ? 'text-2xl sm:text-[2rem]'
+                      : 'text-[1.25rem] sm:text-[1.45rem]',
                   )}
                 >
                   {article.title}
                 </h3>
                 <p
                   className={cn(
-                    "mt-2 min-w-0 max-w-2xl leading-7 text-slate-600 dark:text-muted-foreground",
+                    'mt-2 min-w-0 max-w-2xl leading-7 text-slate-600 dark:text-muted-foreground',
                     featured
-                      ? "line-clamp-3 text-base sm:text-lg"
-                      : "line-clamp-2 text-sm sm:text-[0.95rem] md:line-clamp-3",
+                      ? 'line-clamp-3 text-base sm:text-lg'
+                      : 'line-clamp-2 text-sm sm:text-[0.95rem] md:line-clamp-3',
                   )}
                 >
                   {article.excerpt}

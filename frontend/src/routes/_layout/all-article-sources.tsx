@@ -1,38 +1,38 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery } from '@tanstack/react-query'
 import {
   createFileRoute,
   Link,
   Outlet,
   useLocation,
-} from "@tanstack/react-router"
-import { AlertCircleIcon, ArrowRightIcon, RadioTowerIcon } from "lucide-react"
-import { useLayoutEffect, useRef, useState } from "react"
-import { ArticlesService, type source_type } from "@/client"
-import { ArticleListState } from "@/components/Articles/ArticleList"
-import { Skeleton } from "@/components/ui/skeleton"
-import { capitalize, cn } from "@/lib/utils"
+} from '@tanstack/react-router'
+import { AlertCircleIcon, ArrowRightIcon, RadioTowerIcon } from 'lucide-react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { ArticlesService, type source_type } from '@/client'
+import { ArticleListState } from '@/components/Articles/ArticleList'
+import { Skeleton } from '@/components/ui/skeleton'
+import { capitalize, cn } from '@/lib/utils'
 
-export const Route = createFileRoute("/_layout/all-article-sources")({
+export const Route = createFileRoute('/_layout/all-article-sources')({
   component: AllArticleSources,
 })
 
-export type source_types = "all" | source_type
+export type source_types = 'all' | source_type
 
 const SOURCE_TYPES: source_types[] = [
-  "all",
-  "official",
-  "independent",
-  "research",
-  "media",
-  "newsletter",
-  "community",
+  'all',
+  'official',
+  'independent',
+  'research',
+  'media',
+  'newsletter',
+  'community',
 ]
 
 const isSourceType = (value: unknown): value is source_types =>
-  typeof value === "string" && SOURCE_TYPES.includes(value as source_types)
+  typeof value === 'string' && SOURCE_TYPES.includes(value as source_types)
 
-const SOURCE_SKELETON_GROUPS = ["official", "research", "media"]
-const SOURCE_SKELETON_ITEMS = ["first", "second", "third", "fourth"]
+const SOURCE_SKELETON_GROUPS = ['official', 'research', 'media']
+const SOURCE_SKELETON_ITEMS = ['first', 'second', 'third', 'fourth']
 
 function SourceGroupSkeleton() {
   return (
@@ -76,12 +76,12 @@ function AllArticleSources() {
   const [sourceFilter, setSourceFilter] = useState<source_types>(() =>
     isSourceType(savedRouteState.allArticleSourcesFilter)
       ? savedRouteState.allArticleSourcesFilter
-      : "all",
+      : 'all',
   )
   const hasRestoredScroll = useRef(false)
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["articleSources"],
+    queryKey: ['articleSources'],
     queryFn: () => ArticlesService.readSources(),
   })
 
@@ -91,7 +91,7 @@ function AllArticleSources() {
     if (
       hasRestoredScroll.current ||
       isLoading ||
-      typeof savedScrollY !== "number"
+      typeof savedScrollY !== 'number'
     ) {
       return
     }
@@ -103,11 +103,11 @@ function AllArticleSources() {
   }, [isLoading, savedScrollY])
 
   const filteredSources =
-    sourceFilter === "all"
+    sourceFilter === 'all'
       ? data?.data
       : data?.data.filter((s) => s.source_type === sourceFilter)
 
-  const groups = SOURCE_TYPES.filter((type) => type !== "all")
+  const groups = SOURCE_TYPES.filter((type) => type !== 'all')
     .map((type) => ({
       type,
       items: filteredSources?.filter((s) => s.source_type === type),
@@ -135,7 +135,7 @@ function AllArticleSources() {
         <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm md:self-auto dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
           <RadioTowerIcon className="h-4 w-4 stroke-[1.8] text-slate-400 dark:text-muted-foreground" />
           <span>
-            {isLoading ? "Loading sources" : `${sourceCount} sources`}
+            {isLoading ? 'Loading sources' : `${sourceCount} sources`}
           </span>
         </div>
       </header>
@@ -148,10 +148,10 @@ function AllArticleSources() {
               key={type}
               onClick={() => setSourceFilter(type)}
               className={cn(
-                "min-h-9 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background",
+                'min-h-9 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background',
                 sourceFilter === type
-                  ? "border-slate-950 bg-slate-950 text-white shadow-sm dark:border-primary dark:bg-primary dark:text-primary-foreground"
-                  : "border-slate-200/70 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent/70 dark:hover:text-foreground",
+                  ? 'border-slate-950 bg-slate-950 text-white shadow-sm dark:border-primary dark:bg-primary dark:text-primary-foreground'
+                  : 'border-slate-200/70 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent/70 dark:hover:text-foreground',
               )}
             >
               {capitalize(type)}
@@ -172,16 +172,16 @@ function AllArticleSources() {
         ) : groups.length === 0 ? (
           <ArticleListState
             title={
-              sourceFilter === "all"
-                ? "No sources yet"
+              sourceFilter === 'all'
+                ? 'No sources yet'
                 : `No ${capitalize(sourceFilter)} sources yet`
             }
             description="Sources will appear here as soon as they are available."
             action={
-              sourceFilter !== "all" && (
+              sourceFilter !== 'all' && (
                 <button
                   type="button"
-                  onClick={() => setSourceFilter("all")}
+                  onClick={() => setSourceFilter('all')}
                   className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-foreground/86 dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                 >
                   Show all sources

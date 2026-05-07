@@ -33,6 +33,7 @@ from app.schemas.user import (
     UserUpdateMe,
 )
 
+
 __all__ = [
     "ArticleBase",
     "ArticleCreate",
@@ -68,4 +69,6 @@ __all__ = [
     "UsersPublic",
     "UserUpdate",
     "UserUpdateMe",
+    "IngestRunPublic",
+    "IngestRunsPublic",
 ]

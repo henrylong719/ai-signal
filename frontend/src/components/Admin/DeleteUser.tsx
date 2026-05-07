@@ -1,10 +1,10 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Trash2 } from "lucide-react"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 
-import { UsersService } from "@/client"
-import { Button } from "@/components/ui/button"
+import { UsersService } from '@/client'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogClose,
@@ -13,11 +13,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { LoadingButton } from "@/components/ui/loading-button"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+} from '@/components/ui/dialog'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { LoadingButton } from '@/components/ui/loading-button'
+import useCustomToast from '@/hooks/useCustomToast'
+import { handleError } from '@/utils'
 
 interface DeleteUserProps {
   id: string
@@ -37,7 +37,7 @@ const DeleteUser = ({ id, onSuccess }: DeleteUserProps) => {
   const mutation = useMutation({
     mutationFn: deleteUser,
     onSuccess: () => {
-      showSuccessToast("The user was deleted successfully")
+      showSuccessToast('The user was deleted successfully')
       setIsOpen(false)
       onSuccess()
     },
@@ -66,7 +66,7 @@ const DeleteUser = ({ id, onSuccess }: DeleteUserProps) => {
           <DialogHeader>
             <DialogTitle>Delete User</DialogTitle>
             <DialogDescription>
-              All items associated with this user will also be{" "}
+              All items associated with this user will also be{' '}
               <strong>permanently deleted.</strong> Are you sure? You will not
               be able to undo this action.
             </DialogDescription>

@@ -1,23 +1,23 @@
-import { Link } from "@tanstack/react-router"
+import { Link } from '@tanstack/react-router'
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
 
 interface LogoProps {
-  variant?: "full" | "icon" | "responsive"
+  variant?: 'full' | 'icon' | 'responsive'
   className?: string
   asLink?: boolean
 }
 
 export function Logo({
-  variant = "full",
+  variant = 'full',
   className,
   asLink = true,
 }: LogoProps) {
   const content =
-    variant === "responsive" ? (
+    variant === 'responsive' ? (
       <span
         className={cn(
-          "inline-flex items-center gap-2 font-display text-2xl font-semibold tracking-normal text-slate-950 dark:text-foreground",
+          'inline-flex items-center gap-2 font-display text-2xl font-semibold tracking-normal text-slate-950 dark:text-foreground',
           className,
         )}
       >
@@ -29,14 +29,14 @@ export function Logo({
     ) : (
       <span
         className={cn(
-          "inline-flex items-center font-display font-semibold tracking-normal text-slate-950 dark:text-foreground",
-          variant === "full"
-            ? "text-2xl sm:text-3xl"
-            : "size-8 justify-center rounded-full border border-slate-200 bg-white font-sans text-[0.68rem] text-slate-700 dark:border-border dark:bg-muted/45 dark:text-foreground",
+          'inline-flex items-center font-display font-semibold tracking-normal text-slate-950 dark:text-foreground',
+          variant === 'full'
+            ? 'text-2xl sm:text-3xl'
+            : 'size-8 justify-center rounded-full border border-slate-200 bg-white font-sans text-[0.68rem] text-slate-700 dark:border-border dark:bg-muted/45 dark:text-foreground',
           className,
         )}
       >
-        {variant === "full" ? "AI Signal" : "AI"}
+        {variant === 'full' ? 'AI Signal' : 'AI'}
       </span>
     )
 

@@ -1,10 +1,10 @@
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
-import { KeyRoundIcon } from "lucide-react"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation } from '@tanstack/react-query'
+import { KeyRoundIcon } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
-import { type UpdatePassword, UsersService } from "@/client"
+import { type UpdatePassword, UsersService } from '@/client'
 import {
   Form,
   FormControl,
@@ -12,29 +12,29 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { LoadingButton } from "@/components/ui/loading-button"
-import { PasswordInput } from "@/components/ui/password-input"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+} from '@/components/ui/form'
+import { LoadingButton } from '@/components/ui/loading-button'
+import { PasswordInput } from '@/components/ui/password-input'
+import useCustomToast from '@/hooks/useCustomToast'
+import { handleError } from '@/utils'
 
 const formSchema = z
   .object({
     current_password: z
       .string()
-      .min(1, { message: "Password is required" })
-      .min(8, { message: "Password must be at least 8 characters" }),
+      .min(1, { message: 'Password is required' })
+      .min(8, { message: 'Password must be at least 8 characters' }),
     new_password: z
       .string()
-      .min(1, { message: "Password is required" })
-      .min(8, { message: "Password must be at least 8 characters" }),
+      .min(1, { message: 'Password is required' })
+      .min(8, { message: 'Password must be at least 8 characters' }),
     confirm_password: z
       .string()
-      .min(1, { message: "Password confirmation is required" }),
+      .min(1, { message: 'Password confirmation is required' }),
   })
   .refine((data) => data.new_password === data.confirm_password, {
     message: "The passwords don't match",
-    path: ["confirm_password"],
+    path: ['confirm_password'],
   })
 
 type FormData = z.infer<typeof formSchema>
@@ -43,12 +43,12 @@ const ChangePassword = () => {
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    mode: "onSubmit",
-    criteriaMode: "all",
+    mode: 'onSubmit',
+    criteriaMode: 'all',
     defaultValues: {
-      current_password: "",
-      new_password: "",
-      confirm_password: "",
+      current_password: '',
+      new_password: '',
+      confirm_password: '',
     },
   })
 
@@ -56,7 +56,7 @@ const ChangePassword = () => {
     mutationFn: (data: UpdatePassword) =>
       UsersService.updatePasswordMe({ requestBody: data }),
     onSuccess: () => {
-      showSuccessToast("Password updated successfully")
+      showSuccessToast('Password updated successfully')
       form.reset()
     },
     onError: handleError.bind(showErrorToast),

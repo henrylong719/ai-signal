@@ -73,6 +73,38 @@ export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
 
+/**
+ * Wire shape of one run.
+ *
+ * Fields mirror the IngestRun model with two adjustments:
+ * - id is serialized as a string (UUID) for the JS client.
+ * - errors is always a list of strings; the model's JSONB column
+ * could hold richer structures in the future, but the current
+ * contract is "human-readable error messages."
+ */
+export type IngestRunPublic = {
+    id: string;
+    started_at: string;
+    finished_at: (string | null);
+    status: 'running' | 'succeeded' | 'failed';
+    inserted: number;
+    skipped: number;
+    embedded: number;
+    duration_ms: (number | null);
+    errors: Array<(string)>;
+};
+
+export type status = 'running' | 'succeeded' | 'failed';
+
+/**
+ * Paginated wrapper. ``count`` is the page size, not a total —
+ * listing is bounded and the admin page doesn't paginate yet.
+ */
+export type IngestRunsPublic = {
+    data: Array<IngestRunPublic>;
+    count: number;
+};
+
 export type ItemCreate = {
     title: string;
     description?: (string | null);
@@ -245,6 +277,14 @@ export type AdminEmbedPendingArticlesData = {
 };
 
 export type AdminEmbedPendingArticlesResponse = (BackfillResponse);
+
+export type AdminReadIngestRunsData = {
+    accessToken?: (string | null);
+    limit?: number;
+    status?: ('running' | 'succeeded' | 'failed' | null);
+};
+
+export type AdminReadIngestRunsResponse = (IngestRunsPublic);
 
 export type ArticlesReadArticlesData = {
     category?: ('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other' | null);

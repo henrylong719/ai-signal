@@ -1,5 +1,5 @@
-import { AxiosError } from "axios"
-import type { ApiError } from "./client"
+import { AxiosError } from 'axios'
+import type { ApiError } from './client'
 
 function extractErrorMessage(err: ApiError): string {
   if (err instanceof AxiosError) {
@@ -10,7 +10,7 @@ function extractErrorMessage(err: ApiError): string {
   if (Array.isArray(errDetail) && errDetail.length > 0) {
     return errDetail[0].msg
   }
-  return errDetail || "Something went wrong."
+  return errDetail || 'Something went wrong.'
 }
 
 export const handleError = function (
@@ -23,9 +23,9 @@ export const handleError = function (
 
 export const getInitials = (name: string): string => {
   return name
-    .split(" ")
+    .split(' ')
     .slice(0, 2)
     .map((word) => word[0])
-    .join("")
+    .join('')
     .toUpperCase()
 }

@@ -1,16 +1,16 @@
-import { EllipsisVertical } from "lucide-react"
-import { useState } from "react"
+import { EllipsisVertical } from 'lucide-react'
+import { useState } from 'react'
 
-import type { UserPublic } from "@/client"
-import { Button } from "@/components/ui/button"
+import type { UserPublic } from '@/client'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import useAuth from "@/hooks/useAuth"
-import DeleteUser from "./DeleteUser"
-import EditUser from "./EditUser"
+} from '@/components/ui/dropdown-menu'
+import useAuth from '@/hooks/useAuth'
+import DeleteUser from './DeleteUser'
+import EditUser from './EditUser'
 
 interface UserActionsMenuProps {
   user: UserPublic

@@ -1,10 +1,10 @@
-import { useInfiniteQuery } from "@tanstack/react-query"
-import axios from "axios"
-import { useCallback, useRef } from "react"
+import { useInfiniteQuery } from '@tanstack/react-query'
+import axios from 'axios'
+import { useCallback, useRef } from 'react'
 
-import { type ArticlePublic, OpenAPI } from "@/client"
-import { isLoggedIn } from "@/lib/auth-state"
-import { ARTICLES_PAGE_SIZE } from "@/lib/constants"
+import { type ArticlePublic, OpenAPI } from '@/client'
+import { isLoggedIn } from '@/lib/auth-state'
+import { ARTICLES_PAGE_SIZE } from '@/lib/constants'
 
 /**
  * Wire shape of GET /articles/for-you. Mirrors ForYouArticlesPublic on
@@ -23,7 +23,7 @@ interface ForYouPage {
   count: number
 }
 
-const FOR_YOU_PATH = "/api/v1/articles/for-you"
+const FOR_YOU_PATH = '/api/v1/articles/for-you'
 
 const fetchPage = async (skip: number): Promise<ForYouPage> => {
   const r = await axios.get<ForYouPage>(`${OpenAPI.BASE}${FOR_YOU_PATH}`, {
@@ -51,7 +51,7 @@ export function useForYouFeed() {
     isPending,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ["forYouFeed"],
+    queryKey: ['forYouFeed'],
     initialPageParam: 0,
     queryFn: ({ pageParam }: { pageParam: number }) => fetchPage(pageParam),
     getNextPageParam: (lastPage: ForYouPage, allPages: ForYouPage[]) => {
@@ -71,11 +71,11 @@ export function useForYouFeed() {
     data?.pages.flatMap((page) => page.data) ?? []
 
   const feedStatus = isFetchingNextPage
-    ? "Loading more..."
+    ? 'Loading more...'
     : !hasNextPage && articles.length > 0
       ? "You're all caught up."
       : !hasNextPage
-        ? "Your personalized feed is empty for now."
+        ? 'Your personalized feed is empty for now.'
         : null
 
   const loadMoreRef = useCallback(
@@ -91,7 +91,7 @@ export function useForYouFeed() {
             void fetchNextPage()
           }
         },
-        { rootMargin: "300px" },
+        { rootMargin: '300px' },
       )
       observerRef.current.observe(node)
     },

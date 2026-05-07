@@ -1,21 +1,21 @@
-import type { category } from "@/client"
-import { capitalize, cn } from "@/lib/utils"
+import type { category } from '@/client'
+import { capitalize, cn } from '@/lib/utils'
 
-export type TopicFilter = "all" | category
+export type TopicFilter = 'all' | category
 
 const FILTER_TOPICS = [
-  "all",
-  "agents",
-  "rag",
-  "models",
-  "infrastructure",
-  "engineering",
-  "research",
-  "applications",
-  "business",
-  "policy",
-  "safety",
-  "other",
+  'all',
+  'agents',
+  'rag',
+  'models',
+  'infrastructure',
+  'engineering',
+  'research',
+  'applications',
+  'business',
+  'policy',
+  'safety',
+  'other',
 ] satisfies TopicFilter[]
 
 interface ArticleFeedHeaderProps {
@@ -50,10 +50,10 @@ export function ArticleFeedHeader({
               key={topic}
               onClick={() => onTopicChange(topic)}
               className={cn(
-                "min-h-9 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background",
+                'min-h-9 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background',
                 activeTopic === topic
-                  ? "border-slate-950 bg-slate-950 text-white shadow-sm dark:border-primary dark:bg-primary dark:text-primary-foreground"
-                  : "border-slate-200/70 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent/70 dark:hover:text-foreground",
+                  ? 'border-slate-950 bg-slate-950 text-white shadow-sm dark:border-primary dark:bg-primary dark:text-primary-foreground'
+                  : 'border-slate-200/70 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent/70 dark:hover:text-foreground',
               )}
             >
               {capitalize(topic)}

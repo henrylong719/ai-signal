@@ -1,5 +1,5 @@
-import { Link as RouterLink } from "@tanstack/react-router"
-import type { UseFormReturn } from "react-hook-form"
+import { Link as RouterLink } from '@tanstack/react-router'
+import type { UseFormReturn } from 'react-hook-form'
 import {
   Form,
   FormControl,
@@ -7,22 +7,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { LoadingButton } from "@/components/ui/loading-button"
-import { PasswordInput } from "@/components/ui/password-input"
-import { cn } from "@/lib/utils"
-import { AuthIntro } from "./AuthIntro"
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { LoadingButton } from '@/components/ui/loading-button'
+import { PasswordInput } from '@/components/ui/password-input'
+import { cn } from '@/lib/utils'
+import { AuthIntro } from './AuthIntro'
 import {
   AUTH_INPUT_CLASS,
   AUTH_LABEL_CLASS,
   primaryButtonClass,
-} from "./AuthShared"
-import type { LoginFormData } from "./authSchemas"
+} from './AuthShared'
+import type { LoginFormData } from './authSchemas'
 import {
   type SocialAuthProvider,
   SocialLoginButtons,
-} from "./SocialLoginButtons"
+} from './SocialLoginButtons'
 
 interface SignInScreenProps {
   form: UseFormReturn<LoginFormData>
@@ -83,7 +83,7 @@ export function SignInScreen({
                       autoComplete="current-password"
                       data-testid="password-input"
                       placeholder="Password"
-                      className={cn(AUTH_INPUT_CLASS, "pr-12 sm:pr-16")}
+                      className={cn(AUTH_INPUT_CLASS, 'pr-12 sm:pr-16')}
                       {...field}
                     />
                   </FormControl>
@@ -109,7 +109,7 @@ export function SignInScreen({
 
             <RouterLink
               to="/recover-password"
-              className="text-sm font-normal text-blue-600 hover:text-blue-700 dark:text-cyan-300 dark:hover:text-cyan-200"
+              className="text-sm font-normal text-slate-600 hover:text-slate-950 dark:text-muted-foreground dark:hover:text-foreground"
             >
               Forgot password?
             </RouterLink>
@@ -118,7 +118,7 @@ export function SignInScreen({
           <LoadingButton
             type="submit"
             loading={loading}
-            className={cn(primaryButtonClass, "mt-6")}
+            className={cn(primaryButtonClass, 'mt-6')}
           >
             Sign In
           </LoadingButton>
@@ -127,11 +127,11 @@ export function SignInScreen({
         </form>
       </Form>
 
-      <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
-        Don&apos;t have an account?{" "}
+      <p className="mt-5 text-center text-sm text-slate-500 dark:text-muted-foreground">
+        Don&apos;t have an account?{' '}
         <button
           type="button"
-          className="font-semibold text-slate-950 hover:text-blue-700 dark:text-slate-100 dark:hover:text-cyan-200"
+          className="font-semibold text-slate-950 hover:text-slate-700 dark:text-foreground dark:hover:text-foreground/78"
           onClick={onCreateAccount}
         >
           Create one

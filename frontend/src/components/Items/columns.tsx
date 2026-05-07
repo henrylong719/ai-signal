@@ -1,11 +1,11 @@
-import type { ColumnDef } from "@tanstack/react-table"
-import { Check, Copy } from "lucide-react"
+import type { ColumnDef } from '@tanstack/react-table'
+import { Check, Copy } from 'lucide-react'
 
-import type { ItemPublic } from "@/client"
-import { Button } from "@/components/ui/button"
-import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
-import { cn } from "@/lib/utils"
-import { ItemActionsMenu } from "./ItemActionsMenu"
+import type { ItemPublic } from '@/client'
+import { Button } from '@/components/ui/button'
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
+import { cn } from '@/lib/utils'
+import { ItemActionsMenu } from './ItemActionsMenu'
 
 function CopyId({ id }: { id: string }) {
   const [copiedText, copy] = useCopyToClipboard()
@@ -33,36 +33,36 @@ function CopyId({ id }: { id: string }) {
 
 export const columns: ColumnDef<ItemPublic>[] = [
   {
-    accessorKey: "id",
-    header: "ID",
+    accessorKey: 'id',
+    header: 'ID',
     cell: ({ row }) => <CopyId id={row.original.id} />,
   },
   {
-    accessorKey: "title",
-    header: "Title",
+    accessorKey: 'title',
+    header: 'Title',
     cell: ({ row }) => (
       <span className="font-medium">{row.original.title}</span>
     ),
   },
   {
-    accessorKey: "description",
-    header: "Description",
+    accessorKey: 'description',
+    header: 'Description',
     cell: ({ row }) => {
       const description = row.original.description
       return (
         <span
           className={cn(
-            "max-w-xs truncate block text-muted-foreground",
-            !description && "italic",
+            'max-w-xs truncate block text-muted-foreground',
+            !description && 'italic',
           )}
         >
-          {description || "No description"}
+          {description || 'No description'}
         </span>
       )
     },
   },
   {
-    id: "actions",
+    id: 'actions',
     header: () => <span className="sr-only">Actions</span>,
     cell: ({ row }) => (
       <div className="flex justify-end">

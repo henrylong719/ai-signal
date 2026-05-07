@@ -1,12 +1,12 @@
-import { AlertCircleIcon, NewspaperIcon } from "lucide-react"
-import type { ReactNode } from "react"
-import type { ArticlePublic } from "@/client"
-import { useDismissArticle } from "@/hooks/useArticleEvents"
-import { isLoggedIn } from "@/hooks/useAuth"
-import useCustomToast from "@/hooks/useCustomToast"
-import { useSavedArticles } from "@/hooks/useSavedArticles"
-import { ArticleCard } from "./ArticleCard"
-import { ArticleCardSkeleton } from "./ArticleCardSkeleton"
+import { AlertCircleIcon, NewspaperIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
+import type { ArticlePublic } from '@/client'
+import { useDismissArticle } from '@/hooks/useArticleEvents'
+import { isLoggedIn } from '@/hooks/useAuth'
+import useCustomToast from '@/hooks/useCustomToast'
+import { useSavedArticles } from '@/hooks/useSavedArticles'
+import { ArticleCard } from './ArticleCard'
+import { ArticleCardSkeleton } from './ArticleCardSkeleton'
 
 interface ArticleListProps {
   articles: ArticlePublic[]
@@ -66,10 +66,10 @@ export function ArticleList({
   loadMoreRef,
   isPending,
   isError,
-  emptyTitle = "No articles yet",
-  emptyDescription = "New signals will appear here as soon as they are available.",
-  errorTitle = "Could not load articles",
-  errorDescription = "Please refresh the page or try again in a moment.",
+  emptyTitle = 'No articles yet',
+  emptyDescription = 'New signals will appear here as soon as they are available.',
+  errorTitle = 'Could not load articles',
+  errorDescription = 'Please refresh the page or try again in a moment.',
   showDismiss = false,
   reasons,
 }: ArticleListProps) {
@@ -80,7 +80,7 @@ export function ArticleList({
   const handleBookmark = (articleId: string) => (e: React.MouseEvent) => {
     e.preventDefault()
     if (!isLoggedIn()) {
-      showErrorToast("Please login to save articles!")
+      showErrorToast('Please login to save articles!')
       return
     }
     toggleSave(articleId)
@@ -92,7 +92,7 @@ export function ArticleList({
   const handleDismiss = (articleId: string) => (e: React.MouseEvent) => {
     e.preventDefault()
     if (!isLoggedIn()) {
-      showErrorToast("Please login to personalize your feed!")
+      showErrorToast('Please login to personalize your feed!')
       return
     }
     dismiss(articleId)

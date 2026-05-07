@@ -27,6 +27,12 @@ from app.crud.event import (
     get_events,
     record_event,
 )
+from app.crud.ingest_run import (
+    fail_ingest_run,
+    finish_ingest_run,
+    list_ingest_runs,
+    start_ingest_run,
+)
 from app.crud.interest import (
     get_interests,
     set_interests,
@@ -107,4 +113,8 @@ __all__ = [
     "refresh_session_is_active",
     "revoke_refresh_sessions_for_user",
     "get_refresh_session_for_update",
+    "fail_ingest_run",
+    "finish_ingest_run",
+    "list_ingest_runs",
+    "start_ingest_run",
 ]

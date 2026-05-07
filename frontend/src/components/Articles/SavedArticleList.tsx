@@ -1,19 +1,19 @@
-import { useQuery } from "@tanstack/react-query"
-import { Link } from "@tanstack/react-router"
-import { AlertCircleIcon, BookmarkIcon, LogInIcon } from "lucide-react"
-import { ArticlesService } from "@/client"
-import { isLoggedIn } from "@/hooks/useAuth"
-import { useSavedArticles } from "@/hooks/useSavedArticles"
-import { ArticleCard } from "./ArticleCard"
-import { ArticleCardSkeleton } from "./ArticleCardSkeleton"
-import { ArticleListState } from "./ArticleList"
+import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
+import { AlertCircleIcon, BookmarkIcon, LogInIcon } from 'lucide-react'
+import { ArticlesService } from '@/client'
+import { isLoggedIn } from '@/hooks/useAuth'
+import { useSavedArticles } from '@/hooks/useSavedArticles'
+import { ArticleCard } from './ArticleCard'
+import { ArticleCardSkeleton } from './ArticleCardSkeleton'
+import { ArticleListState } from './ArticleList'
 
 export function SavedArticleList() {
   const { savedArticleIds, toggleSave } = useSavedArticles()
   const loggedIn = isLoggedIn()
 
   const { data, isPending, isError } = useQuery({
-    queryKey: ["savedArticles"],
+    queryKey: ['savedArticles'],
     queryFn: () => ArticlesService.readSavedArticles({}),
     enabled: loggedIn,
   })

@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
-import axios from "axios"
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+import axios from 'axios'
 
 import {
   type Body_login_login_access_token as AccessToken,
@@ -9,10 +9,10 @@ import {
   type UserPublic,
   type UserRegister,
   UsersService,
-} from "@/client"
-import { clearLoginState, isLoggedIn } from "@/lib/auth-state"
-import { handleError } from "@/utils"
-import useCustomToast from "./useCustomToast"
+} from '@/client'
+import { clearLoginState, isLoggedIn } from '@/lib/auth-state'
+import { handleError } from '@/utils'
+import useCustomToast from './useCustomToast'
 
 const useAuth = () => {
   const navigate = useNavigate()
@@ -26,7 +26,7 @@ const useAuth = () => {
     isLoading,
     isError,
   } = useQuery<UserPublic | null, Error>({
-    queryKey: ["currentUser"],
+    queryKey: ['currentUser'],
     queryFn: () => UsersService.readUserMe(),
     enabled: isLoggedIn(),
   })
@@ -35,11 +35,11 @@ const useAuth = () => {
     mutationFn: (data: UserRegister) =>
       UsersService.registerUser({ requestBody: data }),
     onSuccess: () => {
-      navigate({ to: "/login" })
+      navigate({ to: '/login' })
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: ['users'] })
     },
   })
 
@@ -65,8 +65,8 @@ const useAuth = () => {
     onSuccess: () => {
       // After login the marker cookie is set — invalidate any cached
       // queries that were gated on logged-in state.
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] })
-      navigate({ to: "/" })
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+      navigate({ to: '/' })
     },
     onError: handleError.bind(showErrorToast),
   })
@@ -86,9 +86,9 @@ const useAuth = () => {
       // Network error or server down — keep going, clear client state.
     }
     clearLoginState()
-    queryClient.setQueryData(["currentUser"], null)
+    queryClient.setQueryData(['currentUser'], null)
     queryClient.clear()
-    navigate({ to: "/" })
+    navigate({ to: '/' })
   }
 
   return {

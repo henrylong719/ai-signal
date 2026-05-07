@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.routes import (
     admin_embeddings,
+    admin_ingest_runs,
     article,
     ingest,
     interest,
@@ -22,6 +23,7 @@ api_router.include_router(article.router)
 api_router.include_router(ingest.router)
 api_router.include_router(interest.router)
 api_router.include_router(admin_embeddings.router)
+api_router.include_router(admin_ingest_runs.router)
 
 
 if settings.ENVIRONMENT == "local":

@@ -1,4 +1,4 @@
-import { OpenAPI } from "@/client"
+import { OpenAPI } from '@/client'
 
 /**
  * URL the article card links to instead of the external URL.

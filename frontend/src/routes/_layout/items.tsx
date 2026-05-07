@@ -1,27 +1,27 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
-import { Search } from "lucide-react"
-import { Suspense } from "react"
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { createFileRoute } from '@tanstack/react-router'
+import { Search } from 'lucide-react'
+import { Suspense } from 'react'
 
-import { ItemsService } from "@/client"
-import { DataTable } from "@/components/Common/DataTable"
-import AddItem from "@/components/Items/AddItem"
-import { columns } from "@/components/Items/columns"
-import PendingItems from "@/components/Pending/PendingItems"
+import { ItemsService } from '@/client'
+import { DataTable } from '@/components/Common/DataTable'
+import AddItem from '@/components/Items/AddItem'
+import { columns } from '@/components/Items/columns'
+import PendingItems from '@/components/Pending/PendingItems'
 
 function getItemsQueryOptions() {
   return {
     queryFn: () => ItemsService.readItems({ skip: 0, limit: 100 }),
-    queryKey: ["items"],
+    queryKey: ['items'],
   }
 }
 
-export const Route = createFileRoute("/_layout/items")({
+export const Route = createFileRoute('/_layout/items')({
   component: Items,
   head: () => ({
     meta: [
       {
-        title: "Items - FastAPI Template",
+        title: 'Items - FastAPI Template',
       },
     ],
   }),

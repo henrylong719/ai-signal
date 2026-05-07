@@ -1,15 +1,15 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery } from '@tanstack/react-query'
 import {
   CheckCircle2Icon,
   KeyRoundIcon,
   LinkIcon,
   MailIcon,
-} from "lucide-react"
-import type { ReactNode } from "react"
-import { FaGithub } from "react-icons/fa"
-import { FcGoogle } from "react-icons/fc"
+} from 'lucide-react'
+import type { ReactNode } from 'react'
+import { FaGithub } from 'react-icons/fa'
+import { FcGoogle } from 'react-icons/fc'
 
-import { type OAuthAccountPublic, UsersService } from "@/client"
+import { type OAuthAccountPublic, UsersService } from '@/client'
 
 const providerMeta: Record<
   string,
@@ -20,11 +20,11 @@ const providerMeta: Record<
 > = {
   github: {
     icon: <FaGithub className="size-5 text-[#24292f]" />,
-    label: "GitHub",
+    label: 'GitHub',
   },
   google: {
     icon: <FcGoogle className="size-5" />,
-    label: "Google",
+    label: 'Google',
   },
 }
 
@@ -91,13 +91,13 @@ function PasswordMethodRow({ hasPassword }: { hasPassword: boolean }) {
             Password
           </h3>
           <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-muted/60 dark:text-muted-foreground">
-            {hasPassword ? "Enabled" : "Not enabled"}
+            {hasPassword ? 'Enabled' : 'Not enabled'}
           </span>
         </div>
         <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-muted-foreground">
           {hasPassword
-            ? "You can sign in with your email address and password."
-            : "You can keep signing in with your connected social accounts."}
+            ? 'You can sign in with your email address and password.'
+            : 'You can keep signing in with your connected social accounts.'}
         </p>
       </div>
     </li>
@@ -111,7 +111,7 @@ export default function ConnectedAccounts({
 }) {
   const { data, isError, isLoading } = useQuery({
     queryFn: () => UsersService.readUserOauthAccounts(),
-    queryKey: ["oauthAccounts"],
+    queryKey: ['oauthAccounts'],
   })
 
   if (isLoading) {

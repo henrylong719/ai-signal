@@ -1,14 +1,14 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   InterestsService,
   type UserInterestPublic,
   type UserInterestUpdate,
-} from "@/client"
-import { isLoggedIn } from "@/lib/auth-state"
-import useCustomToast from "./useCustomToast"
+} from '@/client'
+import { isLoggedIn } from '@/lib/auth-state'
+import useCustomToast from './useCustomToast'
 
-const INTERESTS_KEY = ["userInterests"] as const
+const INTERESTS_KEY = ['userInterests'] as const
 
 const putInterests = (requestBody: UserInterestUpdate) =>
   InterestsService.updateInterests({ requestBody })
@@ -49,18 +49,18 @@ export function useInterests() {
       if (context?.previous) {
         queryClient.setQueryData(INTERESTS_KEY, context.previous)
       }
-      showErrorToast("Could not save your interests. Please try again.")
+      showErrorToast('Could not save your interests. Please try again.')
     },
     onSuccess: (data) => {
       // Replace the optimistic value with the canonical one returned by
       // the server. This catches normalization (e.g., "RAG " → "rag").
       queryClient.setQueryData(INTERESTS_KEY, data)
-      showSuccessToast("Interests saved.")
+      showSuccessToast('Interests saved.')
     },
     onSettled: () => {
       // Future For-You feed will key off this; invalidating now means
       // the next visit re-fetches with new interests applied.
-      queryClient.invalidateQueries({ queryKey: ["forYouFeed"] })
+      queryClient.invalidateQueries({ queryKey: ['forYouFeed'] })
     },
   })
 

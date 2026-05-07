@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router"
-import { SearchIcon } from "lucide-react"
-import { ArticleList } from "@/components/Articles/ArticleList"
-import { useArticleFeed } from "@/hooks/useArticleFeed"
+import { createFileRoute } from '@tanstack/react-router'
+import { SearchIcon } from 'lucide-react'
+import { ArticleList } from '@/components/Articles/ArticleList'
+import { useArticleFeed } from '@/hooks/useArticleFeed'
 
-export const Route = createFileRoute("/_layout/search-feed/$q")({
+export const Route = createFileRoute('/_layout/search-feed/$q')({
   component: SearchFeed,
 })
 

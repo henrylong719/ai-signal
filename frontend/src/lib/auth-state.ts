@@ -12,7 +12,7 @@
  * login state on first paint.
  */
 
-const MARKER_COOKIE_NAME = "is_logged_in"
+const MARKER_COOKIE_NAME = 'is_logged_in'
 
 /**
  * Read the marker cookie. Synchronous, no network. Returns false when
@@ -24,10 +24,10 @@ const MARKER_COOKIE_NAME = "is_logged_in"
  * httpOnly access cookie is trustworthy.
  */
 export const isLoggedIn = (): boolean => {
-  if (typeof document === "undefined") return false
-  for (const part of document.cookie.split(";")) {
-    const [name, value] = part.trim().split("=")
-    if (name === MARKER_COOKIE_NAME && value === "1") return true
+  if (typeof document === 'undefined') return false
+  for (const part of document.cookie.split(';')) {
+    const [name, value] = part.trim().split('=')
+    if (name === MARKER_COOKIE_NAME && value === '1') return true
   }
   return false
 }
@@ -39,6 +39,6 @@ export const isLoggedIn = (): boolean => {
  * function only handles the JS-readable marker.
  */
 export const clearLoginState = (): void => {
-  if (typeof document === "undefined") return
+  if (typeof document === 'undefined') return
   document.cookie = `${MARKER_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`
 }

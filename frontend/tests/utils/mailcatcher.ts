@@ -1,4 +1,4 @@
-import type { APIRequestContext } from "@playwright/test"
+import type { APIRequestContext } from '@playwright/test'
 
 type Email = {
   id: number
@@ -41,7 +41,7 @@ export function findLastEmail({
 }) {
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(
-      () => reject(new Error("Timeout while trying to get latest email")),
+      () => reject(new Error('Timeout while trying to get latest email')),
       timeout,
     ),
   )

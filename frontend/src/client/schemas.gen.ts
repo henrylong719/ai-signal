@@ -325,6 +325,96 @@ export const HTTPValidationErrorSchema = {
     title: 'HTTPValidationError'
 } as const;
 
+export const IngestRunPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        started_at: {
+            type: 'string',
+            title: 'Started At'
+        },
+        finished_at: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Finished At'
+        },
+        status: {
+            type: 'string',
+            enum: ['running', 'succeeded', 'failed'],
+            title: 'Status'
+        },
+        inserted: {
+            type: 'integer',
+            title: 'Inserted'
+        },
+        skipped: {
+            type: 'integer',
+            title: 'Skipped'
+        },
+        embedded: {
+            type: 'integer',
+            title: 'Embedded'
+        },
+        duration_ms: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Duration Ms'
+        },
+        errors: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Errors'
+        }
+    },
+    type: 'object',
+    required: ['id', 'started_at', 'finished_at', 'status', 'inserted', 'skipped', 'embedded', 'duration_ms', 'errors'],
+    title: 'IngestRunPublic',
+    description: `Wire shape of one run.
+
+Fields mirror the IngestRun model with two adjustments:
+  - id is serialized as a string (UUID) for the JS client.
+  - errors is always a list of strings; the model's JSONB column
+    could hold richer structures in the future, but the current
+    contract is "human-readable error messages."`
+} as const;
+
+export const IngestRunsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/IngestRunPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'IngestRunsPublic',
+    description: `Paginated wrapper. \`\`count\`\` is the page size, not a total —
+listing is bounded and the admin page doesn't paginate yet.`
+} as const;
+
 export const ItemCreateSchema = {
     properties: {
         title: {

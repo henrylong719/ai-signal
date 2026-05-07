@@ -1,26 +1,26 @@
-import { CheckIcon, XIcon } from "lucide-react"
-import { useEffect, useId, useMemo, useState } from "react"
+import { CheckIcon, XIcon } from 'lucide-react'
+import { useEffect, useId, useMemo, useState } from 'react'
 
-import type { category as Category } from "@/client"
-import { LoadingButton } from "@/components/ui/loading-button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useInterests } from "@/hooks/useInterests"
-import { capitalize, cn } from "@/lib/utils"
+import type { category as Category } from '@/client'
+import { LoadingButton } from '@/components/ui/loading-button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useInterests } from '@/hooks/useInterests'
+import { capitalize, cn } from '@/lib/utils'
 
 // Source of truth for category options. Mirrors the backend Category
 // Literal — any addition here must be matched server-side.
 const CATEGORIES: { value: Category; label: string }[] = [
-  { value: "agents", label: "Agents" },
-  { value: "rag", label: "RAG" },
-  { value: "models", label: "Models" },
-  { value: "infrastructure", label: "Infrastructure" },
-  { value: "engineering", label: "Engineering" },
-  { value: "research", label: "Research" },
-  { value: "applications", label: "Applications" },
-  { value: "business", label: "Business" },
-  { value: "policy", label: "Policy" },
-  { value: "safety", label: "Safety" },
-  { value: "other", label: "Other" },
+  { value: 'agents', label: 'Agents' },
+  { value: 'rag', label: 'RAG' },
+  { value: 'models', label: 'Models' },
+  { value: 'infrastructure', label: 'Infrastructure' },
+  { value: 'engineering', label: 'Engineering' },
+  { value: 'research', label: 'Research' },
+  { value: 'applications', label: 'Applications' },
+  { value: 'business', label: 'Business' },
+  { value: 'policy', label: 'Policy' },
+  { value: 'safety', label: 'Safety' },
+  { value: 'other', label: 'Other' },
 ]
 
 const MAX_TAGS = 20
@@ -35,7 +35,7 @@ export default function InterestPicker() {
   // value to compute the dirty flag.
   const [categories, setCategories] = useState<Category[]>([])
   const [tags, setTags] = useState<string[]>([])
-  const [tagInput, setTagInput] = useState("")
+  const [tagInput, setTagInput] = useState('')
   const tagsInputId = useId()
 
   // Sync local state whenever the server value loads or changes (after a save).
@@ -75,19 +75,19 @@ export default function InterestPicker() {
     if (!candidate) return
     if (candidate.length > MAX_TAG_LENGTH) return
     if (tags.includes(candidate)) {
-      setTagInput("")
+      setTagInput('')
       return
     }
     if (tags.length >= MAX_TAGS) return
     setTags((prev) => [...prev, candidate])
-    setTagInput("")
+    setTagInput('')
   }
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
+    if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault()
       commitTagInput()
-    } else if (e.key === "Backspace" && tagInput === "" && tags.length > 0) {
+    } else if (e.key === 'Backspace' && tagInput === '' && tags.length > 0) {
       // Empty input + backspace = remove last chip. Mirrors the
       // pattern in most tag-input UIs (Gmail to-field, etc.).
       setTags((prev) => prev.slice(0, -1))
@@ -139,17 +139,17 @@ export default function InterestPicker() {
                   onClick={() => toggleCategory(cat.value)}
                   aria-pressed={selected}
                   className={cn(
-                    "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background",
+                    'inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background',
                     selected
-                      ? "border-slate-950 bg-slate-950 text-white shadow-sm hover:bg-slate-800 dark:border-primary dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88"
-                      : "border-slate-200 bg-slate-50/80 text-slate-600 hover:border-slate-300 hover:bg-white hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground",
+                      ? 'border-slate-950 bg-slate-950 text-white shadow-sm hover:bg-slate-800 dark:border-primary dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88'
+                      : 'border-slate-200 bg-slate-50/80 text-slate-600 hover:border-slate-300 hover:bg-white hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground',
                   )}
                 >
                   <CheckIcon
                     className={cn(
-                      "h-3.5 w-3.5 transition-opacity",
-                      selected ? "opacity-100" : "opacity-0",
+                      'h-3.5 w-3.5 transition-opacity',
+                      selected ? 'opacity-100' : 'opacity-0',
                     )}
                   />
                   {cat.label}
@@ -194,8 +194,8 @@ export default function InterestPicker() {
                 tags.length >= MAX_TAGS
                   ? `Max ${MAX_TAGS} tags`
                   : tags.length === 0
-                    ? "e.g. evals, fine-tuning"
-                    : ""
+                    ? 'e.g. evals, fine-tuning'
+                    : ''
               }
               maxLength={MAX_TAG_LENGTH}
               className="min-h-7 min-w-[9rem] flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none disabled:cursor-not-allowed dark:text-foreground dark:placeholder:text-muted-foreground"

@@ -1,19 +1,19 @@
-import type { ReactNode } from "react"
-import { FaGithub } from "react-icons/fa"
-import { FcGoogle } from "react-icons/fc"
-import { ProviderButton } from "./AuthShared"
+import type { ReactNode } from 'react'
+import { FaGithub } from 'react-icons/fa'
+import { FcGoogle } from 'react-icons/fc'
+import { ProviderButton } from './AuthShared'
 
-export type SocialAuthProvider = "google" | "github"
+export type SocialAuthProvider = 'google' | 'github'
 
 const socialProviders = [
   {
-    id: "google",
-    label: "Google",
+    id: 'google',
+    label: 'Google',
     icon: <FcGoogle className="size-5" />,
   },
   {
-    id: "github",
-    label: "GitHub",
+    id: 'github',
+    label: 'GitHub',
     icon: <FaGithub className="size-5 text-[#24292f] dark:text-slate-100" />,
   },
 ] satisfies {

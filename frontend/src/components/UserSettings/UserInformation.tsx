@@ -1,10 +1,10 @@
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { CheckIcon } from "lucide-react"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { CheckIcon } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
-import { UsersService, type UserUpdateMe } from "@/client"
+import { UsersService, type UserUpdateMe } from '@/client'
 import {
   Form,
   FormControl,
@@ -12,16 +12,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { LoadingButton } from "@/components/ui/loading-button"
-import useAuth from "@/hooks/useAuth"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { LoadingButton } from '@/components/ui/loading-button'
+import useAuth from '@/hooks/useAuth'
+import useCustomToast from '@/hooks/useCustomToast'
+import { handleError } from '@/utils'
 
 const formSchema = z.object({
   full_name: z.string().max(30).optional(),
-  email: z.email({ message: "Invalid email address" }),
+  email: z.email({ message: 'Invalid email address' }),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -33,11 +33,11 @@ const UserInformation = () => {
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    mode: "onBlur",
-    criteriaMode: "all",
+    mode: 'onBlur',
+    criteriaMode: 'all',
     defaultValues: {
-      full_name: currentUser?.full_name ?? "",
-      email: currentUser?.email ?? "",
+      full_name: currentUser?.full_name ?? '',
+      email: currentUser?.email ?? '',
     },
   })
 
@@ -45,7 +45,7 @@ const UserInformation = () => {
     mutationFn: (data: UserUpdateMe) =>
       UsersService.updateUserMe({ requestBody: data }),
     onSuccess: () => {
-      showSuccessToast("User updated successfully")
+      showSuccessToast('User updated successfully')
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
@@ -57,7 +57,7 @@ const UserInformation = () => {
     const updateData: UserUpdateMe = {}
 
     // only include fields that have changed
-    if (data.full_name !== (currentUser?.full_name ?? "")) {
+    if (data.full_name !== (currentUser?.full_name ?? '')) {
       updateData.full_name = data.full_name || null
     }
     if (data.email !== currentUser?.email) {

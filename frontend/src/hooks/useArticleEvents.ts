@@ -1,8 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 
-import { ArticlesService } from "@/client"
-import useCustomToast from "./useCustomToast"
+import { ArticlesService } from '@/client'
+import useCustomToast from './useCustomToast'
 
 /**
  * Dismiss-article mutation with session-local optimistic state.
@@ -47,12 +47,12 @@ export function useDismissArticle() {
           return next
         })
       }
-      showErrorToast("Could not dismiss article. Please try again.")
+      showErrorToast('Could not dismiss article. Please try again.')
     },
     onSettled: () => {
       // The For-You feed query (when we add it) will be invalidated here
       // so the next paint reflects the server-side filter.
-      queryClient.invalidateQueries({ queryKey: ["forYouFeed"] })
+      queryClient.invalidateQueries({ queryKey: ['forYouFeed'] })
     },
   })
 

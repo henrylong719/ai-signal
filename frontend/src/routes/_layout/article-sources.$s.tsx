@@ -1,17 +1,17 @@
-import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, Link, useLocation } from "@tanstack/react-router"
-import { AlertCircleIcon, ArrowLeftIcon, RadioTowerIcon } from "lucide-react"
-import { ArticlesService } from "@/client"
-import { ArticleCardSkeleton } from "@/components/Articles/ArticleCardSkeleton"
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, Link, useLocation } from '@tanstack/react-router'
+import { AlertCircleIcon, ArrowLeftIcon, RadioTowerIcon } from 'lucide-react'
+import { ArticlesService } from '@/client'
+import { ArticleCardSkeleton } from '@/components/Articles/ArticleCardSkeleton'
 import {
   ArticleList,
   ArticleListState,
-} from "@/components/Articles/ArticleList"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useArticleFeed } from "@/hooks/useArticleFeed"
-import { capitalize } from "@/lib/utils"
+} from '@/components/Articles/ArticleList'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useArticleFeed } from '@/hooks/useArticleFeed'
+import { capitalize } from '@/lib/utils'
 
-export const Route = createFileRoute("/_layout/article-sources/$s")({
+export const Route = createFileRoute('/_layout/article-sources/$s')({
   component: ArticlesSources,
 })
 
@@ -45,7 +45,7 @@ function ArticlesSources() {
   }
   const allArticleSourcesScrollY = articleSourcesState.allArticleSourcesScrollY
   const backToAllSourcesState =
-    typeof allArticleSourcesScrollY === "number"
+    typeof allArticleSourcesScrollY === 'number'
       ? (previousState: object) =>
           ({
             ...previousState,
@@ -58,7 +58,7 @@ function ArticlesSources() {
   const feed = useArticleFeed({ source: s })
 
   const sourcesQuery = useQuery({
-    queryKey: ["articleSources"],
+    queryKey: ['articleSources'],
     queryFn: () => ArticlesService.readSources(),
   })
 

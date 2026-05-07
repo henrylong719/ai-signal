@@ -1,9 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Trash2Icon } from "lucide-react"
-import { useForm } from "react-hook-form"
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Trash2Icon } from 'lucide-react'
+import { useForm } from 'react-hook-form'
 
-import { UsersService } from "@/client"
-import { Button } from "@/components/ui/button"
+import { UsersService } from '@/client'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogClose,
@@ -13,11 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { LoadingButton } from "@/components/ui/loading-button"
-import useAuth from "@/hooks/useAuth"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+} from '@/components/ui/dialog'
+import { LoadingButton } from '@/components/ui/loading-button'
+import useAuth from '@/hooks/useAuth'
+import useCustomToast from '@/hooks/useCustomToast'
+import { handleError } from '@/utils'
 
 const DeleteConfirmation = () => {
   const queryClient = useQueryClient()
@@ -28,12 +28,12 @@ const DeleteConfirmation = () => {
   const mutation = useMutation({
     mutationFn: () => UsersService.deleteUserMe(),
     onSuccess: () => {
-      showSuccessToast("Your account has been successfully deleted")
+      showSuccessToast('Your account has been successfully deleted')
       logout()
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] })
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] })
     },
   })
 
@@ -60,7 +60,7 @@ const DeleteConfirmation = () => {
               Delete account?
             </DialogTitle>
             <DialogDescription className="leading-6">
-              All your account data will be{" "}
+              All your account data will be{' '}
               <strong>permanently deleted.</strong> If you are sure, please
               confirm below. This action cannot be undone.
             </DialogDescription>

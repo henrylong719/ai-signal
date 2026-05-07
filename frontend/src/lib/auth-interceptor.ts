@@ -1,6 +1,6 @@
-import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios"
+import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios'
 
-import { OpenAPI } from "@/client"
+import { OpenAPI } from '@/client'
 
 /**
  * 401-on-API → refresh-and-retry interceptor.
@@ -30,8 +30,8 @@ import { OpenAPI } from "@/client"
  *    failure response (or were never valid to begin with).
  */
 
-const REFRESH_PATH = "/api/v1/login/refresh"
-const LOGIN_PATH = "/login"
+const REFRESH_PATH = '/api/v1/login/refresh'
+const LOGIN_PATH = '/login'
 
 /**
  * In-flight refresh promise. While set, all 401-handlers await this
@@ -45,7 +45,7 @@ let refreshInFlight: Promise<boolean> | null = null
  * retried again. Tracked by a Symbol stamped onto the config so we can
  * recognize it in the interceptor without leaking state across requests.
  */
-const RETRIED = Symbol("RETRIED_AFTER_REFRESH")
+const RETRIED = Symbol('RETRIED_AFTER_REFRESH')
 
 interface RetryableConfig extends AxiosRequestConfig {
   [RETRIED]?: boolean
@@ -74,12 +74,12 @@ const onRefreshFailure = () => {
   // server cookies in its 401 response (or never set valid ones). The
   // marker cookie is the SPA's UI-state hint; clearing it here keeps the
   // sidebar from flashing "logged in" briefly after a hard refresh.
-  document.cookie = "is_logged_in=; Max-Age=0; Path=/; SameSite=Lax"
+  document.cookie = 'is_logged_in=; Max-Age=0; Path=/; SameSite=Lax'
   // Hard navigate so React Query caches, in-memory state, and any other
   // user-tied state are reset. A soft navigate via the router would
   // leave stale data behind.
   if (
-    typeof window !== "undefined" &&
+    typeof window !== 'undefined' &&
     !window.location.pathname.startsWith(LOGIN_PATH)
   ) {
     window.location.href = LOGIN_PATH

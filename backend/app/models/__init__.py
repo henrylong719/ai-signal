@@ -8,6 +8,11 @@ from app.models.article import (
     ArticleEventType,
     SavedArticle,
 )
+from app.models.ingest_run import (
+    INGEST_RUN_STATUSES,
+    IngestRun,
+    IngestRunStatus,
+)
 from app.models.interest import UserInterest
 from app.models.item import Item
 from app.models.oauth_account import OAuthAccount
@@ -46,6 +51,7 @@ from app.schemas import (
 __all__ = [
     "ARTICLE_EVENT_TYPES",
     "EMBEDDING_DIM",
+    "INGEST_RUN_STATUSES",
     "Article",
     "ArticleEvent",
     "ArticleEventType",
@@ -57,6 +63,8 @@ __all__ = [
     "ArticleUpdate",
     "CATEGORIES",
     "Category",
+    "IngestRun",
+    "IngestRunStatus",
     "Item",
     "ItemCreate",
     "ItemPublic",

@@ -1,8 +1,8 @@
-import { XIcon } from "lucide-react"
-import { useState } from "react"
+import { XIcon } from 'lucide-react'
+import { useState } from 'react'
 
-import AuthFlow from "@/components/Auth/AuthFlow"
-import { Button } from "@/components/ui/button"
+import AuthFlow from '@/components/Auth/AuthFlow'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogClose,
@@ -10,7 +10,7 @@ import {
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog'
 
 function AuthModal() {
   const [isOpen, setIsOpen] = useState(false)
@@ -28,8 +28,8 @@ function AuthModal() {
       </DialogTrigger>
       <DialogContent
         showCloseButton={false}
-        overlayClassName="z-[70] bg-black/35"
-        className="z-[80] max-h-[calc(100svh-1.5rem)] overflow-y-auto border-0 bg-white p-0 text-slate-950 shadow-xl dark:bg-background dark:text-foreground sm:max-w-[520px] sm:rounded-[4px]"
+        overlayClassName="z-[70] bg-black/40 dark:bg-black/55"
+        className="z-[80] max-h-[calc(100svh-1.5rem)] overflow-y-auto border border-slate-200/80 bg-white p-0 text-slate-950 shadow-xl dark:border-border dark:bg-card dark:text-card-foreground dark:shadow-[0_18px_45px_rgba(0,0,0,0.32),0_2px_8px_rgba(0,0,0,0.24)] sm:max-w-[520px] sm:rounded-lg"
       >
         <DialogTitle className="sr-only">AI Signal authentication</DialogTitle>
         <DialogDescription className="sr-only">
@@ -37,7 +37,7 @@ function AuthModal() {
         </DialogDescription>
         <AuthFlow
           closeControl={
-            <DialogClose className="absolute right-5 top-5 z-10 rounded-sm p-1.5 text-zinc-500 transition hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-muted-foreground dark:hover:text-foreground dark:focus-visible:ring-ring">
+            <DialogClose className="absolute right-5 top-5 z-10 rounded-sm p-1.5 text-slate-500 transition hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 dark:text-muted-foreground dark:hover:text-foreground dark:focus-visible:ring-ring/35">
               <XIcon className="size-5 stroke-[1.6]" />
               <span className="sr-only">Close</span>
             </DialogClose>

@@ -1,8 +1,8 @@
-import { Link } from "@tanstack/react-router"
-import { Sparkles } from "lucide-react"
-import { CATEGORIES } from "@/lib/constants"
-import { capitalize } from "@/lib/utils"
-import { Badge } from "../ui/badge"
+import { Link } from '@tanstack/react-router'
+import { Sparkles } from 'lucide-react'
+import { CATEGORIES } from '@/lib/constants'
+import { capitalize } from '@/lib/utils'
+import { Badge } from '../ui/badge'
 
 const RecommendedTopics = () => {
   return (

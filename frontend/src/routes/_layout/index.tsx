@@ -1,66 +1,67 @@
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { LogInIcon } from "lucide-react"
-import { useMemo, useRef, useState } from "react"
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { LogInIcon } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
 import {
   ArticleList,
   ArticleListState,
-} from "@/components/Articles/ArticleList"
-import { MobileSidebar, Sidebar } from "@/components/Landing/Sidebar"
-import { useArticleFeed } from "@/hooks/useArticleFeed"
-import { isLoggedIn } from "@/hooks/useAuth"
-import { useForYouFeed } from "@/hooks/useForYouFeed"
+} from '@/components/Articles/ArticleList';
+import { MobileSidebar, Sidebar } from '@/components/Landing/Sidebar';
+import { useArticleFeed } from '@/hooks/useArticleFeed';
+import { useForYouFeed } from '@/hooks/useForYouFeed';
+import useAuth from '@/hooks/useAuth';
 
-export const Route = createFileRoute("/_layout/")({
+export const Route = createFileRoute('/_layout/')({
   component: Dashboard,
   head: () => ({
     meta: [
       {
-        title: "AI Signal",
+        title: 'AI Signal',
       },
     ],
   }),
-})
+});
 
-type Tab = "for-you" | "latest"
+type Tab = 'for-you' | 'latest';
 
 const tabs: { value: Tab; label: string }[] = [
-  { value: "for-you", label: "For you" },
-  { value: "latest", label: "Latest" },
-]
+  { value: 'for-you', label: 'For you' },
+  { value: 'latest', label: 'Latest' },
+];
 
 function Dashboard() {
-  const [activeTab, setActiveTab] = useState<Tab>("for-you")
-  const feedTopRef = useRef<HTMLDivElement>(null)
-  const latest = useArticleFeed()
+  const [activeTab, setActiveTab] = useState<Tab>('for-you');
+  const feedTopRef = useRef<HTMLDivElement>(null);
+  const latest = useArticleFeed();
   // useForYouFeed always runs, but its query needs auth — when the user
   // isn't logged in we render the sign-in CTA instead. Calling the hook
   // unconditionally keeps the hooks order stable.
-  const forYou = useForYouFeed()
+  const forYou = useForYouFeed();
+  const { user } = useAuth();
 
   // Build a stable id→reason map. ForYouArticle extends ArticlePublic so
   // the underlying article objects are compatible with ArticleList; the
   // reason is passed alongside via this map.
   const forYouReasons = useMemo(() => {
-    const m = new Map<string, string | null>()
+    const m = new Map<string, string | null>();
     for (const article of forYou.articles) {
-      m.set(article.id, article.reason)
+      m.set(article.id, article.reason);
     }
-    return m
-  }, [forYou.articles])
+    return m;
+  }, [forYou.articles]);
 
   const handleTabChange = (tab: Tab) => {
     if (tab === activeTab) {
-      return
+      return;
     }
 
-    setActiveTab(tab)
+    setActiveTab(tab);
     window.requestAnimationFrame(() => {
       feedTopRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      })
-    })
-  }
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  };
 
   return (
     <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-12">
@@ -81,8 +82,8 @@ function Dashboard() {
                   onClick={() => handleTabChange(tab.value)}
                   className={`relative rounded-sm pb-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-4 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background ${
                     activeTab === tab.value
-                      ? "text-slate-950 dark:text-foreground"
-                      : "text-slate-500 hover:text-slate-800 dark:text-muted-foreground dark:hover:text-foreground/86"
+                      ? 'text-slate-950 dark:text-foreground'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-muted-foreground dark:hover:text-foreground/86'
                   }`}
                 >
                   {tab.label}
@@ -95,8 +96,8 @@ function Dashboard() {
           </div>
         </div>
 
-        {activeTab === "for-you" &&
-          (isLoggedIn() ? (
+        {activeTab === 'for-you' &&
+          (user ? (
             <ArticleList
               {...forYou}
               showDismiss
@@ -119,9 +120,9 @@ function Dashboard() {
               }
             />
           ))}
-        {activeTab === "latest" && <ArticleList {...latest} />}
+        {activeTab === 'latest' && <ArticleList {...latest} />}
       </div>
       <Sidebar />
     </div>
-  )
+  );
 }

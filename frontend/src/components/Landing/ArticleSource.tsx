@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
-import { Link } from "@tanstack/react-router"
+import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import {
   BadgeCheckIcon,
   ChevronRightIcon,
@@ -10,15 +10,15 @@ import {
   MegaphoneIcon,
   NewspaperIcon,
   UsersIcon,
-} from "lucide-react"
-import { useMemo } from "react"
-import { ArticlesService, type SourcePublic } from "@/client"
-import { Badge } from "@/components/ui/badge"
-import { previewSourceTypes } from "@/lib/constants"
-import { capitalize } from "@/lib/utils"
-import { Skeleton } from "../ui/skeleton"
+} from 'lucide-react'
+import { useMemo } from 'react'
+import { ArticlesService, type SourcePublic } from '@/client'
+import { Badge } from '@/components/ui/badge'
+import { previewSourceTypes } from '@/lib/constants'
+import { capitalize } from '@/lib/utils'
+import { Skeleton } from '../ui/skeleton'
 
-const sourceTypeIcons: Record<SourcePublic["source_type"], LucideIcon> = {
+const sourceTypeIcons: Record<SourcePublic['source_type'], LucideIcon> = {
   official: BadgeCheckIcon,
   independent: NewspaperIcon,
   community: UsersIcon,
@@ -44,7 +44,7 @@ const shuffle = <T,>(items: T[]) => {
 const getPreviewSources = (sources: SourcePublic[], limit = 4) => {
   const selected: SourcePublic[] = []
   const selectedNames = new Set<string>()
-  const sourcesByType = new Map<SourcePublic["source_type"], SourcePublic[]>()
+  const sourcesByType = new Map<SourcePublic['source_type'], SourcePublic[]>()
 
   for (const source of sources) {
     const existingSources = sourcesByType.get(source.source_type) ?? []
@@ -77,7 +77,7 @@ const getPreviewSources = (sources: SourcePublic[], limit = 4) => {
 
 const ArticleSource = () => {
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["articleSources"],
+    queryKey: ['articleSources'],
     queryFn: () => ArticlesService.readSources(),
   })
 
@@ -95,7 +95,7 @@ const ArticleSource = () => {
       </div>
       <div className="mt-3 space-y-1">
         {isLoading ? (
-          ["a", "b", "c", "d"].map((key) => (
+          ['a', 'b', 'c', 'd'].map((key) => (
             <div
               key={key}
               className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 dark:border-border"

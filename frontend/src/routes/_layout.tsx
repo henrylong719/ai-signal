@@ -1,7 +1,7 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router"
-import Header from "@/components/Common/Header"
+import { createFileRoute, Outlet } from '@tanstack/react-router'
+import Header from '@/components/Common/Header'
 
-export const Route = createFileRoute("/_layout")({
+export const Route = createFileRoute('/_layout')({
   component: Layout,
   beforeLoad: async () => {
     // if (!isLoggedIn()) {

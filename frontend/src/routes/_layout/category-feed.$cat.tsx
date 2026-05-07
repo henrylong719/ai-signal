@@ -1,11 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router"
-import type { category } from "@/client"
-import { ArticleList } from "@/components/Articles/ArticleList"
-import { useArticleFeed } from "@/hooks/useArticleFeed"
-import { CATEGORIES } from "@/lib/constants"
-import { capitalize } from "@/lib/utils"
+import { createFileRoute, Link } from '@tanstack/react-router'
+import type { category } from '@/client'
+import { ArticleList } from '@/components/Articles/ArticleList'
+import { useArticleFeed } from '@/hooks/useArticleFeed'
+import { CATEGORIES } from '@/lib/constants'
+import { capitalize } from '@/lib/utils'
 
-export const Route = createFileRoute("/_layout/category-feed/$cat")({
+export const Route = createFileRoute('/_layout/category-feed/$cat')({
   component: CategoryFeed,
 })
 
@@ -34,11 +34,11 @@ function CategoryFeed() {
               key={tab}
               to="/category-feed/$cat"
               params={{ cat: tab }}
-              aria-current={cat === tab ? "page" : undefined}
+              aria-current={cat === tab ? 'page' : undefined}
               className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background ${
                 cat === tab
-                  ? "border-slate-950 bg-slate-950 text-white shadow-sm dark:border-primary dark:bg-primary dark:text-primary-foreground"
-                  : "border-slate-200/70 bg-white text-slate-600 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent/70 dark:hover:text-foreground"
+                  ? 'border-slate-950 bg-slate-950 text-white shadow-sm dark:border-primary dark:bg-primary dark:text-primary-foreground'
+                  : 'border-slate-200/70 bg-white text-slate-600 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent/70 dark:hover:text-foreground'
               }`}
             >
               {capitalize(tab)}

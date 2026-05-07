@@ -1,9 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ArticlesService } from "@/client"
-import { isLoggedIn } from "./useAuth"
-import useCustomToast from "./useCustomToast"
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArticlesService } from '@/client'
+import { isLoggedIn } from './useAuth'
+import useCustomToast from './useCustomToast'
 
-const SAVED_IDS_KEY = ["savedArticleIds"]
+const SAVED_IDS_KEY = ['savedArticleIds']
 
 export function useSavedArticles() {
   const queryClient = useQueryClient()
@@ -33,14 +33,14 @@ export function useSavedArticles() {
     },
     onError: (_err, _articleId, context) => {
       queryClient.setQueryData(SAVED_IDS_KEY, context?.previous)
-      showErrorToast("Failed to save article, please try again later.")
+      showErrorToast('Failed to save article, please try again later.')
     },
     onSuccess: () => {
-      showSuccessToast("Article saved!")
+      showSuccessToast('Article saved!')
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: SAVED_IDS_KEY })
-      queryClient.invalidateQueries({ queryKey: ["savedArticles"] })
+      queryClient.invalidateQueries({ queryKey: ['savedArticles'] })
     },
   })
 
@@ -62,14 +62,14 @@ export function useSavedArticles() {
     },
     onError: (_err, _articleId, context) => {
       queryClient.setQueryData(SAVED_IDS_KEY, context?.previous)
-      showErrorToast("Failed to remove article, please try again later.")
+      showErrorToast('Failed to remove article, please try again later.')
     },
     onSuccess: () => {
-      showSuccessToast("Article removed!")
+      showSuccessToast('Article removed!')
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: SAVED_IDS_KEY })
-      queryClient.invalidateQueries({ queryKey: ["savedArticles"] })
+      queryClient.invalidateQueries({ queryKey: ['savedArticles'] })
     },
   })
 

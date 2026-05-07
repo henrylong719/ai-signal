@@ -65,6 +65,31 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
 
+    # Ingestion scheduler — see app/services/scheduler.py.
+    #
+    # Disabled by default in local because dev-mode auto-reloads would
+    # otherwise restart ingestion on every file save. Set it to True in
+    # local explicitly when you want to test the scheduled path.
+    # Deployed environments default to enabled.
+    INGEST_SCHEDULER_ENABLED: bool | None = None
+    INGEST_INTERVAL_MINUTES: int = 30
+    # Delay before the first run after process startup. Gives the DB,
+    # the embedding model load, and any other startup work time to settle
+    # before we hammer 44 RSS feeds and start writing rows.
+    INGEST_INITIAL_DELAY_SECONDS: int = 60
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def ingest_scheduler_enabled(self) -> bool:
+        """Resolved scheduler-on flag with environment-aware default.
+
+        If the env var is set explicitly (True or False), use it.
+        Otherwise: enabled in non-local environments, disabled in local.
+        """
+        if self.INGEST_SCHEDULER_ENABLED is not None:
+            return self.INGEST_SCHEDULER_ENABLED
+        return self.ENVIRONMENT != "local"
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:

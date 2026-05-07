@@ -1,7 +1,7 @@
-import { useInfiniteQuery } from "@tanstack/react-query"
-import { useCallback, useRef } from "react"
-import { type ArticlesPublic, ArticlesService, type category } from "@/client"
-import { ARTICLES_PAGE_SIZE } from "@/lib/constants"
+import { useInfiniteQuery } from '@tanstack/react-query'
+import { useCallback, useRef } from 'react'
+import { type ArticlesPublic, ArticlesService, type category } from '@/client'
+import { ARTICLES_PAGE_SIZE } from '@/lib/constants'
 
 interface UseArticleFeedOptions {
   category?: category
@@ -14,7 +14,7 @@ export function useArticleFeed(options: UseArticleFeedOptions = {}) {
 
   const queryOptions = {
     queryKey: [
-      "articles",
+      'articles',
       options.category ?? null,
       options.search ?? null,
       options.source ?? null,
@@ -52,11 +52,11 @@ export function useArticleFeed(options: UseArticleFeedOptions = {}) {
   const articles = data?.pages.flatMap((page) => page.data) ?? []
 
   const feedStatus = isFetchingNextPage
-    ? "Loading more..."
+    ? 'Loading more...'
     : !hasNextPage && articles.length > 0
       ? "You're all caught up."
       : !hasNextPage
-        ? "No articles yet."
+        ? 'No articles yet.'
         : null
 
   const loadMoreRef = useCallback(
@@ -74,7 +74,7 @@ export function useArticleFeed(options: UseArticleFeedOptions = {}) {
             void fetchNextPage()
           }
         },
-        { rootMargin: "300px" },
+        { rootMargin: '300px' },
       )
 
       observerRef.current.observe(node)

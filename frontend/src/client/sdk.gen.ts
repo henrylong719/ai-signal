@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AdminEmbedPendingArticlesData, AdminEmbedPendingArticlesResponse, AdminReadIngestRunsData, AdminReadIngestRunsResponse, ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadForYouData, ArticlesReadForYouResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, LoginStartOauthLoginData, LoginStartOauthLoginResponse, LoginOauthCallbackData, LoginOauthCallbackResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutData, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersReadUserOauthAccountsData, UsersReadUserOauthAccountsResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AdminEmbedPendingArticlesData, AdminEmbedPendingArticlesResponse, AdminReadIngestRunsData, AdminReadIngestRunsResponse, ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadForYouData, ArticlesReadForYouResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, DigestReadTodayDigestData, DigestReadTodayDigestResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, LoginStartOauthLoginData, LoginStartOauthLoginResponse, LoginOauthCallbackData, LoginOauthCallbackResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutData, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersReadUserOauthAccountsData, UsersReadUserOauthAccountsResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class AdminService {
     /**
@@ -333,6 +333,29 @@ export class ArticlesService {
             path: {
                 article_id: data.articleId
             },
+            cookies: {
+                access_token: data.accessToken
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class DigestService {
+    /**
+     * Read Today Digest
+     * Today's digest. Personalized when signed in, generic when not.
+     * @param data The data for the request.
+     * @param data.accessToken
+     * @returns DigestPublicSchema Successful Response
+     * @throws ApiError
+     */
+    public static readTodayDigest(data: DigestReadTodayDigestData = {}): CancelablePromise<DigestReadTodayDigestResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/digest/today-digest',
             cookies: {
                 access_token: data.accessToken
             },

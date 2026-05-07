@@ -1,14 +1,14 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { LogInIcon } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { LogInIcon } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
 import {
   ArticleList,
   ArticleListState,
-} from '@/components/Articles/ArticleList';
-import { MobileSidebar, Sidebar } from '@/components/Landing/Sidebar';
-import { useArticleFeed } from '@/hooks/useArticleFeed';
-import useAuth from '@/hooks/useAuth';
-import { useForYouFeed } from '@/hooks/useForYouFeed';
+} from '@/components/Articles/ArticleList'
+import { MobileSidebar, Sidebar } from '@/components/Landing/Sidebar'
+import { useArticleFeed } from '@/hooks/useArticleFeed'
+import useAuth from '@/hooks/useAuth'
+import { useForYouFeed } from '@/hooks/useForYouFeed'
 
 export const Route = createFileRoute('/_layout/')({
   component: Dashboard,
@@ -19,49 +19,49 @@ export const Route = createFileRoute('/_layout/')({
       },
     ],
   }),
-});
+})
 
-type Tab = 'for-you' | 'latest';
+type Tab = 'for-you' | 'latest'
 
 const tabs: { value: Tab; label: string }[] = [
   { value: 'for-you', label: 'For you' },
   { value: 'latest', label: 'Latest' },
-];
+]
 
 function Dashboard() {
-  const [activeTab, setActiveTab] = useState<Tab>('for-you');
-  const feedTopRef = useRef<HTMLDivElement>(null);
-  const latest = useArticleFeed();
+  const [activeTab, setActiveTab] = useState<Tab>('for-you')
+  const feedTopRef = useRef<HTMLDivElement>(null)
+  const latest = useArticleFeed()
   // useForYouFeed always runs, but its query needs auth — when the user
   // isn't logged in we render the sign-in CTA instead. Calling the hook
   // unconditionally keeps the hooks order stable.
-  const forYou = useForYouFeed();
-  const { user } = useAuth();
+  const forYou = useForYouFeed()
+  const { user } = useAuth()
 
   // Build a stable id→reason map. ForYouArticle extends ArticlePublic so
   // the underlying article objects are compatible with ArticleList; the
   // reason is passed alongside via this map.
   const forYouReasons = useMemo(() => {
-    const m = new Map<string, string | null>();
+    const m = new Map<string, string | null>()
     for (const article of forYou.articles) {
-      m.set(article.id, article.reason ?? null);
+      m.set(article.id, article.reason ?? null)
     }
-    return m;
-  }, [forYou.articles]);
+    return m
+  }, [forYou.articles])
 
   const handleTabChange = (tab: Tab) => {
     if (tab === activeTab) {
-      return;
+      return
     }
 
-    setActiveTab(tab);
+    setActiveTab(tab)
     window.requestAnimationFrame(() => {
       feedTopRef.current?.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
-      });
-    });
-  };
+      })
+    })
+  }
 
   return (
     <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-12">
@@ -124,5 +124,5 @@ function Dashboard() {
       </div>
       <Sidebar />
     </div>
-  );
+  )
 }

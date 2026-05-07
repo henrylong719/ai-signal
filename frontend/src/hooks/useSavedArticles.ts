@@ -41,6 +41,7 @@ export function useSavedArticles() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: SAVED_IDS_KEY })
       queryClient.invalidateQueries({ queryKey: ['savedArticles'] })
+      queryClient.invalidateQueries({ queryKey: ['todayDigest'] })
     },
   })
 
@@ -70,6 +71,7 @@ export function useSavedArticles() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: SAVED_IDS_KEY })
       queryClient.invalidateQueries({ queryKey: ['savedArticles'] })
+      queryClient.invalidateQueries({ queryKey: ['todayDigest'] })
     },
   })
 

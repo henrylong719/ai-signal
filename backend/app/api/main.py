@@ -4,6 +4,7 @@ from app.api.routes import (
     admin_embeddings,
     admin_ingest_runs,
     article,
+    digest,
     ingest,
     interest,
     login,
@@ -22,6 +23,7 @@ api_router.include_router(ingest.router)
 api_router.include_router(interest.router)
 api_router.include_router(admin_embeddings.router)
 api_router.include_router(admin_ingest_runs.router)
+api_router.include_router(digest.router)
 
 
 if settings.ENVIRONMENT == "local":

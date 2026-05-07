@@ -43,6 +43,40 @@ export type Body_login_login_access_token = {
 };
 
 /**
+ * ArticlePublic plus the recommender's reason string.
+ *
+ * Matches ForYouArticlePublic's shape so the frontend can reuse the
+ * same article-card rendering and reason-badge component.
+ */
+export type DigestArticlePublic = {
+    url: string;
+    title: string;
+    source: string;
+    excerpt?: (string | null);
+    image_url?: (string | null);
+    author?: (string | null);
+    category: 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other';
+    tags?: Array<(string)>;
+    published_at?: (string | null);
+    id: string;
+    fetched_at: string;
+    reason?: (string | null);
+};
+
+export type DigestPublicSchema = {
+    generated_at: string;
+    window_start: string;
+    is_personalized: boolean;
+    sections: Array<DigestSectionPublic>;
+};
+
+export type DigestSectionPublic = {
+    key: string;
+    title: string;
+    articles: Array<DigestArticlePublic>;
+};
+
+/**
  * Article + recommendation reason label.
  *
  * The reason is built server-side from the dominant scoring component
@@ -334,6 +368,12 @@ export type ArticlesDismissArticleData = {
 };
 
 export type ArticlesDismissArticleResponse = (void);
+
+export type DigestReadTodayDigestData = {
+    accessToken?: (string | null);
+};
+
+export type DigestReadTodayDigestResponse = (DigestPublicSchema);
 
 export type IngestTriggerIngestData = {
     accessToken?: (string | null);

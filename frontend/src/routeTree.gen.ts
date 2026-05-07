@@ -15,6 +15,7 @@ import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
+import { Route as LayoutTodayDigestRouteImport } from './routes/_layout/today-digest'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutSavedArticlesRouteImport } from './routes/_layout/saved-articles'
 import { Route as LayoutAllArticleSourcesRouteImport } from './routes/_layout/all-article-sources'
@@ -52,6 +53,11 @@ const LayoutRoute = LayoutRouteImport.update({
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutTodayDigestRoute = LayoutTodayDigestRouteImport.update({
+  id: '/today-digest',
+  path: '/today-digest',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/all-article-sources': typeof LayoutAllArticleSourcesRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
+  '/today-digest': typeof LayoutTodayDigestRoute
   '/admin/ingest-runs': typeof LayoutAdminIngestRunsRoute
   '/article-sources/$s': typeof LayoutArticleSourcesSRoute
   '/category-feed/$cat': typeof LayoutCategoryFeedCatRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/all-article-sources': typeof LayoutAllArticleSourcesRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
+  '/today-digest': typeof LayoutTodayDigestRoute
   '/': typeof LayoutIndexRoute
   '/admin/ingest-runs': typeof LayoutAdminIngestRunsRoute
   '/article-sources/$s': typeof LayoutArticleSourcesSRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/_layout/all-article-sources': typeof LayoutAllArticleSourcesRoute
   '/_layout/saved-articles': typeof LayoutSavedArticlesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
+  '/_layout/today-digest': typeof LayoutTodayDigestRoute
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/admin/ingest-runs': typeof LayoutAdminIngestRunsRoute
   '/_layout/article-sources/$s': typeof LayoutArticleSourcesSRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/all-article-sources'
     | '/saved-articles'
     | '/settings'
+    | '/today-digest'
     | '/admin/ingest-runs'
     | '/article-sources/$s'
     | '/category-feed/$cat'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/all-article-sources'
     | '/saved-articles'
     | '/settings'
+    | '/today-digest'
     | '/'
     | '/admin/ingest-runs'
     | '/article-sources/$s'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/_layout/all-article-sources'
     | '/_layout/saved-articles'
     | '/_layout/settings'
+    | '/_layout/today-digest'
     | '/_layout/'
     | '/_layout/admin/ingest-runs'
     | '/_layout/article-sources/$s'
@@ -250,6 +262,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof LayoutIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/today-digest': {
+      id: '/_layout/today-digest'
+      path: '/today-digest'
+      fullPath: '/today-digest'
+      preLoaderRoute: typeof LayoutTodayDigestRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/settings': {
@@ -337,6 +356,7 @@ interface LayoutRouteChildren {
   LayoutAllArticleSourcesRoute: typeof LayoutAllArticleSourcesRoute
   LayoutSavedArticlesRoute: typeof LayoutSavedArticlesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
+  LayoutTodayDigestRoute: typeof LayoutTodayDigestRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
   LayoutArticleSourcesSRoute: typeof LayoutArticleSourcesSRoute
   LayoutCategoryFeedCatRoute: typeof LayoutCategoryFeedCatRoute
@@ -348,6 +368,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAllArticleSourcesRoute: LayoutAllArticleSourcesRoute,
   LayoutSavedArticlesRoute: LayoutSavedArticlesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
+  LayoutTodayDigestRoute: LayoutTodayDigestRoute,
   LayoutIndexRoute: LayoutIndexRoute,
   LayoutArticleSourcesSRoute: LayoutArticleSourcesSRoute,
   LayoutCategoryFeedCatRoute: LayoutCategoryFeedCatRoute,

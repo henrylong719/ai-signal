@@ -53,6 +53,7 @@ export function useDismissArticle() {
       // The For-You feed query (when we add it) will be invalidated here
       // so the next paint reflects the server-side filter.
       queryClient.invalidateQueries({ queryKey: ['forYouFeed'] })
+      queryClient.invalidateQueries({ queryKey: ['todayDigest'] })
     },
   })
 

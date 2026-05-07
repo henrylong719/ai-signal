@@ -188,6 +188,161 @@ export const Body_login_login_access_tokenSchema = {
     title: 'Body_login-login_access_token'
 } as const;
 
+export const DigestArticlePublicSchema = {
+    properties: {
+        url: {
+            type: 'string',
+            title: 'Url'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        source: {
+            type: 'string',
+            maxLength: 64,
+            title: 'Source'
+        },
+        excerpt: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Excerpt'
+        },
+        image_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Url'
+        },
+        author: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Author'
+        },
+        category: {
+            type: 'string',
+            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other'],
+            title: 'Category'
+        },
+        tags: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Tags'
+        },
+        published_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Published At'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        fetched_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Fetched At'
+        },
+        reason: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Reason'
+        }
+    },
+    type: 'object',
+    required: ['url', 'title', 'source', 'category', 'id', 'fetched_at'],
+    title: 'DigestArticlePublic',
+    description: `ArticlePublic plus the recommender's reason string.
+
+Matches ForYouArticlePublic's shape so the frontend can reuse the
+same article-card rendering and reason-badge component.`
+} as const;
+
+export const DigestPublicSchemaSchema = {
+    properties: {
+        generated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Generated At'
+        },
+        window_start: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Window Start'
+        },
+        is_personalized: {
+            type: 'boolean',
+            title: 'Is Personalized'
+        },
+        sections: {
+            items: {
+                '$ref': '#/components/schemas/DigestSectionPublic'
+            },
+            type: 'array',
+            title: 'Sections'
+        }
+    },
+    type: 'object',
+    required: ['generated_at', 'window_start', 'is_personalized', 'sections'],
+    title: 'DigestPublicSchema'
+} as const;
+
+export const DigestSectionPublicSchema = {
+    properties: {
+        key: {
+            type: 'string',
+            title: 'Key'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        articles: {
+            items: {
+                '$ref': '#/components/schemas/DigestArticlePublic'
+            },
+            type: 'array',
+            title: 'Articles'
+        }
+    },
+    type: 'object',
+    required: ['key', 'title', 'articles'],
+    title: 'DigestSectionPublic'
+} as const;
+
 export const ForYouArticlePublicSchema = {
     properties: {
         url: {

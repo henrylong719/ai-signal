@@ -12,12 +12,14 @@ import useAuth from '@/hooks/useAuth'
 import ArticleSource from './ArticleSource'
 import RecentBookmarks from './RecentBookmarks'
 import RecommendedTopics from './RecommendedTopics'
+import TodayDigest from './TodayDigest'
 
 function SidebarSections() {
   const { user } = useAuth()
 
   return (
     <>
+      <TodayDigest />
       <RecommendedTopics />
       <ArticleSource />
       {user && <RecentBookmarks />}

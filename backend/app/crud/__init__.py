@@ -8,6 +8,7 @@ from app.crud.article import (
     get_article_by_url,
     get_articles,
     get_articles_by_ids,
+    get_articles_in_window,
     get_pending_embedding_articles,
     get_recent_articles_excluding,
     get_saved_article,
@@ -103,4 +104,5 @@ __all__ = [
     "finish_ingest_run",
     "list_ingest_runs",
     "start_ingest_run",
+    "get_articles_in_window",
 ]

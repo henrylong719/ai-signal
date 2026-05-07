@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import Sequence
+from datetime import datetime
 from typing import cast
 
 from sqlmodel import Session, col, func, or_, select
@@ -301,3 +302,25 @@ def update_article_embeddings(
         article.embedding = vector
         session.add(article)
     session.commit()
+
+
+def get_articles_in_window(
+    *,
+    session: Session,
+    since: datetime,
+    excluded_ids: set[uuid.UUID] | None = None,
+    limit: int = 200,
+) -> Sequence[Article]:
+    """Articles published since `since`, most recent first.
+
+    Used by the daily digest. Time-bounded variant of
+    get_recent_articles_excluding — the digest is "today", not "recent N".
+    """
+    statement = select(Article).where(col(Article.published_at) >= since)
+    if excluded_ids:
+        statement = statement.where(col(Article.id).not_in(excluded_ids))
+    statement = statement.order_by(
+        col(Article.published_at).desc().nullslast(),
+        col(Article.fetched_at).desc(),
+    ).limit(limit)
+    return session.exec(statement).all()

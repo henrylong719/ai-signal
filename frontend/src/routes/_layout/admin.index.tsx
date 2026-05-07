@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Activity } from 'lucide-react'
+import { Activity, Newspaper } from 'lucide-react'
 import { Suspense } from 'react'
 
 import { type UserPublic, UsersService } from '@/client'
@@ -65,6 +65,12 @@ function AdminIndex() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" asChild className="gap-2">
+            <Link to="/admin/articles">
+              <Newspaper className="size-3.5" />
+              Articles
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" asChild className="gap-2">
             <Link to="/admin/ingest-runs">
               <Activity className="size-3.5" />

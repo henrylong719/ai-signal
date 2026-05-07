@@ -25,6 +25,7 @@ import { Route as LayoutSearchFeedQRouteImport } from './routes/_layout/search-f
 import { Route as LayoutCategoryFeedCatRouteImport } from './routes/_layout/category-feed.$cat'
 import { Route as LayoutArticleSourcesSRouteImport } from './routes/_layout/article-sources.$s'
 import { Route as LayoutAdminIngestRunsRouteImport } from './routes/_layout/admin.ingest-runs'
+import { Route as LayoutAdminArticlesRouteImport } from './routes/_layout/admin.articles'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -105,6 +106,11 @@ const LayoutAdminIngestRunsRoute = LayoutAdminIngestRunsRouteImport.update({
   path: '/ingest-runs',
   getParentRoute: () => LayoutAdminRoute,
 } as any)
+const LayoutAdminArticlesRoute = LayoutAdminArticlesRouteImport.update({
+  id: '/articles',
+  path: '/articles',
+  getParentRoute: () => LayoutAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
   '/today-digest': typeof LayoutTodayDigestRoute
+  '/admin/articles': typeof LayoutAdminArticlesRoute
   '/admin/ingest-runs': typeof LayoutAdminIngestRunsRoute
   '/article-sources/$s': typeof LayoutArticleSourcesSRoute
   '/category-feed/$cat': typeof LayoutCategoryFeedCatRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/settings': typeof LayoutSettingsRoute
   '/today-digest': typeof LayoutTodayDigestRoute
   '/': typeof LayoutIndexRoute
+  '/admin/articles': typeof LayoutAdminArticlesRoute
   '/admin/ingest-runs': typeof LayoutAdminIngestRunsRoute
   '/article-sources/$s': typeof LayoutArticleSourcesSRoute
   '/category-feed/$cat': typeof LayoutCategoryFeedCatRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/today-digest': typeof LayoutTodayDigestRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/admin/articles': typeof LayoutAdminArticlesRoute
   '/_layout/admin/ingest-runs': typeof LayoutAdminIngestRunsRoute
   '/_layout/article-sources/$s': typeof LayoutArticleSourcesSRoute
   '/_layout/category-feed/$cat': typeof LayoutCategoryFeedCatRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/saved-articles'
     | '/settings'
     | '/today-digest'
+    | '/admin/articles'
     | '/admin/ingest-runs'
     | '/article-sources/$s'
     | '/category-feed/$cat'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/today-digest'
     | '/'
+    | '/admin/articles'
     | '/admin/ingest-runs'
     | '/article-sources/$s'
     | '/category-feed/$cat'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/_layout/settings'
     | '/_layout/today-digest'
     | '/_layout/'
+    | '/_layout/admin/articles'
     | '/_layout/admin/ingest-runs'
     | '/_layout/article-sources/$s'
     | '/_layout/category-feed/$cat'
@@ -334,15 +346,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminIngestRunsRouteImport
       parentRoute: typeof LayoutAdminRoute
     }
+    '/_layout/admin/articles': {
+      id: '/_layout/admin/articles'
+      path: '/articles'
+      fullPath: '/admin/articles'
+      preLoaderRoute: typeof LayoutAdminArticlesRouteImport
+      parentRoute: typeof LayoutAdminRoute
+    }
   }
 }
 
 interface LayoutAdminRouteChildren {
+  LayoutAdminArticlesRoute: typeof LayoutAdminArticlesRoute
   LayoutAdminIngestRunsRoute: typeof LayoutAdminIngestRunsRoute
   LayoutAdminIndexRoute: typeof LayoutAdminIndexRoute
 }
 
 const LayoutAdminRouteChildren: LayoutAdminRouteChildren = {
+  LayoutAdminArticlesRoute: LayoutAdminArticlesRoute,
   LayoutAdminIngestRunsRoute: LayoutAdminIngestRunsRoute,
   LayoutAdminIndexRoute: LayoutAdminIndexRoute,
 }

@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -9,8 +10,10 @@ from app import crud
 from app.api.routes import article as article_routes
 from app.core.config import settings
 from app.models import Article, User
+from app.models.article import EMBEDDING_DIM
 from app.schemas import ArticleCreate, UserCreate
 from app.schemas.source import SOURCES, Category
+from app.services import article_search
 from tests.utils.article import create_random_article
 from tests.utils.user import user_authentication_headers
 from tests.utils.utils import random_email, random_lower_string
@@ -54,6 +57,12 @@ def _create_article(
     )
 
 
+def _embedding(axis: int) -> list[float]:
+    vector = [0.0] * EMBEDDING_DIM
+    vector[axis] = 1.0
+    return vector
+
+
 def test_read_articles(client: TestClient, db: Session) -> None:
     create_random_article(db)
     create_random_article(db)
@@ -89,6 +98,74 @@ def test_read_articles_by_source(client: TestClient, db: Session) -> None:
     content = response.json()
     assert content["count"] == 1
     assert all(article["source"] == source for article in content["data"])
+
+
+def test_read_articles_search_uses_semantic_similarity(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = f"Semantic Source {uuid.uuid4()}"
+    near = _create_article(
+        db,
+        source=source,
+        title="A compact roundup about deployment metrics",
+    )
+    far = _create_article(
+        db,
+        source=source,
+        title="A compact roundup about hardware procurement",
+    )
+    crud.update_article_embeddings(
+        session=db,
+        embeddings={
+            near.id: _embedding(0),
+            far.id: _embedding(1),
+        },
+    )
+    monkeypatch.setattr(article_search, "embed_text", lambda text: _embedding(0))
+
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/",
+        params={"search": "neural retrieval", "source": source},
+    )
+
+    assert response.status_code == 200
+    content = response.json()
+    assert content["count"] == 2
+    assert [article["id"] for article in content["data"]] == [
+        str(near.id),
+        str(far.id),
+    ]
+
+
+def test_read_articles_search_falls_back_to_keyword_when_embeddings_fail(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = f"Keyword Fallback {uuid.uuid4()}"
+    match = _create_article(
+        db,
+        source=source,
+        title="Sparse mixture routing in production",
+    )
+    _create_article(db, source=source, title="Unrelated deployment notes")
+
+    def fail_embed(_text: str) -> list[float]:
+        raise RuntimeError("encoder unavailable")
+
+    monkeypatch.setattr(article_search, "embed_text", fail_embed)
+
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/",
+        params={"search": "Sparse mixture", "source": source},
+    )
+
+    assert response.status_code == 200
+    content = response.json()
+    assert content["count"] == 1
+    assert [article["id"] for article in content["data"]] == [str(match.id)]
 
 
 def test_read_sources(client: TestClient) -> None:

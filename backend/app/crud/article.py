@@ -1,7 +1,7 @@
 import uuid
 from collections.abc import Sequence
 from datetime import datetime
-from typing import cast
+from typing import Any, cast
 
 from sqlmodel import Session, col, func, or_, select
 
@@ -9,6 +9,8 @@ from app.models import Article
 from app.models.article import SavedArticle
 from app.schemas import ArticleCreate, ArticleUpdate
 from app.schemas.source import Category
+
+ArticleWithSavedCount = tuple[Article, int]
 
 
 def count_articles(
@@ -32,6 +34,24 @@ def count_articles(
     return session.exec(statement).one()
 
 
+def count_semantic_search_articles(
+    *,
+    session: Session,
+    category: Category | None = None,
+    source: str | None = None,
+) -> int:
+    statement = (
+        select(func.count())
+        .select_from(Article)
+        .where(col(Article.embedding).is_not(None))
+    )
+    if category is not None:
+        statement = statement.where(Article.category == category)
+    if source:
+        statement = statement.where(Article.source == source)
+    return session.exec(statement).one()
+
+
 def get_articles(
     *,
     session: Session,
@@ -44,6 +64,66 @@ def get_articles(
     statement = select(Article)
     if category is not None:
         statement = statement.where(Article.category == category)
+    if source:
+        statement = statement.where(Article.source == source)
+    if search:
+        escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        pattern = f"%{escaped}%"
+        statement = statement.where(
+            or_(col(Article.title).ilike(pattern), col(Article.excerpt).ilike(pattern))
+        )
+    statement = (
+        statement.order_by(
+            col(Article.published_at).desc().nullslast(),
+            col(Article.fetched_at).desc(),
+        )
+        .offset(skip)
+        .limit(limit)
+    )
+    return session.exec(statement).all()
+
+
+def get_semantic_search_articles(
+    *,
+    session: Session,
+    query_embedding: list[float],
+    skip: int = 0,
+    limit: int = 50,
+    category: Category | None = None,
+    source: str | None = None,
+) -> Sequence[Article]:
+    embedding_column = cast(Any, Article.embedding)
+    distance = embedding_column.cosine_distance(query_embedding)
+    statement = select(Article).where(col(Article.embedding).is_not(None))
+    if category is not None:
+        statement = statement.where(Article.category == category)
+    if source:
+        statement = statement.where(Article.source == source)
+    statement = (
+        statement.order_by(
+            distance,
+            col(Article.published_at).desc().nullslast(),
+            col(Article.fetched_at).desc(),
+        )
+        .offset(skip)
+        .limit(limit)
+    )
+    return session.exec(statement).all()
+
+
+def get_articles_with_saved_counts(
+    *,
+    session: Session,
+    skip: int = 0,
+    limit: int = 100,
+    search: str | None = None,
+    source: str | None = None,
+) -> Sequence[ArticleWithSavedCount]:
+    statement = (
+        select(Article, func.count(SavedArticle.user_id))
+        .outerjoin(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
+        .group_by(col(Article.id))
+    )
     if source:
         statement = statement.where(Article.source == source)
     if search:

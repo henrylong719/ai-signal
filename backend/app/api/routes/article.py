@@ -22,6 +22,7 @@ from app.schemas.source import (
     SourcesPublic,
     SourceType,
 )
+from app.services.article_search import search_articles
 from app.services.embeddings import compute_and_save_user_vector
 from app.services.for_you import rank_for_you
 
@@ -63,10 +64,7 @@ def read_articles(
     """
     Retrieve articles.
     """
-    count = crud.count_articles(
-        session=session, category=category, search=search, source=source
-    )
-    articles = crud.get_articles(
+    articles, count = search_articles(
         session=session,
         category=category,
         search=search,

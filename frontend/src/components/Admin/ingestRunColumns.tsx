@@ -5,6 +5,8 @@ import type { IngestRunPublic } from '@/client'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
+const STALE_RUN_ERROR = 'process terminated before completion'
+
 /**
  * Column definitions for the ingest-runs admin table.
  *
@@ -26,14 +28,16 @@ export const ingestRunColumns: ColumnDef<IngestRunPublic>[] = [
   {
     accessorKey: 'status',
     header: 'Status',
-    cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    cell: ({ row }) => <StatusBadge run={row.original} />,
   },
   {
     accessorKey: 'duration_ms',
     header: 'Duration',
     cell: ({ row }) => (
       <span className="text-muted-foreground">
-        {formatDuration(row.original.duration_ms)}
+        {isAbandonedRun(row.original)
+          ? 'Unknown'
+          : formatDuration(row.original.duration_ms)}
       </span>
     ),
   },
@@ -67,6 +71,16 @@ export const ingestRunColumns: ColumnDef<IngestRunPublic>[] = [
     header: 'Errors',
     cell: ({ row }) => {
       const errors = row.original.errors
+      if (isAbandonedRun(row.original)) {
+        return (
+          <span
+            className="line-clamp-1 max-w-[28ch] text-xs text-amber-700 dark:text-amber-300/85"
+            title="Run was last seen running and marked failed by a later ingest."
+          >
+            Last seen running; marked failed later
+          </span>
+        )
+      }
       if (errors.length === 0) {
         return <span className="text-muted-foreground">—</span>
       }
@@ -88,8 +102,21 @@ export const ingestRunColumns: ColumnDef<IngestRunPublic>[] = [
   },
 ]
 
-function StatusBadge({ status }: { status: IngestRunPublic['status'] }) {
-  if (status === 'running') {
+function StatusBadge({ run }: { run: IngestRunPublic }) {
+  if (isAbandonedRun(run)) {
+    return (
+      <Badge
+        variant="outline"
+        className={cn(
+          'gap-1.5 border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300',
+        )}
+      >
+        <AlertCircle className="size-3" />
+        Abandoned
+      </Badge>
+    )
+  }
+  if (run.status === 'running') {
     return (
       <Badge variant="outline" className="gap-1.5">
         <Loader2 className="size-3 animate-spin" />
@@ -97,7 +124,7 @@ function StatusBadge({ status }: { status: IngestRunPublic['status'] }) {
       </Badge>
     )
   }
-  if (status === 'succeeded') {
+  if (run.status === 'succeeded') {
     return (
       <Badge
         variant="outline"
@@ -119,6 +146,10 @@ function StatusBadge({ status }: { status: IngestRunPublic['status'] }) {
       Failed
     </Badge>
   )
+}
+
+function isAbandonedRun(run: IngestRunPublic): boolean {
+  return run.status === 'failed' && run.errors.includes(STALE_RUN_ERROR)
 }
 
 /**

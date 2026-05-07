@@ -1,4 +1,4 @@
-"""Add created_at to User and Item
+"""Add created_at columns
 
 Revision ID: fe56fa70289e
 Revises: 1a31ce608336

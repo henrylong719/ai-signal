@@ -18,7 +18,6 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">{children}</div>
         </div>
-        {/* <Footer /> */}
       </div>
     </div>
   )

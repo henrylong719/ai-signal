@@ -1,29 +1,29 @@
-import { Link, useNavigate } from '@tanstack/react-router';
-import { SearchIcon } from 'lucide-react';
-import { useState } from 'react';
-import { type UseFormReturn, useForm } from 'react-hook-form';
-import useAuth from '@/hooks/useAuth';
-import AuthModal from '../Auth/AuthModal';
-import { Form, FormControl, FormField, FormItem } from '../ui/form';
+import { Link, useNavigate } from '@tanstack/react-router'
+import { SearchIcon } from 'lucide-react'
+import { useState } from 'react'
+import { type UseFormReturn, useForm } from 'react-hook-form'
+import useAuth from '@/hooks/useAuth'
+import AuthModal from '../Auth/AuthModal'
+import { Form, FormControl, FormField, FormItem } from '../ui/form'
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '../ui/sheet';
-import { HeaderActionsMenu } from './HeaderActionsMenu';
+} from '../ui/sheet'
+import { HeaderActionsMenu } from './HeaderActionsMenu'
 
 interface SearchFormInputs {
-  query: string;
+  query: string
 }
 
 interface HeaderSearchFormProps {
-  form: UseFormReturn<SearchFormInputs>;
-  onSubmit: (data: SearchFormInputs) => void;
-  placeholder: string;
-  className?: string;
-  inputClassName?: string;
+  form: UseFormReturn<SearchFormInputs>
+  onSubmit: (data: SearchFormInputs) => void
+  placeholder: string
+  className?: string
+  inputClassName?: string
 }
 
 function HeaderSearchForm({
@@ -58,32 +58,32 @@ function HeaderSearchForm({
         />
       </form>
     </Form>
-  );
+  )
 }
 
 const Header = () => {
-  const navigate = useNavigate();
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const navigate = useNavigate()
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
 
-  const { user } = useAuth();
+  const { user } = useAuth()
 
   const searchForm = useForm<SearchFormInputs>({
     defaultValues: {
       query: '',
     },
-  });
+  })
   const mobileSearchForm = useForm<SearchFormInputs>({
     defaultValues: {
       query: '',
     },
-  });
+  })
 
   const onSubmit = (data: SearchFormInputs) => {
     if (data.query.trim()) {
-      navigate({ to: '/search-feed/$q', params: { q: data.query.trim() } });
-      setMobileSearchOpen(false);
+      navigate({ to: '/search-feed/$q', params: { q: data.query.trim() } })
+      setMobileSearchOpen(false)
     }
-  };
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.02)] backdrop-blur dark:border-border dark:bg-background/92 dark:shadow-none">
@@ -144,7 +144,7 @@ const Header = () => {
         </div>
       </div>
     </header>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

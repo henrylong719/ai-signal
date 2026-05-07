@@ -9,7 +9,6 @@ from app.schemas.article import (
 )
 from app.schemas.common import Message
 from app.schemas.interest import UserInterestPublic, UserInterestUpdate
-from app.schemas.item import ItemCreate, ItemPublic, ItemsPublic, ItemUpdate
 from app.schemas.source import (
     CATEGORIES,
     SOURCE_TYPES,
@@ -33,7 +32,6 @@ from app.schemas.user import (
     UserUpdateMe,
 )
 
-
 __all__ = [
     "ArticleBase",
     "ArticleCreate",
@@ -44,10 +42,6 @@ __all__ = [
     "Category",
     "ForYouArticlePublic",
     "ForYouArticlesPublic",
-    "ItemCreate",
-    "ItemPublic",
-    "ItemsPublic",
-    "ItemUpdate",
     "Message",
     "NewPassword",
     "OAuthAccountPublic",

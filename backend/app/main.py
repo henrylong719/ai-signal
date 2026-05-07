@@ -19,7 +19,7 @@ if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
+async def lifespan(_app: FastAPI):  # type: ignore[no-untyped-def]
     """Manage long-lived background work alongside the API.
 
     Currently owns the ingestion scheduler. Anything else that needs

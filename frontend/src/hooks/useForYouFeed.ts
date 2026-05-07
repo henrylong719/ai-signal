@@ -1,36 +1,22 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import axios from 'axios'
 import { useCallback, useRef } from 'react'
 
-import { type ArticlePublic, OpenAPI } from '@/client'
+import { ArticlesService, type ForYouArticlePublic } from '@/client'
 import { isLoggedIn } from '@/lib/auth-state'
 import { ARTICLES_PAGE_SIZE } from '@/lib/constants'
 
-/**
- * Wire shape of GET /articles/for-you. Mirrors ForYouArticlesPublic on
- * the backend. Defined locally because the OpenAPI client hasn't been
- * regenerated against the updated backend yet.
- *
- * TODO: replace with the generated ArticlesService types after running
- *   `npm run generate-client` and use ArticlesService.readForYou.
- */
-export interface ForYouArticle extends ArticlePublic {
-  reason: string | null
-}
+export type ForYouArticle = ForYouArticlePublic
 
 interface ForYouPage {
   data: ForYouArticle[]
   count: number
 }
 
-const FOR_YOU_PATH = '/api/v1/articles/for-you'
-
 const fetchPage = async (skip: number): Promise<ForYouPage> => {
-  const r = await axios.get<ForYouPage>(`${OpenAPI.BASE}${FOR_YOU_PATH}`, {
-    params: { skip, limit: ARTICLES_PAGE_SIZE },
-    withCredentials: true,
+  return ArticlesService.readForYou({
+    skip,
+    limit: ARTICLES_PAGE_SIZE,
   })
-  return r.data
 }
 
 /**

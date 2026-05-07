@@ -129,6 +129,18 @@ def test_read_for_you_requires_auth(client: TestClient) -> None:
     assert response.status_code == 401
 
 
+def test_saved_article_static_routes_are_not_captured_by_article_id(
+    client: TestClient,
+) -> None:
+    fresh_client = TestClient(client.app)
+
+    saved_list = fresh_client.get(f"{settings.API_V1_STR}/articles/saved/")
+    saved_ids = fresh_client.get(f"{settings.API_V1_STR}/articles/saved/ids")
+
+    assert saved_list.status_code == 401
+    assert saved_ids.status_code == 401
+
+
 def test_read_for_you_articles(
     client: TestClient,
     db: Session,
@@ -179,7 +191,9 @@ def test_read_for_you_refetches_page_articles_in_one_bulk_query(
         raise AssertionError("read_for_you should bulk-fetch page articles")
 
     monkeypatch.setattr(article_routes, "rank_for_you", fake_rank_for_you)
-    monkeypatch.setattr(article_routes.crud, "get_articles_by_ids", fake_get_articles_by_ids)
+    monkeypatch.setattr(
+        article_routes.crud, "get_articles_by_ids", fake_get_articles_by_ids
+    )
     monkeypatch.setattr(article_routes.crud, "get_article", fail_get_article)
 
     response = article_routes.read_for_you(

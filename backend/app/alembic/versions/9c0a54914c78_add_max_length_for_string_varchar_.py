@@ -1,4 +1,4 @@
-"""Add max length for string(varchar) fields in User and Items models
+"""Add max length for string fields in user and legacy item tables
 
 Revision ID: 9c0a54914c78
 Revises: e2412789c190
@@ -30,13 +30,13 @@ def upgrade():
                type_=sa.String(length=255),
                existing_nullable=True)
 
-    # Adjust the length of the title field in the Item table
+    # Adjust the length of the title field in the legacy item table
     op.alter_column('item', 'title',
                existing_type=sa.String(),
                type_=sa.String(length=255),
                existing_nullable=False)
 
-    # Adjust the length of the description field in the Item table
+    # Adjust the length of the description field in the legacy item table
     op.alter_column('item', 'description',
                existing_type=sa.String(),
                type_=sa.String(length=255),
@@ -56,13 +56,13 @@ def downgrade():
                type_=sa.String(),
                existing_nullable=True)
 
-    # Revert the length of the title field in the Item table
+    # Revert the length of the title field in the legacy item table
     op.alter_column('item', 'title',
                existing_type=sa.String(length=255),
                type_=sa.String(),
                existing_nullable=False)
 
-    # Revert the length of the description field in the Item table
+    # Revert the length of the description field in the legacy item table
     op.alter_column('item', 'description',
                existing_type=sa.String(length=255),
                type_=sa.String(),

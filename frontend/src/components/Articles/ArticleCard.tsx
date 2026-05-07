@@ -51,13 +51,13 @@ export function ArticleCard({
   return (
     <article
       className={cn(
-        'group -mx-3 border-b border-slate-200/70 px-3 py-7 transition-colors last:border-0 hover:bg-slate-50/60 sm:-mx-4 sm:px-4 sm:py-8 dark:border-border dark:hover:bg-card/45',
+        'group -mx-3 border-b border-slate-200/70 px-3 py-7 transition-colors last:border-0 hover:bg-slate-50/60 sm:-mx-4 sm:px-4 sm:py-8 dark:border-border/80 dark:hover:bg-muted/30',
         className,
       )}
     >
       <div className="flex flex-col gap-4">
         {reason && (
-          <div className="inline-flex w-fit rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[11px] font-medium uppercase text-stone-700 dark:border-border dark:bg-muted/45 dark:text-muted-foreground">
+          <div className="inline-flex w-fit rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[11px] font-medium uppercase text-stone-700 dark:border-border/85 dark:bg-muted/55 dark:text-muted-foreground">
             {reason}
           </div>
         )}
@@ -68,7 +68,7 @@ export function ArticleCard({
               to="/article-sources/$s"
               params={{ s: article.source }}
             >
-              <span className="truncate text-slate-900 hover:text-slate-950 dark:text-foreground/86 dark:hover:text-foreground">
+              <span className="truncate text-slate-900 hover:text-slate-950 dark:text-foreground/88 dark:hover:text-foreground">
                 {article.source}
               </span>
             </Link>
@@ -90,7 +90,7 @@ export function ArticleCard({
                   <button
                     type="button"
                     onClick={onBookmark}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent/80 dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                     aria-label={
                       isBookmarked ? 'Remove saved article' : 'Save article'
                     }
@@ -116,7 +116,7 @@ export function ArticleCard({
                     <button
                       type="button"
                       onClick={onDismiss}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent/80 dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                       aria-label="Show less like this"
                     >
                       <ThumbsDown className="h-4.5 w-4.5 stroke-[1.6]" />
@@ -142,7 +142,7 @@ export function ArticleCard({
               <div>
                 <h3
                   className={cn(
-                    'font-serif font-medium leading-tight text-slate-950 transition-colors group-hover:text-slate-700 dark:text-foreground dark:group-hover:text-foreground/78',
+                    'font-serif font-medium leading-tight text-slate-950 transition-colors group-hover:text-slate-700 dark:text-foreground dark:group-hover:text-foreground/92',
                     featured
                       ? 'text-2xl sm:text-[2rem]'
                       : 'text-[1.25rem] sm:text-[1.45rem]',
@@ -169,7 +169,7 @@ export function ArticleCard({
                   <Badge
                     key={tag}
                     variant="secondary"
-                    className="border-slate-200/70 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)] transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent/70 dark:hover:text-foreground"
+                    className="border-slate-200/70 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)] transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border/85 dark:bg-card/35 dark:text-muted-foreground dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent/70 dark:hover:text-foreground"
                   >
                     {capitalize(tag)}
                   </Badge>

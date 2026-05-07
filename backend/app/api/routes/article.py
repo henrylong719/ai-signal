@@ -102,7 +102,9 @@ def read_for_you(
     article_ids = [item.scored.article.id for item in items]
     articles_by_id = {
         article.id: article
-        for article in crud.get_articles_by_ids(session=session, article_ids=article_ids)
+        for article in crud.get_articles_by_ids(
+            session=session, article_ids=article_ids
+        )
     }
     data = [
         ForYouArticlePublic(
@@ -135,17 +137,6 @@ def read_sources(
         if source_type is None or source.source_type == source_type
     ]
     return SourcesPublic(data=sources, count=len(sources))
-
-
-@router.get("/{id}", response_model=ArticlePublic)
-def read_article(session: SessionDep, id: uuid.UUID) -> Any:
-    """
-    Get article by ID.
-    """
-    article = crud.get_article(session=session, article_id=id)
-    if not article:
-        raise HTTPException(status_code=404, detail="Article not found")
-    return article
 
 
 # --- Saved articles ---
@@ -188,6 +179,17 @@ def read_saved_article_ids(
     """Get IDs of all articles saved by current user (for UI state)."""
     ids = crud.get_saved_article_ids(session=session, user_id=current_user.id)
     return SavedArticleIdsPublic(article_ids=ids)
+
+
+@router.get("/{id}", response_model=ArticlePublic)
+def read_article(session: SessionDep, id: uuid.UUID) -> Any:
+    """
+    Get article by ID.
+    """
+    article = crud.get_article(session=session, article_id=id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return article
 
 
 @router.post("/{article_id}/save", status_code=201)

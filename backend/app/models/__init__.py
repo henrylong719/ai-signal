@@ -14,7 +14,6 @@ from app.models.ingest_run import (
     IngestRunStatus,
 )
 from app.models.interest import UserInterest
-from app.models.item import Item
 from app.models.oauth_account import OAuthAccount
 from app.models.refresh_session import RefreshSession
 from app.models.user import User
@@ -28,10 +27,6 @@ from app.schemas import (
     ArticlesPublic,
     ArticleUpdate,
     Category,
-    ItemCreate,
-    ItemPublic,
-    ItemsPublic,
-    ItemUpdate,
     Message,
     NewPassword,
     OAuthAccountPublic,
@@ -65,11 +60,6 @@ __all__ = [
     "Category",
     "IngestRun",
     "IngestRunStatus",
-    "Item",
-    "ItemCreate",
-    "ItemPublic",
-    "ItemsPublic",
-    "ItemUpdate",
     "Message",
     "NewPassword",
     "OAuthAccount",

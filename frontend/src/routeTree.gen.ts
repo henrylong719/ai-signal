@@ -17,7 +17,6 @@ import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutSavedArticlesRouteImport } from './routes/_layout/saved-articles'
-import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutAllArticleSourcesRouteImport } from './routes/_layout/all-article-sources'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutAdminIndexRouteImport } from './routes/_layout/admin.index'
@@ -65,11 +64,6 @@ const LayoutSavedArticlesRoute = LayoutSavedArticlesRouteImport.update({
   path: '/saved-articles',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutItemsRoute = LayoutItemsRouteImport.update({
-  id: '/items',
-  path: '/items',
-  getParentRoute: () => LayoutRoute,
-} as any)
 const LayoutAllArticleSourcesRoute = LayoutAllArticleSourcesRouteImport.update({
   id: '/all-article-sources',
   path: '/all-article-sources',
@@ -114,7 +108,6 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRouteWithChildren
   '/all-article-sources': typeof LayoutAllArticleSourcesRoute
-  '/items': typeof LayoutItemsRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
   '/admin/ingest-runs': typeof LayoutAdminIngestRunsRoute
@@ -129,7 +122,6 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/all-article-sources': typeof LayoutAllArticleSourcesRoute
-  '/items': typeof LayoutItemsRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
@@ -148,7 +140,6 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRouteWithChildren
   '/_layout/all-article-sources': typeof LayoutAllArticleSourcesRoute
-  '/_layout/items': typeof LayoutItemsRoute
   '/_layout/saved-articles': typeof LayoutSavedArticlesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
@@ -168,7 +159,6 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/all-article-sources'
-    | '/items'
     | '/saved-articles'
     | '/settings'
     | '/admin/ingest-runs'
@@ -183,7 +173,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/all-article-sources'
-    | '/items'
     | '/saved-articles'
     | '/settings'
     | '/'
@@ -201,7 +190,6 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_layout/admin'
     | '/_layout/all-article-sources'
-    | '/_layout/items'
     | '/_layout/saved-articles'
     | '/_layout/settings'
     | '/_layout/'
@@ -278,13 +266,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSavedArticlesRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/items': {
-      id: '/_layout/items'
-      path: '/items'
-      fullPath: '/items'
-      preLoaderRoute: typeof LayoutItemsRouteImport
-      parentRoute: typeof LayoutRoute
-    }
     '/_layout/all-article-sources': {
       id: '/_layout/all-article-sources'
       path: '/all-article-sources'
@@ -354,7 +335,6 @@ const LayoutAdminRouteWithChildren = LayoutAdminRoute._addFileChildren(
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRouteWithChildren
   LayoutAllArticleSourcesRoute: typeof LayoutAllArticleSourcesRoute
-  LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutSavedArticlesRoute: typeof LayoutSavedArticlesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
@@ -366,7 +346,6 @@ interface LayoutRouteChildren {
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRouteWithChildren,
   LayoutAllArticleSourcesRoute: LayoutAllArticleSourcesRoute,
-  LayoutItemsRoute: LayoutItemsRoute,
   LayoutSavedArticlesRoute: LayoutSavedArticlesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,

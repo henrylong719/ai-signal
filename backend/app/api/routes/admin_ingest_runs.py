@@ -73,7 +73,6 @@ def read_ingest_runs(
     count query alongside the listing.
     """
 
-    print("runnnnnnnnnn")
     runs = crud.list_ingest_runs(session=session, limit=limit, status=status)
     data = [
         IngestRunPublic(

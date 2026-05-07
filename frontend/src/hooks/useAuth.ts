@@ -1,11 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import axios from 'axios'
 
 import {
   type Body_login_login_access_token as AccessToken,
   LoginService,
-  OpenAPI,
   type UserPublic,
   type UserRegister,
   UsersService,
@@ -75,13 +73,9 @@ const useAuth = () => {
   // Best-effort: if the server is unreachable we still clear local state
   // and navigate, because leaving a stale "logged in" UI after an
   // explicit logout would be worse than swallowing the network error.
-  // TODO: replace bare axios call with LoginService.logout() once the
-  //   SDK is regenerated against the updated backend spec.
   const logout = async () => {
     try {
-      await axios.post(`${OpenAPI.BASE}/api/v1/login/logout`, undefined, {
-        withCredentials: true,
-      })
+      await LoginService.logout()
     } catch {
       // Network error or server down — keep going, clear client state.
     }

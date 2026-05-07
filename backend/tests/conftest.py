@@ -85,7 +85,7 @@ _run_test_migrations()
 
 from app.core.db import engine, init_db
 from app.main import app
-from app.models import Article, IngestRun, OAuthAccount, Item, RefreshSession, User
+from app.models import Article, IngestRun, OAuthAccount, RefreshSession, User
 from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
 
@@ -95,8 +95,6 @@ def _clear_test_data(session: Session) -> None:
     statement = delete(Article)
     session.exec(statement)
     statement = delete(IngestRun)
-    session.exec(statement)
-    statement = delete(Item)
     session.exec(statement)
     statement = delete(RefreshSession)
     session.exec(statement)

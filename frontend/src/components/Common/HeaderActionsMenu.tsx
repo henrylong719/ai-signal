@@ -1,4 +1,4 @@
-import { Link as RouterLink } from '@tanstack/react-router';
+import { Link as RouterLink } from '@tanstack/react-router'
 import {
   Bookmark,
   Check,
@@ -9,9 +9,9 @@ import {
   Settings,
   Sun,
   UserStar,
-} from 'lucide-react';
-import { useState } from 'react';
-import { type Theme, useTheme } from '@/components/theme-provider';
+} from 'lucide-react'
+import { useState } from 'react'
+import { type Theme, useTheme } from '@/components/theme-provider'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,19 +22,19 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import useAuth from '@/hooks/useAuth';
-import { getInitials } from '@/utils';
-import { Avatar, AvatarFallback } from '../ui/avatar';
+} from '@/components/ui/dropdown-menu'
+import useAuth from '@/hooks/useAuth'
+import { getInitials } from '@/utils'
+import { Avatar, AvatarFallback } from '../ui/avatar'
 
 interface UserInfoProps {
-  fullName?: string;
-  email?: string;
+  fullName?: string
+  email?: string
 }
 
 function UserInfo({ fullName, email }: UserInfoProps) {
-  const displayName = fullName?.trim() || 'AI Signal reader';
-  const initialsSource = fullName?.trim() || email || 'User';
+  const displayName = fullName?.trim() || 'AI Signal reader'
+  const initialsSource = fullName?.trim() || email || 'User'
 
   return (
     <div className="flex min-w-0 items-center gap-3">
@@ -54,26 +54,26 @@ function UserInfo({ fullName, email }: UserInfoProps) {
         )}
       </div>
     </div>
-  );
+  )
 }
 
 const themeOptions: { value: Theme; label: string; icon: typeof Monitor }[] = [
   { value: 'system', label: 'System Default', icon: Monitor },
   { value: 'light', label: 'Light', icon: Sun },
   { value: 'dark', label: 'Dark', icon: Moon },
-];
+]
 
 export const HeaderActionsMenu = () => {
-  const [open, setOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const { setTheme, theme } = useTheme();
-  const initialsSource = user?.full_name?.trim() || user?.email || 'User';
-  const currentTheme = themeOptions.find((option) => option.value === theme);
-  const CurrentThemeIcon = currentTheme?.icon ?? Monitor;
+  const [open, setOpen] = useState(false)
+  const { user, logout } = useAuth()
+  const { setTheme, theme } = useTheme()
+  const initialsSource = user?.full_name?.trim() || user?.email || 'User'
+  const currentTheme = themeOptions.find((option) => option.value === theme)
+  const CurrentThemeIcon = currentTheme?.icon ?? Monitor
 
   const handleLogout = () => {
-    void logout();
-  };
+    void logout()
+  }
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -140,7 +140,7 @@ export const HeaderActionsMenu = () => {
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="min-w-52 rounded-lg border-slate-200/80 bg-white p-2 shadow-[0_18px_45px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.06)] dark:border-border dark:bg-popover dark:shadow-[0_18px_45px_rgba(0,0,0,0.28),0_2px_8px_rgba(0,0,0,0.22)]">
             {themeOptions.map((option) => {
-              const OptionIcon = option.icon;
+              const OptionIcon = option.icon
               return (
                 <DropdownMenuItem
                   key={option.value}
@@ -154,7 +154,7 @@ export const HeaderActionsMenu = () => {
                   )}
                   {option.label}
                 </DropdownMenuItem>
-              );
+              )
             })}
           </DropdownMenuSubContent>
         </DropdownMenuSub>
@@ -168,5 +168,5 @@ export const HeaderActionsMenu = () => {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-};
+  )
+}

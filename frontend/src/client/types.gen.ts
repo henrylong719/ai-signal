@@ -105,29 +105,6 @@ export type IngestRunsPublic = {
     count: number;
 };
 
-export type ItemCreate = {
-    title: string;
-    description?: (string | null);
-};
-
-export type ItemPublic = {
-    title: string;
-    description?: (string | null);
-    id: string;
-    owner_id: string;
-    created_at?: (string | null);
-};
-
-export type ItemsPublic = {
-    data: Array<ItemPublic>;
-    count: number;
-};
-
-export type ItemUpdate = {
-    title?: (string | null);
-    description?: (string | null);
-};
-
 export type Message = {
     message: string;
 };
@@ -310,12 +287,6 @@ export type ArticlesReadSourcesData = {
 
 export type ArticlesReadSourcesResponse = (SourcesPublic);
 
-export type ArticlesReadArticleData = {
-    id: string;
-};
-
-export type ArticlesReadArticleResponse = (ArticlePublic);
-
 export type ArticlesReadSavedArticlesData = {
     accessToken?: (string | null);
     limit?: number;
@@ -329,6 +300,12 @@ export type ArticlesReadSavedArticleIdsData = {
 };
 
 export type ArticlesReadSavedArticleIdsResponse = (SavedArticleIdsPublic);
+
+export type ArticlesReadArticleData = {
+    id: string;
+};
+
+export type ArticlesReadArticleResponse = (ArticlePublic);
 
 export type ArticlesSaveArticleData = {
     accessToken?: (string | null);
@@ -376,43 +353,6 @@ export type InterestsUpdateInterestsData = {
 };
 
 export type InterestsUpdateInterestsResponse = (UserInterestPublic);
-
-export type ItemsReadItemsData = {
-    accessToken?: (string | null);
-    limit?: number;
-    skip?: number;
-};
-
-export type ItemsReadItemsResponse = (ItemsPublic);
-
-export type ItemsCreateItemData = {
-    accessToken?: (string | null);
-    requestBody: ItemCreate;
-};
-
-export type ItemsCreateItemResponse = (ItemPublic);
-
-export type ItemsReadItemData = {
-    accessToken?: (string | null);
-    id: string;
-};
-
-export type ItemsReadItemResponse = (ItemPublic);
-
-export type ItemsUpdateItemData = {
-    accessToken?: (string | null);
-    id: string;
-    requestBody: ItemUpdate;
-};
-
-export type ItemsUpdateItemResponse = (ItemPublic);
-
-export type ItemsDeleteItemData = {
-    accessToken?: (string | null);
-    id: string;
-};
-
-export type ItemsDeleteItemResponse = (Message);
 
 export type LoginStartOauthLoginData = {
     provider: string;

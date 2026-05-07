@@ -7,8 +7,8 @@ import {
 } from '@/components/Articles/ArticleList';
 import { MobileSidebar, Sidebar } from '@/components/Landing/Sidebar';
 import { useArticleFeed } from '@/hooks/useArticleFeed';
-import { useForYouFeed } from '@/hooks/useForYouFeed';
 import useAuth from '@/hooks/useAuth';
+import { useForYouFeed } from '@/hooks/useForYouFeed';
 
 export const Route = createFileRoute('/_layout/')({
   component: Dashboard,
@@ -44,7 +44,7 @@ function Dashboard() {
   const forYouReasons = useMemo(() => {
     const m = new Map<string, string | null>();
     for (const article of forYou.articles) {
-      m.set(article.id, article.reason);
+      m.set(article.id, article.reason ?? null);
     }
     return m;
   }, [forYou.articles]);
@@ -68,10 +68,10 @@ function Dashboard() {
       <div className="min-w-0">
         <div
           ref={feedTopRef}
-          className="scroll-mt-16 sm:scroll-mt-[72px]"
+          className="scroll-mt-16 sm:scroll-mt-18"
           aria-hidden="true"
         />
-        <div className="sticky top-16 z-40 -mx-4 border-b border-slate-200/80 bg-white/95 px-4 pt-6 backdrop-blur sm:top-[72px] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 dark:border-border dark:bg-background/92">
+        <div className="sticky top-16 z-40 -mx-4 border-b border-slate-200/80 bg-white/95 px-4 pt-6 backdrop-blur sm:top-[72px] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 dark:border-border/80 dark:bg-background/92">
           <div className="flex items-center">
             <MobileSidebar />
             <div className="flex gap-8 sm:gap-10">

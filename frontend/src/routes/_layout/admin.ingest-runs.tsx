@@ -1,15 +1,15 @@
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
-import { Suspense, useState } from 'react';
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { ArrowLeft, RefreshCw } from 'lucide-react'
+import { Suspense, useState } from 'react'
 
-import { AdminService } from '@/client';
-import { ingestRunColumns } from '@/components/Admin/ingestRunColumns';
-import { DataTable } from '@/components/Common/DataTable';
-import PendingIngestRuns from '@/components/Pending/PendingIngestRuns';
-import { Button } from '@/components/ui/button';
-import useCustomToast from '@/hooks/useCustomToast';
-import { cn } from '@/lib/utils';
+import { AdminService } from '@/client'
+import { ingestRunColumns } from '@/components/Admin/ingestRunColumns'
+import { DataTable } from '@/components/Common/DataTable'
+import PendingIngestRuns from '@/components/Pending/PendingIngestRuns'
+import { Button } from '@/components/ui/button'
+import useCustomToast from '@/hooks/useCustomToast'
+import { cn } from '@/lib/utils'
 
 /**
  * Admin page for ingestion run history.
@@ -25,7 +25,7 @@ function getIngestRunsQueryOptions() {
   return {
     queryFn: () => AdminService.readIngestRuns({ limit: 50 }),
     queryKey: ['ingest-runs'],
-  };
+  }
 }
 
 export const Route = createFileRoute('/_layout/admin/ingest-runs')({
@@ -37,11 +37,11 @@ export const Route = createFileRoute('/_layout/admin/ingest-runs')({
       },
     ],
   }),
-});
+})
 
 function IngestRunsTableContent() {
-  const { data } = useSuspenseQuery(getIngestRunsQueryOptions());
-  return <DataTable columns={ingestRunColumns} data={data.data} />;
+  const { data } = useSuspenseQuery(getIngestRunsQueryOptions())
+  return <DataTable columns={ingestRunColumns} data={data.data} />
 }
 
 function IngestRunsTable() {
@@ -49,30 +49,30 @@ function IngestRunsTable() {
     <Suspense fallback={<PendingIngestRuns />}>
       <IngestRunsTableContent />
     </Suspense>
-  );
+  )
 }
 
 function IngestRunsPage() {
-  const queryClient = useQueryClient();
-  const { showSuccessToast, showErrorToast } = useCustomToast();
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const handleRefresh = async () => {
     if (isRefreshing) {
-      return;
+      return
     }
 
-    setIsRefreshing(true);
+    setIsRefreshing(true)
 
     try {
-      await queryClient.invalidateQueries({ queryKey: ['ingest-runs'] });
-      showSuccessToast('Ingest runs refreshed.');
+      await queryClient.invalidateQueries({ queryKey: ['ingest-runs'] })
+      showSuccessToast('Ingest runs refreshed.')
     } catch {
-      showErrorToast('Could not refresh ingest runs. Try again.');
+      showErrorToast('Could not refresh ingest runs. Try again.')
     } finally {
-      setIsRefreshing(false);
+      setIsRefreshing(false)
     }
-  };
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-16 pt-8 sm:pb-20 sm:pt-10">
@@ -109,5 +109,5 @@ function IngestRunsPage() {
       </header>
       <IngestRunsTable />
     </div>
-  );
+  )
 }

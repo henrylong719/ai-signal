@@ -37,14 +37,6 @@ from app.crud.interest import (
     get_interests,
     set_interests,
 )
-from app.crud.item import (
-    count_items,
-    create_item,
-    delete_item,
-    get_item,
-    get_items,
-    update_item,
-)
 from app.crud.oauth_account import (
     create_oauth_account,
     get_oauth_account,
@@ -67,15 +59,12 @@ from app.crud.user_embedding import (
 __all__ = [
     "authenticate",
     "count_articles",
-    "count_items",
     "count_pending_embeddings",
     "count_saved_articles",
     "create_article",
-    "create_item",
     "create_oauth_account",
     "create_user",
     "delete_article",
-    "delete_item",
     "delete_user_embedding",
     "get_article",
     "get_article_by_url",
@@ -93,8 +82,6 @@ __all__ = [
     "get_saved_article_ids",
     "get_saved_articles",
     "get_saved_signals",
-    "get_item",
-    "get_items",
     "get_oauth_account",
     "get_user_by_email",
     "get_user_embedding",
@@ -104,7 +91,6 @@ __all__ = [
     "unsave_article",
     "update_article",
     "update_article_embeddings",
-    "update_item",
     "update_oauth_account_profile",
     "update_user",
     "upsert_user_embedding",

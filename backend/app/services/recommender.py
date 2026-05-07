@@ -68,6 +68,12 @@ class UserProfile:
     ``interest_categories`` and ``interest_tags`` come from explicit
     onboarding choices.
 
+    ``preferred_sources`` are sources the user has explicitly opted into
+    via the personalization page — the strongest possible source signal.
+    They feed the source-affinity term only; they do not flow into the
+    user embedding (semantic similarity is built from saved/clicked
+    article embeddings plus stated interest text).
+
     ``saved_tags`` / ``saved_sources`` are derived from saved articles
     (strongest behavioral positive). ``clicked_tags`` / ``clicked_sources``
     are derived from outbound-link clicks recorded by the redirect endpoint
@@ -78,6 +84,7 @@ class UserProfile:
 
     interest_categories: frozenset[str] = field(default_factory=frozenset)
     interest_tags: frozenset[str] = field(default_factory=frozenset)
+    preferred_sources: frozenset[str] = field(default_factory=frozenset)
     saved_tags: frozenset[str] = field(default_factory=frozenset)
     saved_sources: frozenset[str] = field(default_factory=frozenset)
     clicked_tags: frozenset[str] = field(default_factory=frozenset)
@@ -91,6 +98,7 @@ class UserProfile:
         return bool(
             self.interest_categories
             or self.interest_tags
+            or self.preferred_sources
             or self.saved_tags
             or self.saved_sources
             or self.clicked_tags
@@ -228,23 +236,29 @@ def source_affinity_score(
     article: CandidateArticle,
     profile: UserProfile,
 ) -> float:
-    """Affinity for the article's source, based on prior engagement.
+    """Affinity for the article's source.
 
-    Returns:
-      1.0  — user has saved an article from this source (strong signal)
-      0.5  — user has clicked through but never saved (weaker signal)
-      0.0  — no engagement with this source
+    Four-level scale, highest applicable level wins:
+      1.0  — user has explicitly opted into this source via the
+             personalization page (strongest, user told us directly)
+      0.7  — user has saved an article from this source (strong behavioral)
+      0.4  — user has clicked through but never saved (weaker behavioral)
+      0.0  — no signal for this source
 
-    Three discrete levels rather than a continuous count: graduated
-    source-affinity (e.g., proportion of saves from this source) tends to
-    over-recommend whatever the user engaged with most recently and reduces
-    feed diversity. The 1.0/0.5 split lets clicks contribute meaningfully
-    without dominating saves.
+    Discrete levels rather than continuous (e.g., proportion of saves
+    from this source) because graduated source-affinity tends to
+    over-recommend whatever the user engaged with most recently and
+    reduces feed diversity.
+
+    The 1.0 ceiling for explicit preference is what makes
+    "Because you follow X" labels meaningful: the user actually said so.
     """
-    if article.source in profile.saved_sources:
+    if article.source in profile.preferred_sources:
         return 1.0
+    if article.source in profile.saved_sources:
+        return 0.7
     if article.source in profile.clicked_sources:
-        return 0.5
+        return 0.4
     return 0.0
 
 
@@ -363,7 +377,21 @@ def reason_for(scored: ScoredArticle, profile: UserProfile) -> str | None:
             return f"Matches your interest in {tag}"
         return "Matches your interest"
     if dominant == "source":
-        return f"Popular from {article.source}"
+        # Explicit preference > saved > clicked, mirroring the score levels.
+        # The phrasing differs to reflect *why* the source matters: explicit
+        # preference is a direct opt-in ("you follow"), saved is a strong
+        # behavioral signal ("you saved articles from"), clicked is a
+        # weaker one ("you read").
+        if article.source in profile.preferred_sources:
+            return f"Because you follow {article.source}"
+        if article.source in profile.saved_sources:
+            return f"Because you saved articles from {article.source}"
+        if article.source in profile.clicked_sources:
+            return f"Because you read {article.source}"
+        # Source dominant but no source membership shouldn't happen in
+        # practice — source_affinity_score returns 0 in that case, so it
+        # can't dominate. Defensive None.
+        return None
     if dominant == "recency":
         return "Fresh from your feed"
 

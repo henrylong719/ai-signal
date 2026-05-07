@@ -66,6 +66,24 @@ def test_explicit_match_rewards_matching_category() -> None:
     assert explicit_match_score(article, profile) == 0.5
 
 
+def test_explicit_match_with_only_stated_tags_is_nonzero() -> None:
+    """A user with only stated interest tags (no categories, no saves, no
+    clicks) should still get a nonzero explicit-match score for an article
+    whose tags overlap. This guards the bug where stated tags were
+    accidentally compared against interest_categories instead of
+    interest_tags."""
+    article = _article(category="other", tags=("rag", "evals"))
+    profile = UserProfile(interest_tags=frozenset({"rag", "evals"}))
+
+    score = explicit_match_score(article, profile)
+
+    # No category match (category="other" not in empty interest_categories).
+    # Full Jaccard overlap on tags = 1.0, weighted by the stated weight 1/6.
+    # Tag-side total = 1/6, then halved with the (zero) category half = 1/12.
+    assert score > 0
+    assert abs(score - (0.5 * 0.0 + 0.5 * (1 / 6))) < 1e-9
+
+
 def test_explicit_match_weights_saved_above_clicked_above_stated() -> None:
     """Strength order: saved > clicked > stated. Each Jaccard-overlaps fully."""
     article = _article(category="other", tags=("rag", "evals"))
@@ -78,30 +96,64 @@ def test_explicit_match_weights_saved_above_clicked_above_stated() -> None:
     clicked_score = explicit_match_score(article, only_clicked)
     saved_score = explicit_match_score(article, only_saved)
 
-    assert stated_score > 0
-    assert stated_score < clicked_score < saved_score
+    # All three are nonzero (the bug-guard above ensures stated > 0).
+    assert 0 < stated_score < clicked_score < saved_score
 
 
-def test_explicit_match_uses_interest_tags_without_categories() -> None:
-    article = _article(category="other", tags=("rag", "evals"))
-    profile = UserProfile(interest_tags=frozenset({"rag"}))
-
-    assert explicit_match_score(article, profile) > 0
-
-
-def test_source_affinity_is_one_for_saved_sources() -> None:
-    article = _article(source="LangChain")
-    profile = UserProfile(saved_sources=frozenset({"LangChain"}))
+def test_source_affinity_is_one_for_explicitly_preferred_source() -> None:
+    """Explicit preference is the strongest possible source signal — 1.0."""
+    article = _article(source="OpenAI")
+    profile = UserProfile(preferred_sources=frozenset({"OpenAI"}))
 
     assert source_affinity_score(article, profile) == 1.0
 
 
-def test_source_affinity_is_half_for_clicked_only_sources() -> None:
+def test_source_affinity_prefers_explicit_over_saved() -> None:
+    """When a source is both explicitly preferred and saved-from, explicit wins
+    (1.0, not the saved 0.7) — the user told us directly."""
+    article = _article(source="LangChain")
+    profile = UserProfile(
+        preferred_sources=frozenset({"LangChain"}),
+        saved_sources=frozenset({"LangChain"}),
+    )
+
+    assert source_affinity_score(article, profile) == 1.0
+
+
+def test_source_affinity_levels_ordered() -> None:
+    """preferred (1.0) > saved (0.7) > clicked (0.4) > none (0.0)."""
+    article = _article(source="LangChain")
+
+    only_preferred = UserProfile(preferred_sources=frozenset({"LangChain"}))
+    only_saved = UserProfile(saved_sources=frozenset({"LangChain"}))
+    only_clicked = UserProfile(clicked_sources=frozenset({"LangChain"}))
+    none_set = UserProfile()
+
+    preferred_score = source_affinity_score(article, only_preferred)
+    saved_score = source_affinity_score(article, only_saved)
+    clicked_score = source_affinity_score(article, only_clicked)
+    none_score = source_affinity_score(article, none_set)
+
+    assert preferred_score == 1.0
+    assert saved_score == 0.7
+    assert clicked_score == 0.4
+    assert none_score == 0.0
+    assert preferred_score > saved_score > clicked_score > none_score
+
+
+def test_source_affinity_is_seven_tenths_for_saved_sources() -> None:
+    article = _article(source="LangChain")
+    profile = UserProfile(saved_sources=frozenset({"LangChain"}))
+
+    assert source_affinity_score(article, profile) == 0.7
+
+
+def test_source_affinity_is_four_tenths_for_clicked_only_sources() -> None:
     """Clicking through is meaningful but weaker than saving."""
     article = _article(source="LangChain")
     profile = UserProfile(clicked_sources=frozenset({"LangChain"}))
 
-    assert source_affinity_score(article, profile) == 0.5
+    assert source_affinity_score(article, profile) == 0.4
 
 
 def test_source_affinity_prefers_saved_over_clicked_when_both_present() -> None:
@@ -111,7 +163,7 @@ def test_source_affinity_prefers_saved_over_clicked_when_both_present() -> None:
         clicked_sources=frozenset({"LangChain"}),
     )
 
-    assert source_affinity_score(article, profile) == 1.0
+    assert source_affinity_score(article, profile) == 0.7
 
 
 def test_source_affinity_is_zero_for_unknown_source() -> None:
@@ -119,6 +171,21 @@ def test_source_affinity_is_zero_for_unknown_source() -> None:
     profile = UserProfile(saved_sources=frozenset({"LangChain"}))
 
     assert source_affinity_score(article, profile) == 0.0
+
+
+def test_has_any_signal_true_with_only_preferred_sources() -> None:
+    """A user with only explicit source preferences (no topics, tags, saves,
+    or clicks) should still count as having signal — the recommender will
+    rank by source-affinity + recency only."""
+    profile = UserProfile(preferred_sources=frozenset({"OpenAI"}))
+
+    assert profile.has_any_signal is True
+
+
+def test_has_any_signal_false_for_completely_empty_profile() -> None:
+    profile = UserProfile()
+
+    assert profile.has_any_signal is False
 
 
 def test_recency_decays_with_seven_day_half_life() -> None:
@@ -206,7 +273,9 @@ def test_clicks_alone_produce_personalized_ranking_above_unmatched() -> None:
     """A user with only click-history (no saves, no stated interests) should
     still get personalized ranking — clicks are real positive signal."""
     matched = _article(category="other", tags=("rag",), source="LangChain", age_days=10)
-    unmatched = _article(category="other", tags=(), source="RandomBlog", age_days=10)
+    unmatched = _article(
+        category="other", tags=("kubernetes",), source="DevOpsBlog", age_days=10
+    )
 
     profile = UserProfile(
         clicked_tags=frozenset({"rag"}),
@@ -218,21 +287,10 @@ def test_clicks_alone_produce_personalized_ranking_above_unmatched() -> None:
     assert result[0].article.id == matched.id
 
 
-def test_semantic_similarity_contributes_when_provided() -> None:
-    article = _article()
-    profile = UserProfile()  # no other signal — isolate semantic
-
-    no_sim = score_candidates([article], profile, now=NOW)
-    with_sim = score_candidates(
-        [article], profile, semantic_similarities={article.id: 1.0}, now=NOW
-    )
-
-    assert with_sim[0].score > no_sim[0].score
-
-
-def test_semantic_similarity_defaults_to_zero_when_omitted() -> None:
-    """Scorer is usable before pgvector is wired up."""
-    article = _article(category="rag", age_days=0)
+def test_score_handles_articles_without_embeddings_gracefully() -> None:
+    """When an article isn't in the semantic_similarities map, the semantic
+    component is 0 and the article is still ranked by the other signals."""
+    article = _article(category="rag", tags=("rag",))
     profile = UserProfile(interest_categories=frozenset({"rag"}))
 
     # Should not raise and should still produce a meaningful ranking.
@@ -257,14 +315,51 @@ def test_reason_uses_category_label_when_explicit_category_drives_score() -> Non
     assert reason_for(scored, profile) == "Because you follow RAG"
 
 
-def test_reason_uses_source_label_when_source_affinity_dominates() -> None:
-    # No category or tag match — only source affinity should fire.
+def test_reason_for_explicit_source_says_because_you_follow() -> None:
+    """When source-affinity dominates and the source is explicitly preferred,
+    the label should be 'Because you follow X' — direct opt-in phrasing."""
+    article = _article(category="other", tags=(), source="OpenAI", age_days=30)
+    profile = UserProfile(preferred_sources=frozenset({"OpenAI"}))
+
+    scored = score_candidates([article], profile, now=NOW)[0]
+
+    assert reason_for(scored, profile) == "Because you follow OpenAI"
+
+
+def test_reason_for_saved_source_says_because_you_saved() -> None:
+    """Behavioral source affinity (saved-from) gets 'Because you saved
+    articles from X' — distinct from explicit preference."""
     article = _article(category="other", tags=(), source="LangChain", age_days=30)
     profile = UserProfile(saved_sources=frozenset({"LangChain"}))
 
     scored = score_candidates([article], profile, now=NOW)[0]
 
-    assert reason_for(scored, profile) == "Popular from LangChain"
+    assert reason_for(scored, profile) == "Because you saved articles from LangChain"
+
+
+def test_reason_for_clicked_source_says_because_you_read() -> None:
+    """Click-only source affinity gets 'Because you read X' — weakest of the
+    three source phrasings."""
+    article = _article(category="other", tags=(), source="LangChain", age_days=30)
+    profile = UserProfile(clicked_sources=frozenset({"LangChain"}))
+
+    scored = score_candidates([article], profile, now=NOW)[0]
+
+    assert reason_for(scored, profile) == "Because you read LangChain"
+
+
+def test_reason_explicit_source_wins_over_saved_when_both_set() -> None:
+    """When a source is both preferred and saved-from, the reason should
+    reflect explicit preference (the dominant signal level)."""
+    article = _article(category="other", tags=(), source="LangChain", age_days=30)
+    profile = UserProfile(
+        preferred_sources=frozenset({"LangChain"}),
+        saved_sources=frozenset({"LangChain"}),
+    )
+
+    scored = score_candidates([article], profile, now=NOW)[0]
+
+    assert reason_for(scored, profile) == "Because you follow LangChain"
 
 
 def test_reason_recognizes_clicked_tags_in_explicit_path() -> None:

@@ -52,18 +52,21 @@ def test_set_interests_normalizes_and_replaces_existing_row(db: Session) -> None
         user_id=user.id,
         categories=["rag", "models", "rag"],
         tags=[" RAG ", "Agents", "", "rag"],
+        preferred_sources=["OpenAI", "Anthropic", "OpenAI"],
     )
     updated = crud.set_interests(
         session=db,
         user_id=user.id,
         categories=["agents"],
         tags=[" Tool Use ", "tool use", "Evals"],
+        preferred_sources=["LangChain"],
     )
 
     assert created.user_id == user.id
     assert updated.user_id == user.id
     assert updated.categories == ["agents"]
     assert updated.tags == ["evals", "tool use"]
+    assert updated.preferred_sources == ["LangChain"]
 
 
 def test_record_event_inserts_then_increments_same_event(db: Session) -> None:

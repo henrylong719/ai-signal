@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.result import Result
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import col
 
 from app.core.db import async_engine
 from app.models import Article
@@ -78,7 +79,7 @@ async def _embed_inserted_articles(
     # Re-fetch the just-inserted rows so we have the canonical text
     # fields (post any DB-side normalization). Since we have the IDs
     # this is a single bounded query.
-    stmt = select(Article).where(Article.id.in_(article_ids))  # type: ignore[attr-defined]
+    stmt = select(Article).where(col(Article.id).in_(article_ids))
     result = await session.execute(stmt)
     articles = list(result.scalars().all())
 
@@ -119,6 +120,7 @@ async def ingest_all() -> IngestResult:
                 if not url or not title:
                     continue
 
+                title = _clean_text(title)
                 excerpt = normalize_excerpt(entry.get("summary")) or None
                 image_url = extract_image_url(entry, feed_url=source.rss_url)
                 author = (

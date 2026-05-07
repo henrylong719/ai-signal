@@ -30,6 +30,12 @@ def _refresh_user_vector(session: Session, user_id: uuid.UUID) -> None:
     is intentional: embedding-pipeline failures here must not break the
     interest-update operation, and centralising the helper would mean
     importing it across modules where the import graph is already busy.
+
+    Note: preferred_sources do NOT flow into the user embedding (they
+    affect the source-affinity component of the score, not the semantic
+    component). When only preferred_sources change, this recompute is
+    effectively a no-op at the embedding level — but we still call it to
+    keep the trigger-on-any-change contract simple.
     """
     try:
         compute_and_save_user_vector(session=session, user_id=user_id)
@@ -45,6 +51,7 @@ def _to_public(
     *,
     categories: list[Category] | None,
     tags: list[str] | None,
+    preferred_sources: list[str] | None,
     updated_at: datetime | None,
 ) -> UserInterestPublic:
     """Construct the public response shape from arbitrary inputs.
@@ -55,6 +62,7 @@ def _to_public(
     return UserInterestPublic(
         categories=list(categories or []),
         tags=list(tags or []),
+        preferred_sources=list(preferred_sources or []),
         updated_at=updated_at,  # type: ignore[arg-type]
     )
 
@@ -67,12 +75,13 @@ def read_interests(
     """Current user's stored interests, or empty defaults if none set."""
     row = crud.get_interests(session=session, user_id=current_user.id)
     if row is None:
-        return _to_public(categories=[], tags=[], updated_at=None)
+        return _to_public(categories=[], tags=[], preferred_sources=[], updated_at=None)
     # The DB stores categories as TEXT[]; we trust the stored values to
     # already match the Category Literal because the writer validates them.
     return _to_public(
         categories=_stored_categories_to_public(row.categories),
         tags=row.tags,
+        preferred_sources=row.preferred_sources,
         updated_at=row.updated_at,
     )
 
@@ -86,20 +95,25 @@ def update_interests(
     """Replace the current user's interests with the provided lists.
 
     Pydantic enforces that `body.categories` is a subset of the Category
-    Literal; tag normalization (lowercase, trim, dedupe, length cap) happens
-    in `body.normalized_tags()` before reaching the DB layer.
+    Literal and that `body.preferred_sources` is a subset of SOURCES.
+    Tag normalization (lowercase, trim, dedupe, length cap) happens in
+    `body.normalized_tags()` before reaching the DB layer.
     """
     row = crud.set_interests(
         session=session,
         user_id=current_user.id,
         categories=list(body.categories),
         tags=body.normalized_tags(),
+        preferred_sources=list(body.preferred_sources),
     )
-    # Stated interests are an input to the user vector — refresh now so
-    # the next /for-you request reflects the new preferences.
+    # Stated interests (categories + tags) are an input to the user vector
+    # — refresh now so the next /for-you request reflects the new
+    # preferences. Preferred sources don't flow into the embedding but the
+    # recompute is cheap and keeps the trigger semantics simple.
     _refresh_user_vector(session, current_user.id)
     return _to_public(
         categories=_stored_categories_to_public(row.categories),
         tags=row.tags,
+        preferred_sources=row.preferred_sources,
         updated_at=row.updated_at,
     )

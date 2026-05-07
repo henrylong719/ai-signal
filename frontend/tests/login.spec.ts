@@ -23,17 +23,17 @@ test('Inputs are visible, empty and editable', async ({ page }) => {
   await verifyInput(page, 'password-input')
 })
 
-test('Log In button is visible', async ({ page }) => {
+test('Sign In button is visible', async ({ page }) => {
   await page.goto('/login')
 
-  await expect(page.getByRole('button', { name: 'Log In' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
 })
 
 test('Forgot Password link is visible', async ({ page }) => {
   await page.goto('/login')
 
   await expect(
-    page.getByRole('link', { name: 'Forgot your password?' }),
+    page.getByRole('link', { name: 'Forgot password?' }),
   ).toBeVisible()
 })
 
@@ -41,12 +41,12 @@ test('Log in with valid email and password ', async ({ page }) => {
   await page.goto('/login')
 
   await fillForm(page, firstSuperuser, firstSuperuserPassword)
-  await page.getByRole('button', { name: 'Log In' }).click()
+  await page.getByRole('button', { name: 'Sign In' }).click()
 
   await page.waitForURL('/')
 
   await expect(
-    page.getByText('Welcome back, nice to see you again!'),
+    page.getByRole('button', { name: 'Open profile menu' }),
   ).toBeVisible()
 })
 
@@ -54,7 +54,7 @@ test('Log in with invalid email', async ({ page }) => {
   await page.goto('/login')
 
   await fillForm(page, 'invalidemail', firstSuperuserPassword)
-  await page.getByRole('button', { name: 'Log In' }).click()
+  await page.getByRole('button', { name: 'Sign In' }).click()
 
   await expect(page.getByText('Invalid email address')).toBeVisible()
 })
@@ -64,7 +64,7 @@ test('Log in with invalid password', async ({ page }) => {
 
   await page.goto('/login')
   await fillForm(page, firstSuperuser, password)
-  await page.getByRole('button', { name: 'Log In' }).click()
+  await page.getByRole('button', { name: 'Sign In' }).click()
 
   await expect(page.getByText('Incorrect email or password')).toBeVisible()
 })
@@ -73,45 +73,41 @@ test('Successful log out', async ({ page }) => {
   await page.goto('/login')
 
   await fillForm(page, firstSuperuser, firstSuperuserPassword)
-  await page.getByRole('button', { name: 'Log In' }).click()
+  await page.getByRole('button', { name: 'Sign In' }).click()
 
   await page.waitForURL('/')
 
   await expect(
-    page.getByText('Welcome back, nice to see you again!'),
+    page.getByRole('button', { name: 'Open profile menu' }),
   ).toBeVisible()
 
-  await page.getByTestId('user-menu').click()
+  await page.getByRole('button', { name: 'Open profile menu' }).click()
   await page.getByRole('menuitem', { name: 'Log out' }).click()
-  await page.waitForURL('/login')
+  await page.waitForURL('/')
+  await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
 })
 
 test('Logged-out user cannot access protected routes', async ({ page }) => {
   await page.goto('/login')
 
   await fillForm(page, firstSuperuser, firstSuperuserPassword)
-  await page.getByRole('button', { name: 'Log In' }).click()
+  await page.getByRole('button', { name: 'Sign In' }).click()
 
   await page.waitForURL('/')
 
   await expect(
-    page.getByText('Welcome back, nice to see you again!'),
+    page.getByRole('button', { name: 'Open profile menu' }),
   ).toBeVisible()
 
-  await page.getByTestId('user-menu').click()
+  await page.getByRole('button', { name: 'Open profile menu' }).click()
   await page.getByRole('menuitem', { name: 'Log out' }).click()
-  await page.waitForURL('/login')
+  await page.waitForURL('/')
 
   await page.goto('/settings')
-  await page.waitForURL('/login')
+  await expect(page.getByText('Sign in to manage settings')).toBeVisible()
 })
 
-test('Redirects to /login when token is wrong', async ({ page }) => {
+test('Logged-out settings page shows sign-in prompt', async ({ page }) => {
   await page.goto('/settings')
-  await page.evaluate(() => {
-    localStorage.setItem('access_token', 'invalid_token')
-  })
-  await page.goto('/settings')
-  await page.waitForURL('/login')
-  await expect(page).toHaveURL('/login')
+  await expect(page.getByText('Sign in to manage settings')).toBeVisible()
 })

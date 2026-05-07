@@ -10,6 +10,7 @@ export type ForYouArticle = ForYouArticlePublic
 interface ForYouPage {
   data: ForYouArticle[]
   count: number
+  candidate_pool_cap: number
 }
 
 const fetchPage = async (skip: number): Promise<ForYouPage> => {
@@ -55,11 +56,16 @@ export function useForYouFeed() {
 
   const articles: ForYouArticle[] =
     data?.pages.flatMap((page) => page.data) ?? []
+  const lastPage = data?.pages[data.pages.length - 1]
+  const exhaustedCandidatePool =
+    lastPage !== undefined && lastPage.count >= lastPage.candidate_pool_cap
 
   const feedStatus = isFetchingNextPage
     ? 'Loading more...'
     : !hasNextPage && articles.length > 0
-      ? "You're all caught up."
+      ? exhaustedCandidatePool
+        ? "That's all your top picks for now."
+        : "You're all caught up."
       : !hasNextPage
         ? 'Your personalized feed is empty for now.'
         : null

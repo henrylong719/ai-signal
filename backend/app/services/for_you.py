@@ -59,10 +59,11 @@ class ForYouItem:
 def build_user_profile(*, session: Session, user_id: uuid.UUID) -> UserProfile:
     """Read every signal we have for the user and assemble a profile.
 
-    Five DB queries — explicit interests, saved signals, clicked signals,
-    saved-article IDs (for filtering), dismissed article IDs (also for
-    filtering). Each query is small; total round-trip overhead is what
-    we trade for keeping the recommender input shape clean and testable.
+    Five DB queries — explicit interests (which now also carries
+    preferred_sources), saved signals, clicked signals, saved-article IDs
+    (for filtering), dismissed article IDs (also for filtering). Each
+    query is small; total round-trip overhead is what we trade for
+    keeping the recommender input shape clean and testable.
     """
     interests_row = crud.get_interests(session=session, user_id=user_id)
     saved_tags, saved_sources = crud.get_saved_signals(session=session, user_id=user_id)
@@ -83,6 +84,9 @@ def build_user_profile(*, session: Session, user_id: uuid.UUID) -> UserProfile:
             interests_row.categories if interests_row else []
         ),
         interest_tags=frozenset(interests_row.tags if interests_row else []),
+        preferred_sources=frozenset(
+            interests_row.preferred_sources if interests_row else []
+        ),
         saved_tags=saved_tags,
         saved_sources=saved_sources,
         clicked_tags=clicked_tags,

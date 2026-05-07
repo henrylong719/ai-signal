@@ -30,21 +30,29 @@ def set_interests(
     user_id: uuid.UUID,
     categories: list[str],
     tags: list[str],
+    preferred_sources: list[str],
 ) -> UserInterest:
     """Full-replace the user's stored interests.
 
-    Validation of category/tag values against the allowed set is the API
-    layer's job — this function trusts its inputs. We normalize tags to
-    lowercase here because tags come from free-form text input upstream.
+    Validation of category/tag/source values against the allowed sets is
+    the API layer's job — this function trusts its inputs. We normalize
+    tags to lowercase here because tags come from free-form text input
+    upstream. Categories and preferred_sources are sorted to keep storage
+    deterministic (helpful for tests and for cache-key stability).
     """
     normalized_tags = sorted({t.strip().lower() for t in tags if t.strip()})
     normalized_categories = sorted(set(categories))
+    # Preferred sources are case-sensitive display names from SOURCES;
+    # the API-layer validator already deduped and stripped them. We sort
+    # for storage determinism.
+    normalized_sources = sorted(set(preferred_sources))
     now = get_datetime_utc()
 
     stmt = pg_insert(UserInterest).values(
         user_id=user_id,
         categories=normalized_categories,
         tags=normalized_tags,
+        preferred_sources=normalized_sources,
         updated_at=now,
     )
     stmt = stmt.on_conflict_do_update(
@@ -52,6 +60,7 @@ def set_interests(
         set_={
             "categories": normalized_categories,
             "tags": normalized_tags,
+            "preferred_sources": normalized_sources,
             "updated_at": now,
         },
     )

@@ -570,10 +570,14 @@ export const ForYouArticlesPublicSchema = {
         count: {
             type: 'integer',
             title: 'Count'
+        },
+        candidate_pool_cap: {
+            type: 'integer',
+            title: 'Candidate Pool Cap'
         }
     },
     type: 'object',
-    required: ['data', 'count'],
+    required: ['data', 'count', 'candidate_pool_cap'],
     title: 'ForYouArticlesPublic'
 } as const;
 

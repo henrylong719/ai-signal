@@ -39,7 +39,11 @@ def test_build_user_profile_aggregates_all_recommendation_signals(
     user_id = uuid4()
     saved_id = uuid4()
     dismissed_id = uuid4()
-    interests = SimpleNamespace(categories=["agents"], tags=["tool-use"])
+    interests = SimpleNamespace(
+        categories=["agents"],
+        tags=["tool-use"],
+        preferred_sources=["OpenAI", "Anthropic"],
+    )
 
     monkeypatch.setattr(
         app_crud,
@@ -74,6 +78,7 @@ def test_build_user_profile_aggregates_all_recommendation_signals(
     assert profile == UserProfile(
         interest_categories=frozenset({"agents"}),
         interest_tags=frozenset({"tool-use"}),
+        preferred_sources=frozenset({"OpenAI", "Anthropic"}),
         saved_tags=frozenset({"evals"}),
         saved_sources=frozenset({"OpenAI"}),
         clicked_tags=frozenset({"rag"}),

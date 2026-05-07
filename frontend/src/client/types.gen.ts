@@ -121,6 +121,7 @@ export type ForYouArticlePublic = {
 export type ForYouArticlesPublic = {
     data: Array<ForYouArticlePublic>;
     count: number;
+    candidate_pool_cap: number;
 };
 
 export type HTTPValidationError = {

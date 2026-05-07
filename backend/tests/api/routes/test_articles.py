@@ -303,6 +303,7 @@ def test_read_for_you_excludes_saved_and_dismissed_articles(
         user_id=user.id,
         categories=["rag"],
         tags=["rag"],
+        preferred_sources=[],
     )
     crud.save_article(
         session=db,
@@ -392,7 +393,9 @@ def test_read_saved_articles_preserves_saved_order_when_bulk_fetching(
     captured_article_ids: list[uuid.UUID] = []
 
     monkeypatch.setattr(article_routes.crud, "count_saved_articles", lambda **_: 2)
-    monkeypatch.setattr(article_routes.crud, "get_saved_articles", lambda **_: saved_rows)
+    monkeypatch.setattr(
+        article_routes.crud, "get_saved_articles", lambda **_: saved_rows
+    )
 
     def fake_get_articles_by_ids(**kwargs):
         captured_article_ids.extend(kwargs["article_ids"])
@@ -433,7 +436,9 @@ def test_read_saved_articles_skips_saved_rows_for_deleted_articles(
     ]
 
     monkeypatch.setattr(article_routes.crud, "count_saved_articles", lambda **_: 2)
-    monkeypatch.setattr(article_routes.crud, "get_saved_articles", lambda **_: saved_rows)
+    monkeypatch.setattr(
+        article_routes.crud, "get_saved_articles", lambda **_: saved_rows
+    )
     monkeypatch.setattr(
         article_routes.crud,
         "get_articles_by_ids",

@@ -31,6 +31,7 @@ from app.crud.event import (
     get_events,
     record_event,
 )
+from app.crud.feedback import create_feedback
 from app.crud.ingest_run import (
     fail_ingest_run,
     finish_ingest_run,
@@ -68,6 +69,7 @@ __all__ = [
     "count_semantic_search_articles",
     "create_article",
     "create_oauth_account",
+    "create_feedback",
     "create_user",
     "delete_article",
     "delete_user_embedding",

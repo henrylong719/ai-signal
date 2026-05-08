@@ -38,6 +38,14 @@ def _configure_github_oauth() -> Any:
     )
 
 
+def _configure_facebook_oauth() -> Any:
+    return patch.multiple(
+        "app.core.config.settings",
+        FACEBOOK_OAUTH_CLIENT_ID="facebook-client-id",
+        FACEBOOK_OAUTH_CLIENT_SECRET="facebook-client-secret",
+    )
+
+
 def test_get_access_token(client: TestClient) -> None:
     login_data = {
         "username": settings.FIRST_SUPERUSER,
@@ -65,6 +73,22 @@ def test_start_google_oauth_redirects_and_sets_state_cookie(
     )
     assert "client_id=google-client-id" in r.headers["location"]
     assert "scope=openid+email+profile" in r.headers["location"]
+    assert _get_set_cookie_for(r, OAUTH_STATE_COOKIE_NAME) is not None
+
+
+def test_start_facebook_oauth_redirects_and_sets_state_cookie(
+    client: TestClient,
+) -> None:
+    with _configure_facebook_oauth():
+        r = client.get(
+            f"{settings.API_V1_STR}/login/facebook",
+            follow_redirects=False,
+        )
+
+    assert r.status_code == 307
+    assert r.headers["location"].startswith("https://www.facebook.com/dialog/oauth?")
+    assert "client_id=facebook-client-id" in r.headers["location"]
+    assert "scope=email%2Cpublic_profile" in r.headers["location"]
     assert _get_set_cookie_for(r, OAUTH_STATE_COOKIE_NAME) is not None
 
 
@@ -171,6 +195,49 @@ def test_github_oauth_callback_links_existing_user_by_email(
     ).first()
     assert account is not None
     assert account.user_id == existing_user.id
+
+
+def test_facebook_oauth_callback_creates_user_and_session(
+    client: TestClient,
+    db: Session,
+) -> None:
+    state = "valid-facebook-state"
+    client.cookies.set(
+        OAUTH_STATE_COOKIE_NAME,
+        state,
+        path=REFRESH_COOKIE_PATH,
+    )
+    identity = OAuthIdentity(
+        provider="facebook",
+        provider_user_id="facebook-user-1",
+        email=random_email(),
+        email_verified=True,
+        display_name="Facebook User",
+        avatar_url="https://example.com/facebook-avatar.png",
+    )
+
+    with (
+        _configure_facebook_oauth(),
+        patch(
+            "app.api.routes.login._fetch_oauth_identity",
+            return_value=identity,
+        ),
+    ):
+        r = client.get(
+            f"{settings.API_V1_STR}/login/facebook/callback",
+            params={"code": "provider-code", "state": state},
+            follow_redirects=False,
+        )
+
+    assert r.status_code == 303
+    account = db.exec(
+        select(OAuthAccount).where(
+            OAuthAccount.provider == "facebook",
+            OAuthAccount.provider_user_id == identity.provider_user_id,
+        )
+    ).first()
+    assert account is not None
+    assert account.email_verified is True
 
 
 def test_oauth_callback_rejects_invalid_state(client: TestClient) -> None:

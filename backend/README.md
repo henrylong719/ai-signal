@@ -98,13 +98,15 @@ Modify or add SQLModel models for data and SQL tables in `./backend/app/models.p
 
 ## Social Login
 
-Google and GitHub sign-in use backend OAuth callbacks and then issue the same app cookies as email/password login. Add these variables to the root `.env` file when enabling providers locally:
+Google, GitHub, and Facebook sign-in use backend OAuth callbacks and then issue the same app cookies as email/password login. Add these variables to the root `.env` file when enabling providers locally:
 
 ```env
 GOOGLE_OAUTH_CLIENT_ID=
 GOOGLE_OAUTH_CLIENT_SECRET=
 GITHUB_OAUTH_CLIENT_ID=
 GITHUB_OAUTH_CLIENT_SECRET=
+FACEBOOK_OAUTH_CLIENT_ID=
+FACEBOOK_OAUTH_CLIENT_SECRET=
 ```
 
 Configure provider redirect URLs to point at the backend callbacks:
@@ -112,6 +114,7 @@ Configure provider redirect URLs to point at the backend callbacks:
 ```text
 http://localhost:8000/api/v1/login/google/callback
 http://localhost:8000/api/v1/login/github/callback
+http://localhost:8000/api/v1/login/facebook/callback
 ```
 
 ## VS Code

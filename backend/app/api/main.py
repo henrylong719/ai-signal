@@ -6,6 +6,7 @@ from app.api.routes import (
     admin_ingest_runs,
     article,
     digest,
+    feedback,
     ingest,
     interest,
     login,
@@ -22,6 +23,7 @@ api_router.include_router(utils.router)
 api_router.include_router(article.router)
 api_router.include_router(ingest.router)
 api_router.include_router(interest.router)
+api_router.include_router(feedback.router)
 api_router.include_router(admin_articles.router)
 api_router.include_router(admin_embeddings.router)
 api_router.include_router(admin_ingest_runs.router)

@@ -8,6 +8,12 @@ from app.schemas.article import (
     ForYouArticlesPublic,
 )
 from app.schemas.common import Message
+from app.schemas.feedback import (
+    FEEDBACK_CATEGORIES,
+    FeedbackCategory,
+    FeedbackCreate,
+    FeedbackPublic,
+)
 from app.schemas.interest import UserInterestPublic, UserInterestUpdate
 from app.schemas.source import (
     CATEGORIES,
@@ -42,6 +48,10 @@ __all__ = [
     "Category",
     "ForYouArticlePublic",
     "ForYouArticlesPublic",
+    "FEEDBACK_CATEGORIES",
+    "FeedbackCategory",
+    "FeedbackCreate",
+    "FeedbackPublic",
     "Message",
     "NewPassword",
     "OAuthAccountPublic",

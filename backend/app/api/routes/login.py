@@ -227,6 +227,22 @@ def _provider_config(provider: str) -> OAuthProviderConfig:
             client_secret=client_secret,
         )
 
+    if provider == "facebook":
+        client_id = settings.FACEBOOK_OAUTH_CLIENT_ID
+        client_secret = settings.FACEBOOK_OAUTH_CLIENT_SECRET
+        if not client_id or not client_secret:
+            raise HTTPException(
+                status_code=503,
+                detail="Facebook OAuth is not configured",
+            )
+        return OAuthProviderConfig(
+            authorize_url="https://www.facebook.com/dialog/oauth",
+            token_url="https://graph.facebook.com/oauth/access_token",
+            scope="email,public_profile",
+            client_id=client_id,
+            client_secret=client_secret,
+        )
+
     raise HTTPException(status_code=404, detail="Unsupported OAuth provider")
 
 
@@ -357,6 +373,39 @@ def _github_identity(*, client: httpx.Client, access_token: str) -> OAuthIdentit
     )
 
 
+def _facebook_identity(*, client: httpx.Client, access_token: str) -> OAuthIdentity:
+    response = client.get(
+        "https://graph.facebook.com/me",
+        params={"fields": "id,name,email,picture.type(large)"},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    response.raise_for_status()
+    profile = response.json()
+
+    provider_user_id = profile.get("id")
+    email = profile.get("email")
+    if not isinstance(provider_user_id, str) or not isinstance(email, str):
+        raise ValueError("Facebook did not return the required identity fields")
+
+    avatar_url: str | None = None
+    picture = profile.get("picture")
+    if isinstance(picture, dict):
+        picture_data = picture.get("data")
+        if isinstance(picture_data, dict) and isinstance(picture_data.get("url"), str):
+            avatar_url = picture_data["url"]
+
+    return OAuthIdentity(
+        provider="facebook",
+        provider_user_id=provider_user_id,
+        email=email.lower(),
+        email_verified=True,
+        display_name=(
+            profile.get("name") if isinstance(profile.get("name"), str) else None
+        ),
+        avatar_url=avatar_url,
+    )
+
+
 def _fetch_oauth_identity(
     *,
     provider: str,
@@ -375,6 +424,8 @@ def _fetch_oauth_identity(
             return _google_identity(client=client, access_token=access_token)
         if provider == "github":
             return _github_identity(client=client, access_token=access_token)
+        if provider == "facebook":
+            return _facebook_identity(client=client, access_token=access_token)
     raise ValueError("Unsupported OAuth provider")
 
 

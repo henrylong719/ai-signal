@@ -8,6 +8,7 @@ from app.models.article import (
     ArticleEventType,
     SavedArticle,
 )
+from app.models.feedback import UserFeedback
 from app.models.ingest_run import (
     INGEST_RUN_STATUSES,
     IngestRun,
@@ -74,6 +75,7 @@ __all__ = [
     "User",
     "UserCreate",
     "UserEmbedding",
+    "UserFeedback",
     "UserInterest",
     "UserPublic",
     "UserRegister",

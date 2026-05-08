@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -6,7 +6,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 
 const PendingItems = () => (
   <Table>
@@ -21,8 +21,8 @@ const PendingItems = () => (
       </TableRow>
     </TableHeader>
     <TableBody>
-      {Array.from({ length: 5 }).map((_, index) => (
-        <TableRow key={index}>
+      {['a', 'b', 'c', 'd', 'e', 'f'].map((v) => (
+        <TableRow key={v}>
           <TableCell>
             <Skeleton className="h-4 w-64 font-mono" />
           </TableCell>
@@ -41,6 +41,6 @@ const PendingItems = () => (
       ))}
     </TableBody>
   </Table>
-)
+);
 
-export default PendingItems
+export default PendingItems;

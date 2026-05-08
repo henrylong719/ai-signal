@@ -1,34 +1,34 @@
-import { zodResolver } from '@hookform/resolvers/zod'
-import type { ReactNode } from 'react'
-import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { OpenAPI } from '@/client'
-import useAuth from '@/hooks/useAuth'
-import useCustomToast from '@/hooks/useCustomToast'
-import { cn } from '@/lib/utils'
-import { AuthIntro } from './AuthIntro'
+import { zodResolver } from '@hookform/resolvers/zod';
+import type { ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { OpenAPI } from '@/client';
+import useAuth from '@/hooks/useAuth';
+import useCustomToast from '@/hooks/useCustomToast';
+import { cn } from '@/lib/utils';
+import { AuthIntro } from './AuthIntro';
 import {
   type LoginFormData,
   loginSchema,
   type SignUpFormData,
   signUpSchema,
-} from './authSchemas'
-import type { AuthMode } from './authTypes'
-import { SignInScreen } from './SignInScreen'
-import { SignUpScreen } from './SignUpScreen'
+} from './authSchemas';
+import type { AuthMode } from './authTypes';
+import { SignInScreen } from './SignInScreen';
+import { SignUpScreen } from './SignUpScreen';
 import {
   type SocialAuthProvider,
   SocialLoginButtons,
-} from './SocialLoginButtons'
+} from './SocialLoginButtons';
 
-export type { AuthMode } from './authTypes'
+export type { AuthMode } from './authTypes';
 
 interface AuthFlowProps {
-  className?: string
-  closeControl?: ReactNode
-  description?: string
-  initialMode?: AuthMode
-  title?: string
+  className?: string;
+  closeControl?: ReactNode;
+  description?: string;
+  initialMode?: AuthMode;
+  title?: string;
 }
 
 export function AuthFlow({
@@ -38,25 +38,25 @@ export function AuthFlow({
   initialMode = 'sign-in',
   title = 'Welcome to AI Signal',
 }: AuthFlowProps) {
-  const [mode, setMode] = useState<AuthMode>(initialMode)
-  const [authStep, setAuthStep] = useState<'providers' | 'email'>('providers')
-  const { loginMutation, signUpMutation } = useAuth()
-  const { showErrorToast } = useCustomToast()
-  const socialErrorShown = useRef(false)
+  const [mode, setMode] = useState<AuthMode>(initialMode);
+  const [authStep, setAuthStep] = useState<'providers' | 'email'>('providers');
+  const { loginMutation, signUpMutation } = useAuth();
+  const { showErrorToast } = useCustomToast();
+  const socialErrorShown = useRef(false);
 
   useEffect(() => {
     const socialError = new URLSearchParams(window.location.search).get(
       'social_error',
-    )
+    );
     if (socialError && !socialErrorShown.current) {
-      socialErrorShown.current = true
-      showErrorToast(socialError)
+      socialErrorShown.current = true;
+      showErrorToast(socialError);
 
-      const nextUrl = new URL(window.location.href)
-      nextUrl.searchParams.delete('social_error')
-      window.history.replaceState(null, '', nextUrl)
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.delete('social_error');
+      window.history.replaceState(null, '', nextUrl);
     }
-  }, [showErrorToast])
+  }, [showErrorToast]);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -66,7 +66,7 @@ export function AuthFlow({
       username: '',
       password: '',
     },
-  })
+  });
 
   const signUpForm = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
@@ -77,26 +77,26 @@ export function AuthFlow({
       full_name: '',
       password: '',
     },
-  })
+  });
 
   const startSocialLogin = (provider: SocialAuthProvider) => {
-    window.location.href = `${OpenAPI.BASE}/api/v1/login/${provider}`
-  }
+    window.location.href = `${OpenAPI.BASE}/api/v1/login/${provider}`;
+  };
 
   const submitLogin = (data: LoginFormData) => {
-    if (loginMutation.isPending) return
-    loginMutation.mutate(data)
-  }
+    if (loginMutation.isPending) return;
+    loginMutation.mutate(data);
+  };
 
   const submitSignUp = (data: SignUpFormData) => {
-    if (signUpMutation.isPending) return
+    if (signUpMutation.isPending) return;
 
-    signUpMutation.mutate(data)
-  }
+    signUpMutation.mutate(data);
+  };
 
   const switchEmailMode = (nextMode: AuthMode) => {
-    setMode(nextMode)
-  }
+    setMode(nextMode);
+  };
 
   return (
     <section
@@ -116,7 +116,7 @@ export function AuthFlow({
               onProviderClick={startSocialLogin}
             />
           </div>
-          <p className="mt-5 max-w-[20.5rem] text-center text-xs leading-relaxed text-slate-500 dark:text-muted-foreground">
+          <p className="mt-5 max-w-82 text-center text-xs leading-relaxed text-slate-500 dark:text-muted-foreground">
             We&apos;ll take you back to your feed after sign-in.
           </p>
         </>
@@ -138,7 +138,7 @@ export function AuthFlow({
         />
       )}
     </section>
-  )
+  );
 }
 
-export default AuthFlow
+export default AuthFlow;

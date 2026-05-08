@@ -2,7 +2,7 @@ import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export const pageContainerWidths = {
-  shell: 'max-w-[1480px]',
+  shell: 'max-w-[1265px]',
   wide: 'max-w-[1200px]',
   default: 'max-w-6xl',
   narrow: 'max-w-5xl',

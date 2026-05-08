@@ -1,10 +1,10 @@
-import { XIcon } from 'lucide-react'
-import type { ReactNode } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { XIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import AuthFlow from '@/components/Auth/AuthFlow'
-import type { AuthMode } from '@/components/Auth/authTypes'
-import { Button } from '@/components/ui/button'
+import AuthFlow from '@/components/Auth/AuthFlow';
+import type { AuthMode } from '@/components/Auth/authTypes';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -12,16 +12,16 @@ import {
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import useAuth from '@/hooks/useAuth'
+} from '@/components/ui/dialog';
+import useAuth from '@/hooks/useAuth';
 
 interface AuthModalProps {
-  description?: string
-  initialMode?: AuthMode
-  onOpenChange?: (open: boolean) => void
-  open?: boolean
-  title?: string
-  trigger?: ReactNode
+  description?: string;
+  initialMode?: AuthMode;
+  onOpenChange?: (open: boolean) => void;
+  open?: boolean;
+  title?: string;
+  trigger?: ReactNode;
 }
 
 function AuthModal({
@@ -32,9 +32,9 @@ function AuthModal({
   title,
   trigger,
 }: AuthModalProps) {
-  const { user } = useAuth()
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
-  const isOpen = open ?? uncontrolledOpen
+  const { user } = useAuth();
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isOpen = open ?? uncontrolledOpen;
   const triggerContent =
     trigger === undefined ? (
       <Button
@@ -46,23 +46,23 @@ function AuthModal({
       </Button>
     ) : (
       trigger
-    )
+    );
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
       if (open === undefined) {
-        setUncontrolledOpen(nextOpen)
+        setUncontrolledOpen(nextOpen);
       }
-      onOpenChange?.(nextOpen)
+      onOpenChange?.(nextOpen);
     },
     [onOpenChange, open],
-  )
+  );
 
   useEffect(() => {
     if (user) {
-      handleOpenChange(false)
+      handleOpenChange(false);
     }
-  }, [handleOpenChange, user])
+  }, [handleOpenChange, user]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -72,7 +72,7 @@ function AuthModal({
       <DialogContent
         showCloseButton={false}
         overlayClassName="z-[70] bg-black/40 dark:bg-black/55"
-        className="z-[80] max-h-[calc(100svh-1.5rem)] overflow-y-auto border border-slate-200/80 bg-white p-0 text-slate-950 shadow-xl dark:border-border dark:bg-card dark:text-card-foreground dark:shadow-[0_18px_45px_rgba(0,0,0,0.32),0_2px_8px_rgba(0,0,0,0.24)] sm:max-w-[500px] sm:rounded-lg"
+        className="z-80 max-h-[calc(100svh-1.5rem)] overflow-y-auto border border-slate-200/80 bg-white p-0 text-slate-950 shadow-xl dark:border-border dark:bg-card dark:text-card-foreground dark:shadow-[0_18px_45px_rgba(0,0,0,0.32),0_2px_8px_rgba(0,0,0,0.24)] sm:max-w-125 sm:rounded-lg"
       >
         <DialogTitle className="sr-only">AI Signal authentication</DialogTitle>
         <DialogDescription className="sr-only">
@@ -91,7 +91,7 @@ function AuthModal({
         />
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-export default AuthModal
+export default AuthModal;

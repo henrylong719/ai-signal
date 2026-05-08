@@ -149,7 +149,7 @@ const Header = () => {
         variant="shell"
         spacing="none"
         gutters
-        className="grid h-16 grid-cols-[1fr_auto] items-center gap-4 sm:h-[72px] md:grid-cols-[minmax(10rem,1fr)_minmax(22rem,40rem)_minmax(10rem,1fr)]"
+        className="grid h-16 grid-cols-[1fr_auto] items-center gap-4 sm:h-18 md:grid-cols-[minmax(10rem,1fr)_minmax(22rem,40rem)_minmax(10rem,1fr)]"
       >
         <div className="flex min-w-0 items-center justify-start">
           <Link

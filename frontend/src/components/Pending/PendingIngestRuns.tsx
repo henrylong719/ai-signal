@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -6,7 +6,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 
 /**
  * Loading skeleton for the ingest-runs table.
@@ -30,8 +30,8 @@ const PendingIngestRuns = () => (
       </TableRow>
     </TableHeader>
     <TableBody>
-      {Array.from({ length: 5 }).map((_, index) => (
-        <TableRow key={index}>
+      {['a', 'b', 'c', 'd', 'e', 'f'].map((v) => (
+        <TableRow key={v}>
           <TableCell>
             <Skeleton className="h-4 w-32" />
           </TableCell>
@@ -57,6 +57,6 @@ const PendingIngestRuns = () => (
       ))}
     </TableBody>
   </Table>
-)
+);
 
-export default PendingIngestRuns
+export default PendingIngestRuns;

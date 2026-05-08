@@ -169,3 +169,82 @@ def test_rank_for_you_excludes_negative_signals_and_paginates_after_scoring(
     assert total == 3
     assert [item.scored.article.title for item in items] == ["Older match"]
     assert items[0].reason == "Because you follow RAG"
+
+
+def test_rank_for_you_applies_diversity_rerank_to_large_pools(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """When the candidate pool is large enough to trigger the
+    diversity reranker, a single source's burst should not occupy the
+    head of the For-You feed.
+
+    This guards against regression of the integration between
+    score_candidates and diversity_rerank in rank_for_you.
+    """
+    user_id = uuid4()
+
+    # 50 articles from one bursty source, 50 from a mix of others.
+    # All match the user's stated interest so they rank similarly on
+    # the explicit-match component — without diversity reranking, the
+    # bursty source would fill the head purely by recency.
+    bursty: list[Article] = []
+    for i in range(50):
+        bursty.append(
+            _article(
+                title=f"Bursty {i}",
+                category="rag",
+                source="arXiv",
+                tags=["rag"],
+                age_days=0,
+            )
+        )
+    others: list[Article] = []
+    for i in range(50):
+        others.append(
+            _article(
+                title=f"Other {i}",
+                category="rag",
+                source=f"source{i % 5}",
+                tags=["rag"],
+                age_days=1,  # slightly older — bursty would otherwise dominate
+            )
+        )
+    all_articles = bursty + others
+
+    monkeypatch.setattr(
+        for_you,
+        "build_user_profile",
+        lambda *, session, user_id: UserProfile(
+            interest_categories=frozenset({"rag"}),
+            interest_tags=frozenset({"rag"}),
+        ),
+    )
+    monkeypatch.setattr(
+        app_crud,
+        "get_recent_articles_excluding",
+        lambda **kwargs: all_articles,
+    )
+    monkeypatch.setattr(app_crud, "get_user_embedding", lambda **kwargs: None)
+    monkeypatch.setattr(
+        for_you,
+        "compute_and_save_user_vector",
+        lambda **kwargs: None,
+    )
+
+    fake_session: Any = object()
+    items, _total = for_you.rank_for_you(
+        session=fake_session, user_id=user_id, skip=0, limit=20
+    )
+
+    head_sources = [item.scored.article.source for item in items]
+    bursty_count = sum(1 for s in head_sources if s == "arXiv")
+    distinct_sources = len(set(head_sources))
+
+    # Without rerank, all 20 head positions would be arXiv. With rerank,
+    # the burst is broken up.
+    assert bursty_count < 12, (
+        f"arXiv took {bursty_count}/20 of the For-You head — rerank not firing"
+    )
+    assert distinct_sources >= 4, (
+        f"only {distinct_sources} distinct sources in For-You head"
+    )

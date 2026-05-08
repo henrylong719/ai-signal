@@ -15,6 +15,8 @@ semantic step entirely — the scorer falls back to the explicit, source,
 and recency layers exactly as it did before embeddings existed.
 """
 
+# Add this import near the other service imports:
+
 import logging
 import uuid
 from collections.abc import Sequence
@@ -23,6 +25,11 @@ from dataclasses import dataclass
 from sqlmodel import Session
 
 from app import crud
+from app.services.diversity import (
+    DEFAULT_LAMBDA_FOR_YOU,
+    RerankItem,
+    diversity_rerank,
+)
 from app.services.embeddings import (
     compute_and_save_user_vector,
     cosine_similarities,
@@ -215,6 +222,29 @@ def rank_for_you(
     candidates = filter_candidates(candidates, profile)
 
     scored = score_candidates(candidates, profile, semantic_similarities=similarities)
+
+    # Diversity rerank between scoring and pagination. Without this, a
+    # source-rich pool can fill the head of the feed with one source
+    # (e.g. arXiv burst, weekly newsletter dump). The reranker uses the
+    # user's preferred_sources to bypass the cap for explicitly opted-
+    # in sources — if the user said "show me OpenAI," seeing OpenAI
+    # cluster is correct, not a bug. Lambda is high (0.85) because
+    # personalized scores are already meaningful and we don't want
+    # diversity to undermine personalization — it's a tiebreaker.
+    #
+    # The reranker reads `source` and `category` off the wrapped item,
+    # so we wrap the CandidateArticle (not ScoredArticle, which only
+    # exposes those via `.article`). After reranking, we map back to
+    # the original ScoredArticle by id so reason_for() still gets the
+    # full breakdown.
+    scored_by_id = {s.article.id: s for s in scored}
+    rerank_items = [RerankItem(item=s.article, score=s.score) for s in scored]
+    reranked = diversity_rerank(
+        rerank_items,
+        lambda_=DEFAULT_LAMBDA_FOR_YOU,
+        preferred_sources=profile.preferred_sources,
+    )
+    scored = [scored_by_id[it.item.id] for it in reranked]
     total = len(scored)
 
     page = scored[skip : skip + limit]

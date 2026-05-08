@@ -1,9 +1,9 @@
-import { zodResolver } from '@hookform/resolvers/zod'
-import { CheckCircle2Icon, SendIcon } from 'lucide-react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod';
+import { CheckCircle2Icon, SendIcon } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
-import type { FeedbackCreate } from '@/client'
+import type { FeedbackCreate } from '@/client';
 import {
   Dialog,
   DialogClose,
@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -20,17 +20,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { LoadingButton } from '@/components/ui/loading-button'
+} from '@/components/ui/form';
+import { LoadingButton } from '@/components/ui/loading-button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { useFeedback } from '@/hooks/useFeedback'
-import { cn } from '@/lib/utils'
+} from '@/components/ui/select';
+import { useFeedback } from '@/hooks/useFeedback';
+import { cn } from '@/lib/utils';
 
 const categoryOptions = [
   { value: 'general', label: 'General feedback' },
@@ -39,9 +39,9 @@ const categoryOptions = [
   { value: 'feature_request', label: 'Feature request' },
   { value: 'bug_report', label: 'Bug report' },
 ] as const satisfies ReadonlyArray<{
-  value: FeedbackCreate['category']
-  label: string
-}>
+  value: FeedbackCreate['category'];
+  label: string;
+}>;
 
 const formSchema = z.object({
   category: z.enum([
@@ -56,48 +56,48 @@ const formSchema = z.object({
     .trim()
     .min(10, 'Add at least 10 characters.')
     .max(2000, 'Keep it under 2,000 characters.'),
-})
+});
 
-type FormData = z.infer<typeof formSchema>
+type FormData = z.infer<typeof formSchema>;
 
 const defaultValues: FormData = {
   category: 'general',
   message: '',
-}
+};
 
 function feedbackContext() {
   if (typeof window === 'undefined') {
-    return undefined
+    return undefined;
   }
 
   return {
     path: window.location.pathname,
     title: document.title,
     source: 'profile_menu',
-  }
+  };
 }
 
 interface FeedbackDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
-  const { submit, isSubmitting, isSuccess, isError, reset } = useFeedback()
+  const { submit, isSubmitting, isSuccess, isError, reset } = useFeedback();
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     mode: 'onBlur',
     defaultValues,
-  })
-  const message = form.watch('message')
+  });
+  const message = form.watch('message');
 
   const handleOpenChange = (nextOpen: boolean) => {
-    onOpenChange(nextOpen)
+    onOpenChange(nextOpen);
     if (!nextOpen) {
-      form.reset(defaultValues)
-      reset()
+      form.reset(defaultValues);
+      reset();
     }
-  }
+  };
 
   const onSubmit = (data: FormData) => {
     submit(
@@ -108,11 +108,12 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
       },
       {
         onSuccess: () => {
-          form.reset(defaultValues)
+          form.reset(defaultValues);
+          onOpenChange(false);
         },
       },
-    )
-  }
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -161,8 +162,8 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                   <Select
                     value={field.value}
                     onValueChange={(value) => {
-                      reset()
-                      field.onChange(value)
+                      reset();
+                      field.onChange(value);
                     }}
                   >
                     <FormControl>
@@ -210,8 +211,8 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                       maxLength={2000}
                       {...field}
                       onChange={(event) => {
-                        reset()
-                        field.onChange(event)
+                        reset();
+                        field.onChange(event);
                       }}
                     />
                   </FormControl>
@@ -242,5 +243,5 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

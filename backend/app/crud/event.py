@@ -8,6 +8,7 @@ the same article must not race each other into double-inserts.
 
 import uuid
 from collections.abc import Sequence
+from datetime import datetime
 
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlmodel import Session, select
@@ -92,36 +93,55 @@ def get_events(
 
 def get_clicked_signals(
     *, session: Session, user_id: uuid.UUID
-) -> tuple[frozenset[str], frozenset[str]]:
-    """Aggregate the user's clicked-article tags and sources.
+) -> tuple[dict[str, float], dict[str, float]]:
+    """Aggregate the user's clicked-article tags and sources, decay-weighted.
 
-    Returns a (tags, sources) pair — exactly what the recommender's
-    UserProfile needs for the click-derived signals. Done as one JOIN
-    rather than fetch-IDs-then-fetch-articles to halve the round trips
-    and let Postgres push down the filtering.
+    Returns ``(tag_weights, source_weights)`` — same shape as
+    ``crud.article.get_saved_signals``. Clicks decay faster than saves
+    (see ``services.decay``) because clicks are noisier signals; an
+    accidental clickthrough from last quarter shouldn't keep biasing
+    the feed.
 
-    For users with thousands of clicked articles this would benefit from
-    SQL-side aggregation (UNNEST + array_agg DISTINCT). At our scale the
-    row count is small enough that pulling into Python and using set
-    arithmetic is simpler and fast enough.
+    The ``last_at`` column is used as the interaction time. A user
+    who clicks an article ten times has a single ArticleEvent row
+    with count=10 and last_at as the most recent click — we use the
+    most recent because the question we're answering is "is this
+    interest current?", not "how often did they click?".
+
+    Done as one JOIN rather than fetch-IDs-then-fetch-articles to
+    halve the round trips and let Postgres push down the filtering.
+    For users with thousands of clicked articles this would benefit
+    from SQL-side aggregation; at our scale Python is simpler.
     """
     from app.models import Article  # local import to avoid circular
+    from app.services.decay import (
+        CLICKED_HALF_LIFE_DAYS,
+        aggregate_weights_by_key,
+    )
 
     statement = (
-        select(Article.source, Article.tags)
+        select(Article.source, Article.tags, ArticleEvent.last_at)
         .join(ArticleEvent, Article.id == ArticleEvent.article_id)  # type: ignore[arg-type]
         .where(
             ArticleEvent.user_id == user_id,
             ArticleEvent.event_type == "clicked",
         )
     )
-    sources: set[str] = set()
-    tags: set[str] = set()
-    for source, article_tags in session.exec(statement).all():
-        sources.add(source)
+    tag_pairs: list[tuple[str, datetime]] = []
+    source_pairs: list[tuple[str, datetime]] = []
+    for source, article_tags, last_at in session.exec(statement).all():
+        source_pairs.append((source, last_at))
         if article_tags:
-            tags.update(article_tags)
-    return frozenset(tags), frozenset(sources)
+            for tag in article_tags:
+                tag_pairs.append((tag, last_at))
+
+    tag_weights = aggregate_weights_by_key(
+        tag_pairs, half_life_days=CLICKED_HALF_LIFE_DAYS
+    )
+    source_weights = aggregate_weights_by_key(
+        source_pairs, half_life_days=CLICKED_HALF_LIFE_DAYS
+    )
+    return tag_weights, source_weights
 
 
 def get_clicked_article_embeddings(

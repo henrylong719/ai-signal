@@ -74,21 +74,30 @@ class UserProfile:
     user embedding (semantic similarity is built from saved/clicked
     article embeddings plus stated interest text).
 
-    ``saved_tags`` / ``saved_sources`` are derived from saved articles
-    (strongest behavioral positive). ``clicked_tags`` / ``clicked_sources``
-    are derived from outbound-link clicks recorded by the redirect endpoint
-    (weaker positive — a click means interest, but not necessarily that the
-    user actually read the article). Both feed the explicit-match and
-    source-affinity terms, with saves weighted above clicks.
+    ``saved_tags`` / ``saved_sources`` / ``clicked_tags`` /
+    ``clicked_sources`` are weighted dictionaries: each key maps to a
+    decay-weighted score in [0, 1] reflecting recency of the underlying
+    interaction. A save from yesterday contributes near 1.0; a save from
+    six months ago contributes near 0. This keeps the For-You feed
+    responsive to evolving interests rather than dragging a permanent
+    historical signal forward forever. The CRUD layer is responsible
+    for computing these weights from interaction timestamps; the
+    recommender just consumes them.
+
+    Saved is the strongest behavioral signal (most committed action) so
+    the recommender weights it highest; clicked is weaker but still
+    positive. The decay half-life is shorter for clicks than saves
+    (clicks are noisier), but the structural weighting between the two
+    lives in the scorers, not here.
     """
 
     interest_categories: frozenset[str] = field(default_factory=frozenset)
     interest_tags: frozenset[str] = field(default_factory=frozenset)
     preferred_sources: frozenset[str] = field(default_factory=frozenset)
-    saved_tags: frozenset[str] = field(default_factory=frozenset)
-    saved_sources: frozenset[str] = field(default_factory=frozenset)
-    clicked_tags: frozenset[str] = field(default_factory=frozenset)
-    clicked_sources: frozenset[str] = field(default_factory=frozenset)
+    saved_tags: dict[str, float] = field(default_factory=dict)
+    saved_sources: dict[str, float] = field(default_factory=dict)
+    clicked_tags: dict[str, float] = field(default_factory=dict)
+    clicked_sources: dict[str, float] = field(default_factory=dict)
     saved_article_ids: frozenset[UUID] = field(default_factory=frozenset)
     dismissed_article_ids: frozenset[UUID] = field(default_factory=frozenset)
 
@@ -200,14 +209,23 @@ def explicit_match_score(article: CandidateArticle, profile: UserProfile) -> flo
 
     Combines:
       - category match against onboarding-selected categories
-      - tag overlap (Jaccard) against three sources, weighted by signal
-        strength: saved tags (strongest) > clicked tags > onboarding tags.
+      - tag overlap against three sources, weighted by signal strength:
+        saved tags (strongest) > clicked tags > onboarding tags.
 
     Returns 0 if the user has provided no interest signal at all.
 
-    Tag-source weights are 1:2:3 (stated:clicked:saved), normalized to sum
-    to 1. Saving an article is a stronger commitment than clicking through
-    to read it, which is in turn stronger than picking a topic checkbox.
+    Tag-source weights are 1:2:3 (stated:clicked:saved), normalized to
+    sum to 1. Saving an article is a stronger commitment than clicking
+    through to read it, which is in turn stronger than picking a topic
+    checkbox.
+
+    Behavioral tags (saved/clicked) carry per-tag decay weights from
+    the CRUD layer — a tag from a save last week contributes near 1.0;
+    a tag from a save six months ago contributes near 0. The decay is
+    applied as an *attenuation* on the Jaccard overlap, so the
+    structural similarity still drives the score but stale signals
+    don't dominate. Stated interest tags don't decay (the user keeps
+    them in the personalization page until they remove them).
     """
     if not (
         profile.interest_categories
@@ -221,8 +239,8 @@ def explicit_match_score(article: CandidateArticle, profile: UserProfile) -> flo
 
     article_tags = set(article.tags)
     started_overlap = _jaccard(article_tags, profile.interest_tags)
-    clicked_overlap = _jaccard(article_tags, profile.clicked_tags)
-    saved_overlap = _jaccard(article_tags, profile.saved_tags)
+    clicked_overlap = _weighted_jaccard(article_tags, profile.clicked_tags)
+    saved_overlap = _weighted_jaccard(article_tags, profile.saved_tags)
     # Weights 1:2:3 normalized to /6. Saved > clicked > started.
     tag_score = (
         (1 / 6) * started_overlap + (2 / 6) * clicked_overlap + (3 / 6) * saved_overlap
@@ -238,27 +256,38 @@ def source_affinity_score(
 ) -> float:
     """Affinity for the article's source.
 
-    Four-level scale, highest applicable level wins:
-      1.0  — user has explicitly opted into this source via the
-             personalization page (strongest, user told us directly)
-      0.7  — user has saved an article from this source (strong behavioral)
-      0.4  — user has clicked through but never saved (weaker behavioral)
-      0.0  — no signal for this source
+    Four-level scale, highest applicable level wins, with decay
+    attenuation on the behavioral levels:
 
-    Discrete levels rather than continuous (e.g., proportion of saves
-    from this source) because graduated source-affinity tends to
-    over-recommend whatever the user engaged with most recently and
-    reduces feed diversity.
+      1.0           — user has explicitly opted into this source via
+                      the personalization page (strongest, user told
+                      us directly; no decay because the preference is
+                      maintained explicitly)
+      0.7 × decay   — user has saved an article from this source
+                      (strong behavioral, decay-weighted by recency)
+      0.4 × decay   — user has clicked through but never saved
+                      (weaker behavioral, decay-weighted)
+      0.0           — no signal for this source
 
-    The 1.0 ceiling for explicit preference is what makes
-    "Because you follow X" labels meaningful: the user actually said so.
+    Discrete level *ceilings* with continuous decay attenuation gives us
+    the best of both: the explainability of fixed levels (saved-from
+    sources are clearly stronger than clicked-only) plus the
+    responsiveness of continuous decay (a fresh save outranks an
+    eighteen-month-old one). The decay weight comes from the CRUD layer
+    — see `crud.article.get_saved_signals`.
+
+    The 1.0 ceiling for explicit preference is what makes "Because you
+    follow X" labels meaningful: the user actually said so, and the
+    preference doesn't decay until they unselect it.
     """
     if article.source in profile.preferred_sources:
         return 1.0
-    if article.source in profile.saved_sources:
-        return 0.7
-    if article.source in profile.clicked_sources:
-        return 0.4
+    saved_weight = profile.saved_sources.get(article.source, 0.0)
+    if saved_weight > 0:
+        return 0.7 * saved_weight
+    clicked_weight = profile.clicked_sources.get(article.source, 0.0)
+    if clicked_weight > 0:
+        return 0.4 * clicked_weight
     return 0.0
 
 
@@ -369,8 +398,13 @@ def reason_for(scored: ScoredArticle, profile: UserProfile) -> str | None:
         # than naming a tag like "rag-evals".
         if article.category in profile.interest_categories:
             return f"Because you follow {_humanize_category(article.category)}"
+        # `saved_tags` and `clicked_tags` are dicts now; we only need their
+        # keys for the membership check, but write it explicitly so the
+        # intent is clear.
         matched_tags = set(article.tags) & (
-            profile.interest_tags | profile.saved_tags | profile.clicked_tags
+            profile.interest_tags
+            | profile.saved_tags.keys()
+            | profile.clicked_tags.keys()
         )
         if matched_tags:
             tag = sorted(matched_tags)[0]
@@ -425,3 +459,34 @@ def _humanize_category(category: str) -> str:
     """
     overrides = {"rag": "RAG"}
     return overrides.get(category, category.capitalize())
+
+
+def _jaccard(a: set[str], b: frozenset[str]) -> float:
+    if not a or not b:
+        return 0.0
+    intersection = len(a & b)
+    union = len(a | b)
+    return intersection / union if union else 0.0
+
+
+def _weighted_jaccard(a: set[str], b: dict[str, float]) -> float:
+    """Jaccard overlap attenuated by the average weight of intersecting items.
+
+    Behaves like ``_jaccard`` when all weights in ``b`` are 1.0 — the
+    decay-free baseline. As weights decay (saves age), the contribution
+    of those tags to the overlap score shrinks proportionally. This is
+    what gives us "saved 5 tags last week is worth more than saved 5
+    tags last year" without changing the structural Jaccard math the
+    rest of the scorer was tuned around.
+    """
+    if not a or not b:
+        return 0.0
+    intersection = a & b.keys()
+    if not intersection:
+        return 0.0
+    union_size = len(a | b.keys())
+    if union_size == 0:
+        return 0.0
+    structural_overlap = len(intersection) / union_size
+    avg_weight = sum(b[t] for t in intersection) / len(intersection)
+    return structural_overlap * avg_weight

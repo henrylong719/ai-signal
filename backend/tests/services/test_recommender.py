@@ -89,8 +89,8 @@ def test_explicit_match_weights_saved_above_clicked_above_stated() -> None:
     article = _article(category="other", tags=("rag", "evals"))
 
     only_stated = UserProfile(interest_tags=frozenset({"rag", "evals"}))
-    only_clicked = UserProfile(clicked_tags=frozenset({"rag", "evals"}))
-    only_saved = UserProfile(saved_tags=frozenset({"rag", "evals"}))
+    only_clicked = UserProfile(clicked_tags={"rag": 1.0, "evals": 1.0})
+    only_saved = UserProfile(saved_tags={"rag": 1.0, "evals": 1.0})
 
     stated_score = explicit_match_score(article, only_stated)
     clicked_score = explicit_match_score(article, only_clicked)
@@ -114,7 +114,7 @@ def test_source_affinity_prefers_explicit_over_saved() -> None:
     article = _article(source="LangChain")
     profile = UserProfile(
         preferred_sources=frozenset({"LangChain"}),
-        saved_sources=frozenset({"LangChain"}),
+        saved_sources={"LangChain": 1.0},
     )
 
     assert source_affinity_score(article, profile) == 1.0
@@ -125,8 +125,8 @@ def test_source_affinity_levels_ordered() -> None:
     article = _article(source="LangChain")
 
     only_preferred = UserProfile(preferred_sources=frozenset({"LangChain"}))
-    only_saved = UserProfile(saved_sources=frozenset({"LangChain"}))
-    only_clicked = UserProfile(clicked_sources=frozenset({"LangChain"}))
+    only_saved = UserProfile(saved_sources={"LangChain": 1.0})
+    only_clicked = UserProfile(clicked_sources={"LangChain": 1.0})
     none_set = UserProfile()
 
     preferred_score = source_affinity_score(article, only_preferred)
@@ -141,9 +141,46 @@ def test_source_affinity_levels_ordered() -> None:
     assert preferred_score > saved_score > clicked_score > none_score
 
 
-def test_source_affinity_is_seven_tenths_for_saved_sources() -> None:
+def test_source_affinity_attenuates_with_decay_for_saved_sources() -> None:
+    """Saved-source affinity is `0.7 * decay_weight`. A fresh save
+    contributes the full 0.7; an old save contributes proportionally
+    less. The CRUD layer is responsible for computing the decay
+    weight; the scorer just consumes it."""
     article = _article(source="LangChain")
-    profile = UserProfile(saved_sources=frozenset({"LangChain"}))
+
+    fresh = UserProfile(saved_sources={"LangChain": 1.0})
+    half_decayed = UserProfile(saved_sources={"LangChain": 0.5})
+    nearly_dead = UserProfile(saved_sources={"LangChain": 0.05})
+
+    assert source_affinity_score(article, fresh) == 0.7
+    assert abs(source_affinity_score(article, half_decayed) - 0.35) < 1e-9
+    assert abs(source_affinity_score(article, nearly_dead) - 0.035) < 1e-9
+
+
+def test_explicit_match_attenuates_with_decay_for_saved_tags() -> None:
+    """Saved-tag overlap is decay-attenuated. With identical tag
+    overlap structure, a freshly-saved tag contributes more than a
+    decayed one."""
+    article = _article(category="other", tags=("rag", "evals"))
+
+    fresh = UserProfile(saved_tags={"rag": 1.0, "evals": 1.0})
+    decayed = UserProfile(saved_tags={"rag": 0.3, "evals": 0.3})
+
+    fresh_score = explicit_match_score(article, fresh)
+    decayed_score = explicit_match_score(article, decayed)
+
+    assert fresh_score > 0
+    assert decayed_score > 0
+    # Decayed score should be ~30% of fresh (the attenuation factor).
+    assert abs(decayed_score / fresh_score - 0.3) < 1e-6
+
+
+def test_source_affinity_is_seven_tenths_for_freshly_saved_sources() -> None:
+    """Freshly saved (decay weight 1.0) yields the full saved-level
+    ceiling of 0.7 — same value the discrete-level scorer used to
+    return before decay was added."""
+    article = _article(source="LangChain")
+    profile = UserProfile(saved_sources={"LangChain": 1.0})
 
     assert source_affinity_score(article, profile) == 0.7
 
@@ -151,7 +188,7 @@ def test_source_affinity_is_seven_tenths_for_saved_sources() -> None:
 def test_source_affinity_is_four_tenths_for_clicked_only_sources() -> None:
     """Clicking through is meaningful but weaker than saving."""
     article = _article(source="LangChain")
-    profile = UserProfile(clicked_sources=frozenset({"LangChain"}))
+    profile = UserProfile(clicked_sources={"LangChain": 1.0})
 
     assert source_affinity_score(article, profile) == 0.4
 
@@ -159,8 +196,8 @@ def test_source_affinity_is_four_tenths_for_clicked_only_sources() -> None:
 def test_source_affinity_prefers_saved_over_clicked_when_both_present() -> None:
     article = _article(source="LangChain")
     profile = UserProfile(
-        saved_sources=frozenset({"LangChain"}),
-        clicked_sources=frozenset({"LangChain"}),
+        saved_sources={"LangChain": 1.0},
+        clicked_sources={"LangChain": 1.0},
     )
 
     assert source_affinity_score(article, profile) == 0.7
@@ -168,7 +205,7 @@ def test_source_affinity_prefers_saved_over_clicked_when_both_present() -> None:
 
 def test_source_affinity_is_zero_for_unknown_source() -> None:
     article = _article(source="RandomBlog")
-    profile = UserProfile(saved_sources=frozenset({"LangChain"}))
+    profile = UserProfile(saved_sources={"LangChain": 1.0})
 
     assert source_affinity_score(article, profile) == 0.0
 
@@ -256,8 +293,8 @@ def test_scored_articles_are_returned_in_descending_score_order() -> None:
 
     profile = UserProfile(
         interest_categories=frozenset({"rag"}),
-        saved_tags=frozenset({"rag", "evals"}),
-        saved_sources=frozenset({"LangChain"}),
+        saved_tags={"rag": 1.0, "evals": 1.0},
+        saved_sources={"LangChain": 1.0},
     )
 
     result = score_candidates([nothing, source_only, perfect], profile, now=NOW)
@@ -278,8 +315,8 @@ def test_clicks_alone_produce_personalized_ranking_above_unmatched() -> None:
     )
 
     profile = UserProfile(
-        clicked_tags=frozenset({"rag"}),
-        clicked_sources=frozenset({"LangChain"}),
+        clicked_tags={"rag": 1.0},
+        clicked_sources={"LangChain": 1.0},
     )
 
     result = score_candidates([unmatched, matched], profile, now=NOW)
@@ -330,7 +367,7 @@ def test_reason_for_saved_source_says_because_you_saved() -> None:
     """Behavioral source affinity (saved-from) gets 'Because you saved
     articles from X' — distinct from explicit preference."""
     article = _article(category="other", tags=(), source="LangChain", age_days=30)
-    profile = UserProfile(saved_sources=frozenset({"LangChain"}))
+    profile = UserProfile(saved_sources={"LangChain": 1.0})
 
     scored = score_candidates([article], profile, now=NOW)[0]
 
@@ -341,7 +378,7 @@ def test_reason_for_clicked_source_says_because_you_read() -> None:
     """Click-only source affinity gets 'Because you read X' — weakest of the
     three source phrasings."""
     article = _article(category="other", tags=(), source="LangChain", age_days=30)
-    profile = UserProfile(clicked_sources=frozenset({"LangChain"}))
+    profile = UserProfile(clicked_sources={"LangChain": 1.0})
 
     scored = score_candidates([article], profile, now=NOW)[0]
 
@@ -354,7 +391,7 @@ def test_reason_explicit_source_wins_over_saved_when_both_set() -> None:
     article = _article(category="other", tags=(), source="LangChain", age_days=30)
     profile = UserProfile(
         preferred_sources=frozenset({"LangChain"}),
-        saved_sources=frozenset({"LangChain"}),
+        saved_sources={"LangChain": 1.0},
     )
 
     scored = score_candidates([article], profile, now=NOW)[0]
@@ -368,7 +405,7 @@ def test_reason_recognizes_clicked_tags_in_explicit_path() -> None:
     article = _article(
         category="other", tags=("rag",), source="UnseenSource", age_days=30
     )
-    profile = UserProfile(clicked_tags=frozenset({"rag"}))
+    profile = UserProfile(clicked_tags={"rag": 1.0})
 
     scored = score_candidates([article], profile, now=NOW)[0]
 

@@ -138,14 +138,28 @@ def test_saved_and_clicked_signal_aggregates_return_distinct_tags_and_sources(
         event_type="clicked",
     )
 
-    assert crud.get_saved_signals(session=db, user_id=user.id) == (
-        frozenset({"rag", "retrieval"}),
-        frozenset({"Weaviate"}),
+    saved_tags, saved_sources = crud.get_saved_signals(session=db, user_id=user.id)
+    clicked_tags, clicked_sources = crud.get_clicked_signals(
+        session=db, user_id=user.id
     )
-    assert crud.get_clicked_signals(session=db, user_id=user.id) == (
-        frozenset({"agents", "tool-use"}),
-        frozenset({"LangChain"}),
-    )
+
+    # Tags and sources are weighted dicts (decay-weighted by recency
+    # of interaction). Just-saved and just-clicked items have weight
+    # ~1.0 modulo float drift from the seconds-old age. Assert key
+    # membership and weight-near-1.0 separately so the test isn't
+    # fragile to clock skew.
+    assert saved_tags.keys() == {"rag", "retrieval"}
+    assert saved_sources.keys() == {"Weaviate"}
+    assert clicked_tags.keys() == {"agents", "tool-use"}
+    assert clicked_sources.keys() == {"LangChain"}
+    for w in (
+        *saved_tags.values(),
+        *saved_sources.values(),
+        *clicked_tags.values(),
+        *clicked_sources.values(),
+    ):
+        # Brand new interactions; decay should be effectively zero.
+        assert 0.999 < w <= 1.0
 
 
 def test_get_recent_articles_excluding_filters_and_orders_candidates(

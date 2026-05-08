@@ -53,12 +53,12 @@ def test_build_user_profile_aggregates_all_recommendation_signals(
     monkeypatch.setattr(
         app_crud,
         "get_saved_signals",
-        lambda *, session, user_id: (frozenset({"evals"}), frozenset({"OpenAI"})),
+        lambda *, session, user_id: ({"evals": 1.0}, {"OpenAI": 1.0}),
     )
     monkeypatch.setattr(
         app_crud,
         "get_clicked_signals",
-        lambda *, session, user_id: (frozenset({"rag"}), frozenset({"LangChain"})),
+        lambda *, session, user_id: ({"rag": 1.0}, {"LangChain": 1.0}),
     )
     monkeypatch.setattr(
         app_crud,
@@ -79,10 +79,10 @@ def test_build_user_profile_aggregates_all_recommendation_signals(
         interest_categories=frozenset({"agents"}),
         interest_tags=frozenset({"tool-use"}),
         preferred_sources=frozenset({"OpenAI", "Anthropic"}),
-        saved_tags=frozenset({"evals"}),
-        saved_sources=frozenset({"OpenAI"}),
-        clicked_tags=frozenset({"rag"}),
-        clicked_sources=frozenset({"LangChain"}),
+        saved_tags={"evals": 1.0},
+        saved_sources={"OpenAI": 1.0},
+        clicked_tags={"rag": 1.0},
+        clicked_sources={"LangChain": 1.0},
         saved_article_ids=frozenset({saved_id}),
         dismissed_article_ids=frozenset({dismissed_id}),
     )
@@ -95,12 +95,12 @@ def test_build_user_profile_treats_missing_interests_as_empty(
     monkeypatch.setattr(
         app_crud,
         "get_saved_signals",
-        lambda **kwargs: (frozenset(), frozenset()),
+        lambda **kwargs: ({}, {}),
     )
     monkeypatch.setattr(
         app_crud,
         "get_clicked_signals",
-        lambda **kwargs: (frozenset(), frozenset()),
+        lambda **kwargs: ({}, {}),
     )
     monkeypatch.setattr(app_crud, "get_saved_article_ids", lambda **kwargs: [])
     monkeypatch.setattr(app_crud, "get_event_article_ids", lambda **kwargs: [])

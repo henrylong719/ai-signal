@@ -9,6 +9,7 @@ from app.models import Article
 from app.models.article import SavedArticle
 from app.schemas import ArticleCreate, ArticleUpdate
 from app.schemas.source import Category
+from app.services.decay import SAVED_HALF_LIFE_DAYS, aggregate_weights_by_key
 
 ArticleWithSavedCount = tuple[Article, int]
 
@@ -242,26 +243,45 @@ def get_saved_article_ids(*, session: Session, user_id: uuid.UUID) -> list[uuid.
 
 def get_saved_signals(
     *, session: Session, user_id: uuid.UUID
-) -> tuple[frozenset[str], frozenset[str]]:
-    """Aggregate the user's saved-article tags and sources.
+) -> tuple[dict[str, float], dict[str, float]]:
+    """Aggregate the user's saved-article tags and sources, decay-weighted.
 
-    Same shape as ``crud.event.get_clicked_signals`` — they feed parallel
-    fields on ``UserProfile``. Saved is the strongest behavioral signal
-    (most committed action) so the recommender weights it highest;
-    clicked is weaker but still positive.
+    Returns ``(tag_weights, source_weights)``. Each dict maps name ->
+    max decay weight in (0, 1] across the user's saves involving that
+    name. A save from yesterday contributes a weight near 1.0; a save
+    from sixty days ago contributes 0.5; older saves taper to near 0.
+    See ``services.decay`` for the curve and rationale.
+
+    Same shape contract as ``crud.event.get_clicked_signals`` — the two
+    feed parallel fields on ``UserProfile``. Saved is the strongest
+    behavioral signal so the recommender weights it highest; clicked
+    is weaker but still positive. Both feed the explicit-match and
+    source-affinity terms.
     """
     statement = (
-        select(Article.source, Article.tags)
+        select(Article.source, Article.tags, SavedArticle.saved_at)
         .join(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
         .where(SavedArticle.user_id == user_id)
     )
-    sources: set[str] = set()
-    tags: set[str] = set()
-    for source, article_tags in session.exec(statement).all():
-        sources.add(source)
+    # Collect (key, interaction_at) pairs per dimension. We want per-tag
+    # and per-source decay, so emit one pair per (tag, save_time) and
+    # one per (source, save_time). The aggregator collapses repeats
+    # using max so duplicate tags across saves don't double-count.
+    tag_pairs: list[tuple[str, datetime]] = []
+    source_pairs: list[tuple[str, datetime]] = []
+    for source, article_tags, saved_at in session.exec(statement).all():
+        source_pairs.append((source, saved_at))
         if article_tags:
-            tags.update(article_tags)
-    return frozenset(tags), frozenset(sources)
+            for tag in article_tags:
+                tag_pairs.append((tag, saved_at))
+
+    tag_weights = aggregate_weights_by_key(
+        tag_pairs, half_life_days=SAVED_HALF_LIFE_DAYS
+    )
+    source_weights = aggregate_weights_by_key(
+        source_pairs, half_life_days=SAVED_HALF_LIFE_DAYS
+    )
+    return tag_weights, source_weights
 
 
 def get_saved_article_embeddings(

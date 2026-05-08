@@ -40,5 +40,6 @@ export const isLoggedIn = (): boolean => {
  */
 export const clearLoginState = (): void => {
   if (typeof document === 'undefined') return
+  // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API lacks broad support for expiry; document.cookie is required here
   document.cookie = `${MARKER_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`
 }

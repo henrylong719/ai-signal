@@ -13,9 +13,10 @@
     </style>
     <script>
       (() => {
+        var saved, theme;
         try {
-          var saved = localStorage.getItem('vite-ui-theme');
-          var theme = saved || 'dark';
+          saved = localStorage.getItem('vite-ui-theme');
+          theme = saved || 'dark';
           if (theme === 'system') {
             theme = window.matchMedia('(prefers-color-scheme: dark)').matches
               ? 'dark'

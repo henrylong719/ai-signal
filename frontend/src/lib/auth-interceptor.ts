@@ -74,6 +74,7 @@ const onRefreshFailure = () => {
   // server cookies in its 401 response (or never set valid ones). The
   // marker cookie is the SPA's UI-state hint; clearing it here keeps the
   // sidebar from flashing "logged in" briefly after a hard refresh.
+  // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API lacks broad support for expiry; document.cookie is required here
   document.cookie = 'is_logged_in=; Max-Age=0; Path=/; SameSite=Lax'
   // Hard navigate so React Query caches, in-memory state, and any other
   // user-tied state are reset. A soft navigate via the router would

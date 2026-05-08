@@ -83,36 +83,36 @@
 
 .dark {
   /* ── Surfaces: neutral charcoal-slate (hue 225, low chroma) ─────────── */
-  --background: oklch(0.13 0.006 225);       /* ~#111418  page canvas         */
-  --foreground: oklch(0.93 0.012 80);         /* warm cream — editorial text   */
+  --background: oklch(0.13 0.006 225); /* ~#111418  page canvas         */
+  --foreground: oklch(0.93 0.012 80); /* warm cream — editorial text   */
 
-  --card: oklch(0.17 0.006 225);             /* ~#17191f  card surface        */
+  --card: oklch(0.17 0.006 225); /* ~#17191f  card surface        */
   --card-foreground: oklch(0.92 0.012 80);
 
-  --popover: oklch(0.20 0.007 225);          /* ~#1c1e24  dropdowns / sheets  */
+  --popover: oklch(0.2 0.007 225); /* ~#1c1e24  dropdowns / sheets  */
   --popover-foreground: oklch(0.92 0.012 80);
 
   /* ── Brand accent: restrained warm cream/gold ───────────────────────── */
-  --primary: oklch(0.875 0.024 80);          /* soft cream-gold — used sparingly */
+  --primary: oklch(0.875 0.024 80); /* soft cream-gold — used sparingly */
   --primary-foreground: oklch(0.13 0.006 225);
 
   /* ── Interactive surfaces ────────────────────────────────────────────── */
   --secondary: oklch(0.23 0.006 225);
-  --secondary-foreground: oklch(0.90 0.010 80);
+  --secondary-foreground: oklch(0.9 0.01 80);
 
-  --muted: oklch(0.21 0.006 225);            /* inputs, tags, subtle fills    */
-  --muted-foreground: oklch(0.60 0.005 225); /* cool neutral — no warm grey   */
+  --muted: oklch(0.21 0.006 225); /* inputs, tags, subtle fills    */
+  --muted-foreground: oklch(0.6 0.005 225); /* cool neutral — no warm grey   */
 
-  --accent: oklch(0.25 0.007 225);           /* hover / selection highlight   */
+  --accent: oklch(0.25 0.007 225); /* hover / selection highlight   */
   --accent-foreground: oklch(0.93 0.012 80);
 
   /* ── Semantic ────────────────────────────────────────────────────────── */
   --destructive: oklch(0.65 0.18 28);
 
   /* ── Borders & focus ────────────────────────────────────────────────── */
-  --border: oklch(0.93 0.012 80 / 11%);      /* subtle separator              */
-  --input: oklch(0.93 0.012 80 / 13%);       /* input border, slightly bolder */
-  --ring: oklch(0.72 0.028 80);              /* warm focus ring               */
+  --border: oklch(0.93 0.012 80 / 11%); /* subtle separator              */
+  --input: oklch(0.93 0.012 80 / 13%); /* input border, slightly bolder */
+  --ring: oklch(0.72 0.028 80); /* warm focus ring               */
 
   /* ── Charts ─────────────────────────────────────────────────────────── */
   --chart-1: oklch(0.72 0.11 58);
@@ -123,11 +123,11 @@
 
   /* ── Sidebar: one step darker than background ───────────────────────── */
   --sidebar: oklch(0.11 0.005 225);
-  --sidebar-foreground: oklch(0.90 0.010 80);
+  --sidebar-foreground: oklch(0.9 0.01 80);
   --sidebar-primary: oklch(0.875 0.024 80);
   --sidebar-primary-foreground: oklch(0.13 0.006 225);
   --sidebar-accent: oklch(0.23 0.006 225);
-  --sidebar-accent-foreground: oklch(0.90 0.010 80);
+  --sidebar-accent-foreground: oklch(0.9 0.01 80);
   --sidebar-border: oklch(0.93 0.012 80 / 9%);
   --sidebar-ring: oklch(0.72 0.028 80);
 }

@@ -454,6 +454,86 @@ export const DigestSectionPublicSchema = {
     title: 'DigestSectionPublic'
 } as const;
 
+export const FeedbackCreateSchema = {
+    properties: {
+        category: {
+            type: 'string',
+            enum: ['general', 'missing_topic_source_tag', 'bad_recommendation', 'feature_request', 'bug_report'],
+            title: 'Category'
+        },
+        message: {
+            type: 'string',
+            maxLength: 2000,
+            minLength: 10,
+            title: 'Message'
+        },
+        context: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Context'
+        }
+    },
+    type: 'object',
+    required: ['category', 'message'],
+    title: 'FeedbackCreate'
+} as const;
+
+export const FeedbackPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'User Id'
+        },
+        category: {
+            type: 'string',
+            enum: ['general', 'missing_topic_source_tag', 'bad_recommendation', 'feature_request', 'bug_report'],
+            title: 'Category'
+        },
+        message: {
+            type: 'string',
+            title: 'Message'
+        },
+        context: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Context'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'user_id', 'category', 'message', 'created_at', 'updated_at'],
+    title: 'FeedbackPublic'
+} as const;
+
 export const ForYouArticlePublicSchema = {
     properties: {
         url: {
@@ -984,6 +1064,14 @@ export const UserInterestPublicSchema = {
             title: 'Tags',
             default: []
         },
+        preferred_sources: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Preferred Sources',
+            default: []
+        },
         updated_at: {
             anyOf: [
                 {
@@ -1024,6 +1112,14 @@ export const UserInterestUpdateSchema = {
             type: 'array',
             maxItems: 20,
             title: 'Tags'
+        },
+        preferred_sources: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            maxItems: 44,
+            title: 'Preferred Sources'
         }
     },
     type: 'object',
@@ -1032,7 +1128,8 @@ export const UserInterestUpdateSchema = {
 
 Validation:
   - categories must be drawn from the Category Literal (Pydantic enforces).
-  - tags are length- and count-bounded.`
+  - tags are length- and count-bounded; normalized in \`normalized_tags\`.
+  - preferred_sources must each be a known source name (validator below).`
 } as const;
 
 export const UserPublicSchema = {

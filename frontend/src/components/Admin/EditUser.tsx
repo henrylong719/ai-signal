@@ -31,6 +31,9 @@ import { LoadingButton } from '@/components/ui/loading-button'
 import useCustomToast from '@/hooks/useCustomToast'
 import { handleError } from '@/utils'
 
+const primaryActionClass =
+  'h-9 bg-slate-950 px-4 font-medium text-white shadow-sm hover:bg-slate-800 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88'
+
 const formSchema = z
   .object({
     email: z.email({ message: 'Invalid email address' }),
@@ -225,7 +228,11 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                   Cancel
                 </Button>
               </DialogClose>
-              <LoadingButton type="submit" loading={mutation.isPending}>
+              <LoadingButton
+                type="submit"
+                loading={mutation.isPending}
+                className={primaryActionClass}
+              >
                 Save
               </LoadingButton>
             </DialogFooter>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { ArrowLeftIcon } from 'lucide-react'
 import type { UseFormReturn } from 'react-hook-form'
 import {
   Form,
@@ -19,62 +19,46 @@ import {
   primaryButtonClass,
 } from './AuthShared'
 import type { SignUpFormData } from './authSchemas'
-import {
-  type SocialAuthProvider,
-  SocialLoginButtons,
-} from './SocialLoginButtons'
-
-const topics = [
-  'AI Agents',
-  'RAG',
-  'LLM Tools',
-  'MCP',
-  'Research',
-  'Voice AI',
-  'Evals',
-  'Startups',
-]
 
 interface SignUpScreenProps {
   form: UseFormReturn<SignUpFormData>
   loading: boolean
+  onBackToProviders: () => void
   onSignIn: () => void
-  onSocialProviderClick: (provider: SocialAuthProvider) => void
   onSubmit: (data: SignUpFormData) => void
 }
 
 export function SignUpScreen({
   form,
   loading,
+  onBackToProviders,
   onSignIn,
-  onSocialProviderClick,
   onSubmit,
 }: SignUpScreenProps) {
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([])
-
-  const toggleTopic = (topic: string) => {
-    setSelectedTopics((currentTopics) =>
-      currentTopics.includes(topic)
-        ? currentTopics.filter((currentTopic) => currentTopic !== topic)
-        : [...currentTopics, topic],
-    )
-  }
-
   return (
     <div className="flex w-full flex-col items-center">
       <AuthIntro
-        title="Create your account"
-        description="Save articles, personalize topics, and receive daily AI insights."
+        title="Create account with email"
+        description="Add a few details to personalize your AI Signal account."
       />
 
+      <button
+        type="button"
+        className="mt-5 inline-flex items-center gap-1.5 self-start text-sm font-medium text-slate-500 transition hover:text-slate-950 dark:text-muted-foreground dark:hover:text-foreground"
+        onClick={onBackToProviders}
+      >
+        <ArrowLeftIcon className="size-4 stroke-[1.8]" />
+        All options
+      </button>
+
       <Form {...form}>
-        <form className="mt-6 w-full" onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="grid gap-5">
+        <form className="mt-4 w-full" onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="grid gap-4">
             <FormField
               control={form.control}
               name="full_name"
               render={({ field }) => (
-                <FormItem className="gap-3">
+                <FormItem className="gap-2">
                   <FormLabel className={AUTH_LABEL_CLASS}>Full Name</FormLabel>
                   <FormControl>
                     <Input
@@ -95,7 +79,7 @@ export function SignUpScreen({
               control={form.control}
               name="email"
               render={({ field }) => (
-                <FormItem className="gap-3">
+                <FormItem className="gap-2">
                   <FormLabel className={AUTH_LABEL_CLASS}>Email</FormLabel>
                   <FormControl>
                     <Input
@@ -112,94 +96,43 @@ export function SignUpScreen({
               )}
             />
 
-            <div className="grid gap-5 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem className="gap-3">
-                    <FormLabel className={AUTH_LABEL_CLASS}>Password</FormLabel>
-                    <FormControl>
-                      <PasswordInput
-                        autoComplete="new-password"
-                        data-testid="password-input"
-                        placeholder="Password"
-                        className={cn(AUTH_INPUT_CLASS, 'pr-12 sm:pr-14')}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="confirm_password"
-                render={({ field }) => (
-                  <FormItem className="gap-3">
-                    <FormLabel className={AUTH_LABEL_CLASS}>
-                      Confirm Password
-                    </FormLabel>
-                    <FormControl>
-                      <PasswordInput
-                        autoComplete="new-password"
-                        data-testid="confirm-password-input"
-                        placeholder="Confirm password"
-                        className={cn(AUTH_INPUT_CLASS, 'pr-12 sm:pr-14')}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem className="gap-2">
+                  <FormLabel className={AUTH_LABEL_CLASS}>Password</FormLabel>
+                  <FormControl>
+                    <PasswordInput
+                      autoComplete="new-password"
+                      data-testid="password-input"
+                      placeholder="Password"
+                      className={cn(AUTH_INPUT_CLASS, 'pr-12 sm:pr-16')}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
-          <div className="my-5 h-px w-full bg-slate-200 dark:bg-border" />
-
-          <div className="w-full">
-            <h2 className="text-sm font-semibold text-slate-700 dark:text-foreground/88">
-              Topics of Interest (Optional)
-            </h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {topics.map((topic) => {
-                const selected = selectedTopics.includes(topic)
-
-                return (
-                  <button
-                    type="button"
-                    aria-pressed={selected}
-                    className={cn(
-                      'rounded-full border px-3 py-1 text-xs font-semibold transition sm:px-4 sm:py-1.5 sm:text-sm',
-                      selected
-                        ? 'border-slate-950 bg-slate-950 text-white dark:border-primary dark:bg-primary dark:text-primary-foreground'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-muted/35 dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent/80 dark:hover:text-foreground',
-                    )}
-                    key={topic}
-                    onClick={() => toggleTopic(topic)}
-                  >
-                    {topic}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          <p className="mt-4 text-center text-xs leading-relaxed text-slate-500 dark:text-muted-foreground">
+            By creating an account, you agree to AI Signal&apos;s terms and
+            privacy practices.
+          </p>
 
           <LoadingButton
             type="submit"
             loading={loading}
-            className={cn(primaryButtonClass, 'mt-6')}
+            className={cn(primaryButtonClass, 'mt-4')}
           >
             Create Account
           </LoadingButton>
-
-          <SocialLoginButtons onProviderClick={onSocialProviderClick} />
         </form>
       </Form>
 
-      <p className="mt-5 text-center text-sm text-slate-500 dark:text-muted-foreground">
+      <p className="mt-6 text-center text-sm text-slate-500 dark:text-muted-foreground">
         Already have an account?{' '}
         <button
           type="button"

@@ -29,7 +29,7 @@ function AuthModal() {
       <DialogContent
         showCloseButton={false}
         overlayClassName="z-[70] bg-black/40 dark:bg-black/55"
-        className="z-[80] max-h-[calc(100svh-1.5rem)] overflow-y-auto border border-slate-200/80 bg-white p-0 text-slate-950 shadow-xl dark:border-border dark:bg-card dark:text-card-foreground dark:shadow-[0_18px_45px_rgba(0,0,0,0.32),0_2px_8px_rgba(0,0,0,0.24)] sm:max-w-[520px] sm:rounded-lg"
+        className="z-[80] max-h-[calc(100svh-1.5rem)] overflow-y-auto border border-slate-200/80 bg-white p-0 text-slate-950 shadow-xl dark:border-border dark:bg-card dark:text-card-foreground dark:shadow-[0_18px_45px_rgba(0,0,0,0.32),0_2px_8px_rgba(0,0,0,0.24)] sm:max-w-[500px] sm:rounded-lg"
       >
         <DialogTitle className="sr-only">AI Signal authentication</DialogTitle>
         <DialogDescription className="sr-only">

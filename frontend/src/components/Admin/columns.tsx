@@ -42,7 +42,14 @@ export const columns: ColumnDef<UserTableData>[] = [
     accessorKey: 'is_superuser',
     header: 'Role',
     cell: ({ row }) => (
-      <Badge variant={row.original.is_superuser ? 'default' : 'secondary'}>
+      <Badge
+        variant={row.original.is_superuser ? 'outline' : 'secondary'}
+        className={
+          row.original.is_superuser
+            ? 'border-slate-200 bg-slate-50 text-slate-700 dark:border-border dark:bg-muted/20 dark:text-foreground/86'
+            : undefined
+        }
+      >
         {row.original.is_superuser ? 'Superuser' : 'User'}
       </Badge>
     ),
@@ -55,7 +62,9 @@ export const columns: ColumnDef<UserTableData>[] = [
         <span
           className={cn(
             'size-2 rounded-full',
-            row.original.is_active ? 'bg-green-500' : 'bg-gray-400',
+            row.original.is_active
+              ? 'bg-slate-950 dark:bg-primary'
+              : 'bg-slate-300 dark:bg-muted-foreground/45',
           )}
         />
         <span className={row.original.is_active ? '' : 'text-muted-foreground'}>

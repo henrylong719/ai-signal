@@ -1,4 +1,4 @@
-import { Home, Users } from 'lucide-react'
+import { Home, SlidersHorizontal, Users } from 'lucide-react'
 
 import { SidebarAppearance } from '@/components/Common/Appearance'
 import { Logo } from '@/components/Common/Logo'
@@ -11,13 +11,27 @@ import {
 import useAuth from '@/hooks/useAuth'
 import { Main, type NavItem } from './Main'
 
+// Dashboard is always present; "Tune your signal" is added for logged-in
+// users (anonymous visitors get redirected to login from the route, so
+// putting it in the nav for them would be confusing). Admin link only
+// appears for superusers.
 const baseItems: NavItem[] = [{ icon: Home, title: 'Dashboard', path: '/' }]
+
+const personalizationItem: NavItem = {
+  icon: SlidersHorizontal,
+  title: 'Tune your signal',
+  path: '/personalization',
+}
+
+const adminItem: NavItem = { icon: Users, title: 'Admin', path: '/admin' }
 
 export function AppSidebar() {
   const { user: currentUser } = useAuth()
 
-  const items = currentUser?.is_superuser
-    ? [...baseItems, { icon: Users, title: 'Admin', path: '/admin' }]
+  const items: NavItem[] = currentUser
+    ? currentUser.is_superuser
+      ? [...baseItems, personalizationItem, adminItem]
+      : [...baseItems, personalizationItem]
     : baseItems
 
   return (

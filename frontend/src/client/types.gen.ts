@@ -96,6 +96,28 @@ export type DigestSectionPublic = {
     articles: Array<DigestArticlePublic>;
 };
 
+export type FeedbackCreate = {
+    category: 'general' | 'missing_topic_source_tag' | 'bad_recommendation' | 'feature_request' | 'bug_report';
+    message: string;
+    context?: ({
+    [key: string]: unknown;
+} | null);
+};
+
+export type category2 = 'general' | 'missing_topic_source_tag' | 'bad_recommendation' | 'feature_request' | 'bug_report';
+
+export type FeedbackPublic = {
+    id: string;
+    user_id: string;
+    category: 'general' | 'missing_topic_source_tag' | 'bad_recommendation' | 'feature_request' | 'bug_report';
+    message: string;
+    context?: ({
+    [key: string]: unknown;
+} | null);
+    created_at: string;
+    updated_at: string;
+};
+
 /**
  * Article + recommendation reason label.
  *
@@ -243,6 +265,7 @@ export type UserCreate = {
 export type UserInterestPublic = {
     categories?: Array<('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other')>;
     tags?: Array<(string)>;
+    preferred_sources?: Array<(string)>;
     updated_at?: (string | null);
 };
 
@@ -251,11 +274,13 @@ export type UserInterestPublic = {
  *
  * Validation:
  * - categories must be drawn from the Category Literal (Pydantic enforces).
- * - tags are length- and count-bounded.
+ * - tags are length- and count-bounded; normalized in `normalized_tags`.
+ * - preferred_sources must each be a known source name (validator below).
  */
 export type UserInterestUpdate = {
     categories?: Array<('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other')>;
     tags?: Array<(string)>;
+    preferred_sources?: Array<(string)>;
 };
 
 export type UserPublic = {
@@ -412,6 +437,13 @@ export type DigestReadTodayDigestData = {
 };
 
 export type DigestReadTodayDigestResponse = (DigestPublicSchema);
+
+export type FeedbackSubmitFeedbackData = {
+    accessToken?: (string | null);
+    requestBody: FeedbackCreate;
+};
+
+export type FeedbackSubmitFeedbackResponse = (FeedbackPublic);
 
 export type IngestTriggerIngestData = {
     accessToken?: (string | null);

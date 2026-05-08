@@ -1,4 +1,5 @@
 import { Link as RouterLink } from '@tanstack/react-router'
+import { ArrowLeftIcon } from 'lucide-react'
 import type { UseFormReturn } from 'react-hook-form'
 import {
   Form,
@@ -19,43 +20,46 @@ import {
   primaryButtonClass,
 } from './AuthShared'
 import type { LoginFormData } from './authSchemas'
-import {
-  type SocialAuthProvider,
-  SocialLoginButtons,
-} from './SocialLoginButtons'
 
 interface SignInScreenProps {
   form: UseFormReturn<LoginFormData>
   loading: boolean
+  onBackToProviders: () => void
   onCreateAccount: () => void
-  onSocialProviderClick: (provider: SocialAuthProvider) => void
   onSubmit: (data: LoginFormData) => void
-  remember: boolean
-  setRemember: (remember: boolean) => void
 }
 
 export function SignInScreen({
   form,
   loading,
+  onBackToProviders,
   onCreateAccount,
-  onSocialProviderClick,
   onSubmit,
 }: SignInScreenProps) {
   return (
     <div className="flex w-full flex-col items-center">
       <AuthIntro
-        title="Welcome back"
-        description="Sign in to continue tracking the latest AI signals."
+        title="Sign in with email"
+        description="Use the email and password connected to your account."
       />
 
+      <button
+        type="button"
+        className="mt-5 inline-flex items-center gap-1.5 self-start text-sm font-medium text-slate-500 transition hover:text-slate-950 dark:text-muted-foreground dark:hover:text-foreground"
+        onClick={onBackToProviders}
+      >
+        <ArrowLeftIcon className="size-4 stroke-[1.8]" />
+        All options
+      </button>
+
       <Form {...form}>
-        <form className="mt-6 w-full" onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="grid gap-5">
+        <form className="mt-4 w-full" onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="grid gap-4">
             <FormField
               control={form.control}
               name="username"
               render={({ field }) => (
-                <FormItem className="gap-3">
+                <FormItem className="gap-2">
                   <FormLabel className={AUTH_LABEL_CLASS}>Email</FormLabel>
                   <FormControl>
                     <Input
@@ -76,7 +80,7 @@ export function SignInScreen({
               control={form.control}
               name="password"
               render={({ field }) => (
-                <FormItem className="gap-3">
+                <FormItem className="gap-2">
                   <FormLabel className={AUTH_LABEL_CLASS}>Password</FormLabel>
                   <FormControl>
                     <PasswordInput
@@ -93,20 +97,7 @@ export function SignInScreen({
             />
           </div>
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-            {/* <label
-              htmlFor={rememberId}
-              className="flex items-center gap-2 text-sm text-slate-600"
-            >
-              <Checkbox
-                checked={remember}
-                className="size-4 rounded-[3px] border-slate-400 data-[state=checked]:border-slate-950 data-[state=checked]:bg-slate-950 data-[state=checked]:text-white"
-                id={rememberId}
-                onCheckedChange={(value) => setRemember(value === true)}
-              />
-              Remember me
-            </label> */}
-
+          <div className="mt-4 flex justify-end">
             <RouterLink
               to="/recover-password"
               className="text-sm font-normal text-slate-600 hover:text-slate-950 dark:text-muted-foreground dark:hover:text-foreground"
@@ -118,16 +109,14 @@ export function SignInScreen({
           <LoadingButton
             type="submit"
             loading={loading}
-            className={cn(primaryButtonClass, 'mt-6')}
+            className={cn(primaryButtonClass, 'mt-4')}
           >
             Sign In
           </LoadingButton>
-
-          <SocialLoginButtons onProviderClick={onSocialProviderClick} />
         </form>
       </Form>
 
-      <p className="mt-5 text-center text-sm text-slate-500 dark:text-muted-foreground">
+      <p className="mt-6 text-center text-sm text-slate-500 dark:text-muted-foreground">
         Don&apos;t have an account?{' '}
         <button
           type="button"

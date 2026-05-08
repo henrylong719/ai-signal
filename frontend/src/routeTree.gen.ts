@@ -18,6 +18,7 @@ import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutTodayDigestRouteImport } from './routes/_layout/today-digest'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutSavedArticlesRouteImport } from './routes/_layout/saved-articles'
+import { Route as LayoutPersonalizationRouteImport } from './routes/_layout/personalization'
 import { Route as LayoutAllArticleSourcesRouteImport } from './routes/_layout/all-article-sources'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutAdminIndexRouteImport } from './routes/_layout/admin.index'
@@ -71,6 +72,11 @@ const LayoutSavedArticlesRoute = LayoutSavedArticlesRouteImport.update({
   path: '/saved-articles',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutPersonalizationRoute = LayoutPersonalizationRouteImport.update({
+  id: '/personalization',
+  path: '/personalization',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutAllArticleSourcesRoute = LayoutAllArticleSourcesRouteImport.update({
   id: '/all-article-sources',
   path: '/all-article-sources',
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRouteWithChildren
   '/all-article-sources': typeof LayoutAllArticleSourcesRoute
+  '/personalization': typeof LayoutPersonalizationRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
   '/today-digest': typeof LayoutTodayDigestRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/all-article-sources': typeof LayoutAllArticleSourcesRoute
+  '/personalization': typeof LayoutPersonalizationRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
   '/today-digest': typeof LayoutTodayDigestRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRouteWithChildren
   '/_layout/all-article-sources': typeof LayoutAllArticleSourcesRoute
+  '/_layout/personalization': typeof LayoutPersonalizationRoute
   '/_layout/saved-articles': typeof LayoutSavedArticlesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/today-digest': typeof LayoutTodayDigestRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/all-article-sources'
+    | '/personalization'
     | '/saved-articles'
     | '/settings'
     | '/today-digest'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/all-article-sources'
+    | '/personalization'
     | '/saved-articles'
     | '/settings'
     | '/today-digest'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_layout/admin'
     | '/_layout/all-article-sources'
+    | '/_layout/personalization'
     | '/_layout/saved-articles'
     | '/_layout/settings'
     | '/_layout/today-digest'
@@ -297,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSavedArticlesRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/personalization': {
+      id: '/_layout/personalization'
+      path: '/personalization'
+      fullPath: '/personalization'
+      preLoaderRoute: typeof LayoutPersonalizationRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/all-article-sources': {
       id: '/_layout/all-article-sources'
       path: '/all-article-sources'
@@ -375,6 +394,7 @@ const LayoutAdminRouteWithChildren = LayoutAdminRoute._addFileChildren(
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRouteWithChildren
   LayoutAllArticleSourcesRoute: typeof LayoutAllArticleSourcesRoute
+  LayoutPersonalizationRoute: typeof LayoutPersonalizationRoute
   LayoutSavedArticlesRoute: typeof LayoutSavedArticlesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutTodayDigestRoute: typeof LayoutTodayDigestRoute
@@ -387,6 +407,7 @@ interface LayoutRouteChildren {
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRouteWithChildren,
   LayoutAllArticleSourcesRoute: LayoutAllArticleSourcesRoute,
+  LayoutPersonalizationRoute: LayoutPersonalizationRoute,
   LayoutSavedArticlesRoute: LayoutSavedArticlesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutTodayDigestRoute: LayoutTodayDigestRoute,

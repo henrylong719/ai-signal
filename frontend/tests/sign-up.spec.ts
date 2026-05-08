@@ -4,17 +4,20 @@ import { randomEmail, randomPassword } from './utils/random'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 
+const openEmailForm = async (page: Page) => {
+  await page.getByRole('button', { name: 'Continue with email' }).click()
+}
+
 const fillForm = async (
   page: Page,
   full_name: string,
   email: string,
   password: string,
-  confirm_password: string,
 ) => {
+  await openEmailForm(page)
   await page.getByTestId('full-name-input').fill(full_name)
   await page.getByTestId('email-input').fill(email)
   await page.getByTestId('password-input').fill(password)
-  await page.getByTestId('confirm-password-input').fill(confirm_password)
 }
 
 const verifyInput = async (page: Page, testId: string) => {
@@ -26,23 +29,52 @@ const verifyInput = async (page: Page, testId: string) => {
 
 test('Inputs are visible, empty and editable', async ({ page }) => {
   await page.goto('/signup')
+  await openEmailForm(page)
 
   await verifyInput(page, 'full-name-input')
   await verifyInput(page, 'email-input')
   await verifyInput(page, 'password-input')
-  await verifyInput(page, 'confirm-password-input')
 })
 
 test('Create Account button is visible', async ({ page }) => {
   await page.goto('/signup')
+  await openEmailForm(page)
 
   await expect(
     page.getByRole('button', { name: 'Create Account' }),
   ).toBeVisible()
 })
 
+test('Signup method options are visible before email form', async ({
+  page,
+}) => {
+  await page.goto('/signup')
+
+  await expect(
+    page.getByRole('button', { name: 'Continue with Google' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Continue with GitHub' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Continue with Facebook' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Continue with email' }),
+  ).toBeVisible()
+  await expect(page.getByTestId('email-input')).toBeHidden()
+})
+
+test('Terms helper is visible on email signup form', async ({ page }) => {
+  await page.goto('/signup')
+  await openEmailForm(page)
+
+  await expect(page.getByText(/terms and privacy practices/)).toBeVisible()
+})
+
 test('Sign In button is visible', async ({ page }) => {
   await page.goto('/signup')
+  await openEmailForm(page)
 
   await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
 })
@@ -53,20 +85,14 @@ test('Sign up with valid name, email, and password', async ({ page }) => {
   const password = randomPassword()
 
   await page.goto('/signup')
-  await fillForm(page, full_name, email, password, password)
+  await fillForm(page, full_name, email, password)
   await page.getByRole('button', { name: 'Create Account' }).click()
 })
 
 test('Sign up with invalid email', async ({ page }) => {
   await page.goto('/signup')
 
-  await fillForm(
-    page,
-    'Playwright Test',
-    'invalid-email',
-    'changethis',
-    'changethis',
-  )
+  await fillForm(page, 'Playwright Test', 'invalid-email', 'changethis')
   await page.getByRole('button', { name: 'Create Account' }).click()
 
   await expect(page.getByText('Invalid email address')).toBeVisible()
@@ -79,12 +105,12 @@ test('Sign up with existing email', async ({ page }) => {
 
   await page.goto('/signup')
 
-  await fillForm(page, fullName, email, password, password)
+  await fillForm(page, fullName, email, password)
   await page.getByRole('button', { name: 'Create Account' }).click()
 
   await page.goto('/signup')
 
-  await fillForm(page, fullName, email, password, password)
+  await fillForm(page, fullName, email, password)
   await page.getByRole('button', { name: 'Create Account' }).click()
 
   await page
@@ -99,26 +125,12 @@ test('Sign up with weak password', async ({ page }) => {
 
   await page.goto('/signup')
 
-  await fillForm(page, fullName, email, password, password)
+  await fillForm(page, fullName, email, password)
   await page.getByRole('button', { name: 'Create Account' }).click()
 
   await expect(
     page.getByText('Password must be at least 8 characters'),
   ).toBeVisible()
-})
-
-test('Sign up with mismatched passwords', async ({ page }) => {
-  const fullName = 'Test User'
-  const email = randomEmail()
-  const password = randomPassword()
-  const password2 = randomPassword()
-
-  await page.goto('/signup')
-
-  await fillForm(page, fullName, email, password, password2)
-  await page.getByRole('button', { name: 'Create Account' }).click()
-
-  await expect(page.getByText("The passwords don't match")).toBeVisible()
 })
 
 test('Sign up with missing full name', async ({ page }) => {
@@ -128,7 +140,7 @@ test('Sign up with missing full name', async ({ page }) => {
 
   await page.goto('/signup')
 
-  await fillForm(page, fullName, email, password, password)
+  await fillForm(page, fullName, email, password)
   await page.getByRole('button', { name: 'Create Account' }).click()
 
   await expect(page.getByText('Full Name is required')).toBeVisible()
@@ -141,7 +153,7 @@ test('Sign up with missing email', async ({ page }) => {
 
   await page.goto('/signup')
 
-  await fillForm(page, fullName, email, password, password)
+  await fillForm(page, fullName, email, password)
   await page.getByRole('button', { name: 'Create Account' }).click()
 
   await expect(page.getByText('Invalid email address')).toBeVisible()
@@ -154,7 +166,7 @@ test('Sign up with missing password', async ({ page }) => {
 
   await page.goto('/signup')
 
-  await fillForm(page, fullName, email, password, password)
+  await fillForm(page, fullName, email, password)
   await page.getByRole('button', { name: 'Create Account' }).click()
 
   await expect(page.getByText('Password is required')).toBeVisible()

@@ -4,7 +4,12 @@ import { randomPassword } from './utils/random.ts'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 
+const openEmailForm = async (page: Page) => {
+  await page.getByRole('button', { name: 'Continue with email' }).click()
+}
+
 const fillForm = async (page: Page, email: string, password: string) => {
+  await openEmailForm(page)
   await page.getByTestId('email-input').fill(email)
   await page.getByTestId('password-input').fill(password)
 }
@@ -18,6 +23,7 @@ const verifyInput = async (page: Page, testId: string) => {
 
 test('Inputs are visible, empty and editable', async ({ page }) => {
   await page.goto('/login')
+  await openEmailForm(page)
 
   await verifyInput(page, 'email-input')
   await verifyInput(page, 'password-input')
@@ -25,12 +31,32 @@ test('Inputs are visible, empty and editable', async ({ page }) => {
 
 test('Sign In button is visible', async ({ page }) => {
   await page.goto('/login')
+  await openEmailForm(page)
 
   await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
 })
 
+test('Auth method options are visible before email form', async ({ page }) => {
+  await page.goto('/login')
+
+  await expect(
+    page.getByRole('button', { name: 'Continue with Google' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Continue with GitHub' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Continue with Facebook' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Continue with email' }),
+  ).toBeVisible()
+  await expect(page.getByTestId('email-input')).toBeHidden()
+})
+
 test('Forgot Password link is visible', async ({ page }) => {
   await page.goto('/login')
+  await openEmailForm(page)
 
   await expect(
     page.getByRole('link', { name: 'Forgot password?' }),

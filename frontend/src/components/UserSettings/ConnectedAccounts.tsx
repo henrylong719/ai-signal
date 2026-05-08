@@ -6,7 +6,7 @@ import {
   MailIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { FaGithub } from 'react-icons/fa'
+import { FaFacebook, FaGithub } from 'react-icons/fa'
 import { FcGoogle } from 'react-icons/fc'
 
 import { type OAuthAccountPublic, UsersService } from '@/client'
@@ -25,6 +25,10 @@ const providerMeta: Record<
   google: {
     icon: <FcGoogle className="size-5" />,
     label: 'Google',
+  },
+  facebook: {
+    icon: <FaFacebook className="size-5 text-[#1877f2]" />,
+    label: 'Facebook',
   },
 }
 

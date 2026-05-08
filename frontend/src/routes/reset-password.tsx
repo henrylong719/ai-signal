@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { LoginService } from '@/client'
+import { primaryButtonClass } from '@/components/Auth/AuthShared'
 import { AuthLayout } from '@/components/Common/AuthLayout'
 import {
   Form,
@@ -146,7 +147,7 @@ function ResetPassword() {
 
             <LoadingButton
               type="submit"
-              className="w-full"
+              className={primaryButtonClass}
               loading={mutation.isPending}
             >
               Reset Password

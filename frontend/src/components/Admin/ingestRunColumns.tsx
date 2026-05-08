@@ -128,7 +128,7 @@ function StatusBadge({ run }: { run: IngestRunPublic }) {
     return (
       <Badge
         variant="outline"
-        className="gap-1.5 border-green-200 bg-green-50 text-green-800 dark:border-green-400/20 dark:bg-green-400/10 dark:text-green-300"
+        className="gap-1.5 border-slate-200 bg-slate-50 text-slate-700 dark:border-border dark:bg-muted/20 dark:text-foreground/86"
       >
         <CheckCircle2 className="size-3" />
         Succeeded

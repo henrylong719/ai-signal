@@ -5,11 +5,18 @@ import {
   Outlet,
   useLocation,
 } from '@tanstack/react-router'
-import { AlertCircleIcon, ArrowRightIcon, RadioTowerIcon } from 'lucide-react'
+import {
+  AlertCircleIcon,
+  CheckIcon,
+  PlusIcon,
+  RadioTowerIcon,
+} from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { ArticlesService, type source_type } from '@/client'
 import { ArticleListState } from '@/components/Articles/ArticleList'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useInterests } from '@/hooks/useInterests'
+import { isLoggedIn } from '@/lib/auth-state'
 import { capitalize, cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/_layout/all-article-sources')({
@@ -57,7 +64,7 @@ function SourceGroupSkeleton() {
                   </div>
                   <Skeleton className="h-4 w-full max-w-md rounded" />
                 </div>
-                <Skeleton className="hidden h-8 w-8 shrink-0 rounded-md sm:block" />
+                <Skeleton className="hidden h-8 w-24 shrink-0 rounded-full sm:block" />
               </div>
             ))}
           </div>
@@ -78,12 +85,21 @@ function AllArticleSources() {
       ? savedRouteState.allArticleSourcesFilter
       : 'all',
   )
+  const [updatingSource, setUpdatingSource] = useState<string | null>(null)
   const hasRestoredScroll = useRef(false)
+  const userIsLoggedIn = isLoggedIn()
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['articleSources'],
     queryFn: () => ArticlesService.readSources(),
   })
+  const {
+    interests,
+    isLoading: interestsLoading,
+    isError: interestsError,
+    save,
+    isSaving,
+  } = useInterests()
 
   const savedScrollY = savedRouteState.allArticleSourcesScrollY
 
@@ -115,6 +131,29 @@ function AllArticleSources() {
     .filter((group) => (group.items || []).length > 0)
 
   const sourceCount = data?.data.length ?? 0
+  const preferredSources = interests?.preferred_sources ?? []
+
+  const togglePreferredSource = (sourceName: string) => {
+    if (!userIsLoggedIn || interestsLoading || interestsError) {
+      return
+    }
+
+    const nextPreferredSources = preferredSources.includes(sourceName)
+      ? preferredSources.filter((source) => source !== sourceName)
+      : [...preferredSources, sourceName]
+
+    setUpdatingSource(sourceName)
+    save(
+      {
+        categories: interests?.categories ?? [],
+        tags: interests?.tags ?? [],
+        preferred_sources: nextPreferredSources,
+      },
+      {
+        onSettled: () => setUpdatingSource(null),
+      },
+    )
+  }
 
   return (
     <div className="mx-auto w-full max-w-5xl pb-16 pt-10 sm:pb-20 sm:pt-12">
@@ -203,41 +242,88 @@ function AllArticleSources() {
                     </span>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {group.items.map((source) => (
-                      <Link
-                        key={source.name}
-                        to="/article-sources/$s"
-                        params={{ s: source.name }}
-                        state={(previousState) => ({
-                          ...previousState,
-                          allArticleSourcesFilter: sourceFilter,
-                          allArticleSourcesScrollY: window.scrollY,
-                        })}
-                        className="group block min-h-36 rounded-lg border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-all hover:border-slate-300 hover:bg-slate-50/70 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_rgba(15,23,42,0.05)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-card/35 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-card/65 dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0">
-                            <div className="mb-2 flex flex-wrap items-center gap-2">
-                              <h3 className="text-base font-semibold text-slate-950 dark:text-foreground">
-                                {source.name}
-                              </h3>
-                              <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-500 dark:border-border dark:bg-transparent dark:text-muted-foreground">
-                                {source.source_type}
-                              </span>
-                              <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-500 dark:border-border dark:bg-transparent dark:text-muted-foreground">
-                                {source.topic}
-                              </span>
+                    {group.items.map((source) => {
+                      const isPreferredSource = preferredSources.includes(
+                        source.name,
+                      )
+                      const isUpdatingSource =
+                        updatingSource === source.name && isSaving
+                      const followDisabled =
+                        interestsLoading || interestsError || isSaving
+
+                      return (
+                        <article
+                          key={source.name}
+                          className="group relative min-h-36 rounded-lg border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-all hover:border-slate-300 hover:bg-slate-50/70 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_rgba(15,23,42,0.05)] dark:border-border dark:bg-card/35 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-card/65 dark:hover:shadow-none"
+                        >
+                          <Link
+                            to="/article-sources/$s"
+                            params={{ s: source.name }}
+                            state={(previousState) => ({
+                              ...previousState,
+                              allArticleSourcesFilter: sourceFilter,
+                              allArticleSourcesScrollY: window.scrollY,
+                            })}
+                            aria-label={`View ${source.name} source details`}
+                            className="absolute inset-0 z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                          />
+                          <div className="pointer-events-none relative z-20 flex min-h-28 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-2 flex flex-wrap items-center gap-2">
+                                <h3 className="text-base font-semibold text-slate-950 dark:text-foreground">
+                                  {source.name}
+                                </h3>
+                                <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-500 dark:border-border dark:bg-transparent dark:text-muted-foreground">
+                                  {source.source_type}
+                                </span>
+                                <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-500 dark:border-border dark:bg-transparent dark:text-muted-foreground">
+                                  {source.topic}
+                                </span>
+                              </div>
+                              <p className="line-clamp-2 text-sm leading-6 text-slate-500 dark:text-muted-foreground">
+                                {source.description}
+                              </p>
                             </div>
-                            <p className="line-clamp-2 text-sm leading-6 text-slate-500 dark:text-muted-foreground">
-                              {source.description}
-                            </p>
+                            <div className="pointer-events-auto relative z-30 flex shrink-0 items-center sm:items-start">
+                              {userIsLoggedIn ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    togglePreferredSource(source.name)
+                                  }
+                                  disabled={followDisabled}
+                                  aria-pressed={isPreferredSource}
+                                  className={cn(
+                                    'inline-flex h-8 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background',
+                                    isPreferredSource
+                                      ? 'border-slate-950 bg-slate-950 text-white shadow-sm dark:border-primary dark:bg-primary dark:text-primary-foreground'
+                                      : 'border-slate-200 bg-white text-slate-600 shadow-sm shadow-slate-950/[0.02] hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground',
+                                  )}
+                                >
+                                  {isPreferredSource ? (
+                                    <CheckIcon className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <PlusIcon className="h-3.5 w-3.5" />
+                                  )}
+                                  {isUpdatingSource
+                                    ? 'Saving'
+                                    : isPreferredSource
+                                      ? 'Following'
+                                      : 'Follow'}
+                                </button>
+                              ) : (
+                                <Link
+                                  to="/login"
+                                  className="inline-flex h-8 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 shadow-sm shadow-slate-950/[0.02] transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                                >
+                                  Follow
+                                </Link>
+                              )}
+                            </div>
                           </div>
-                          <div className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors group-hover:text-slate-950 sm:flex dark:border-border dark:bg-muted/35 dark:text-muted-foreground dark:shadow-none dark:group-hover:text-foreground">
-                            <ArrowRightIcon className="h-4 w-4 stroke-[1.7]" />
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
+                        </article>
+                      )
+                    })}
                   </div>
                 </section>
               ),

@@ -31,6 +31,9 @@ import { LoadingButton } from '@/components/ui/loading-button'
 import useCustomToast from '@/hooks/useCustomToast'
 import { handleError } from '@/utils'
 
+const primaryActionClass =
+  'h-9 bg-slate-950 px-4 font-medium text-white shadow-sm hover:bg-slate-800 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88'
+
 const formSchema = z
   .object({
     email: z.email({ message: 'Invalid email address' }),
@@ -92,8 +95,8 @@ const AddUser = () => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="my-4">
-          <Plus className="mr-2" />
+        <Button size="sm" className={primaryActionClass}>
+          <Plus className="size-3.5" />
           Add User
         </Button>
       </DialogTrigger>
@@ -224,7 +227,11 @@ const AddUser = () => {
                   Cancel
                 </Button>
               </DialogClose>
-              <LoadingButton type="submit" loading={mutation.isPending}>
+              <LoadingButton
+                type="submit"
+                loading={mutation.isPending}
+                className={primaryActionClass}
+              >
                 Save
               </LoadingButton>
             </DialogFooter>

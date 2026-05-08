@@ -4,7 +4,6 @@ import {
   LinkIcon,
   LogInIcon,
   ShieldCheckIcon,
-  SlidersHorizontalIcon,
   Trash2Icon,
   UserRoundIcon,
 } from 'lucide-react'
@@ -14,7 +13,6 @@ import { ArticleListState } from '@/components/Articles/ArticleList'
 import ChangePassword from '@/components/UserSettings/ChangePassword'
 import ConnectedAccounts from '@/components/UserSettings/ConnectedAccounts'
 import DeleteAccount from '@/components/UserSettings/DeleteAccount'
-import InterestPicker from '@/components/UserSettings/InterestPicker'
 import UserInformation from '@/components/UserSettings/UserInformation'
 import { Skeleton } from '@/components/ui/skeleton'
 import useAuth from '@/hooks/useAuth'
@@ -108,8 +106,15 @@ function UserSettings() {
             Account Settings
           </h1>
           <p className="mt-3 max-w-xl text-base leading-7 text-slate-500 dark:text-muted-foreground">
-            Manage your identity, security, and the signals that shape your
-            personalized feed.
+            Manage your identity and security. To shape your personalized feed,
+            head to{' '}
+            <Link
+              to="/personalization"
+              className="font-medium text-slate-700 underline decoration-slate-300 underline-offset-4 transition-colors hover:text-slate-950 hover:decoration-slate-500 dark:text-foreground/86 dark:decoration-border dark:hover:text-foreground dark:hover:decoration-foreground/40"
+            >
+              Tune your signal
+            </Link>
+            .
           </p>
         </div>
         <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-500 shadow-sm md:self-auto dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
@@ -144,15 +149,6 @@ function UserSettings() {
           className={hasPassword ? 'lg:col-span-2' : 'lg:self-start'}
         >
           <ConnectedAccounts hasPassword={hasPassword} />
-        </SettingsSection>
-
-        <SettingsSection
-          title="Topic Preferences"
-          description="Tune the categories and tags used to recommend articles."
-          icon={<SlidersHorizontalIcon className="h-4 w-4 stroke-[1.8]" />}
-          className="lg:col-span-2"
-        >
-          <InterestPicker />
         </SettingsSection>
 
         <SettingsSection

@@ -19,6 +19,10 @@ const putInterests = (requestBody: UserInterestUpdate) =>
  * The query is gated on `isLoggedIn()` so anonymous visitors don't trigger
  * a 401. The PUT mutation also invalidates the For-You feed because
  * changing interests changes what should be recommended next time.
+ *
+ * The body now carries three fields — categories, tags, preferred_sources —
+ * but the wire shape is unchanged for callers that only set the first two
+ * (`preferred_sources` is optional on the request type).
  */
 export function useInterests() {
   const queryClient = useQueryClient()
@@ -38,9 +42,14 @@ export function useInterests() {
         queryClient.getQueryData<UserInterestPublic>(INTERESTS_KEY)
       // Optimistic: show the new selection immediately. Backend echoes
       // back the canonical (sorted, deduped, lowercased) version on success.
+      // Fields not present in the update payload should retain their previous
+      // value so a partial save (e.g. only sources changed) doesn't blank
+      // out the others in the cache.
       queryClient.setQueryData<UserInterestPublic>(INTERESTS_KEY, {
-        categories: newValues.categories ?? [],
-        tags: newValues.tags ?? [],
+        categories: newValues.categories ?? previous?.categories ?? [],
+        tags: newValues.tags ?? previous?.tags ?? [],
+        preferred_sources:
+          newValues.preferred_sources ?? previous?.preferred_sources ?? [],
         updated_at: previous?.updated_at ?? null,
       })
       return { previous }
@@ -49,17 +58,18 @@ export function useInterests() {
       if (context?.previous) {
         queryClient.setQueryData(INTERESTS_KEY, context.previous)
       }
-      showErrorToast('Could not save your interests. Please try again.')
+      showErrorToast('Could not save your preferences. Please try again.')
     },
     onSuccess: (data) => {
       // Replace the optimistic value with the canonical one returned by
-      // the server. This catches normalization (e.g., "RAG " → "rag").
+      // the server. This catches normalization (e.g., "RAG " → "rag" for
+      // tags, sort + dedupe for sources).
       queryClient.setQueryData(INTERESTS_KEY, data)
-      showSuccessToast('Interests saved.')
+      showSuccessToast('Preferences saved.')
     },
     onSettled: () => {
       // Future For-You feed will key off this; invalidating now means
-      // the next visit re-fetches with new interests applied.
+      // the next visit re-fetches with new preferences applied.
       queryClient.invalidateQueries({ queryKey: ['forYouFeed'] })
     },
   })

@@ -6,6 +6,7 @@ import { OpenAPI } from '@/client'
 import useAuth from '@/hooks/useAuth'
 import useCustomToast from '@/hooks/useCustomToast'
 import { cn } from '@/lib/utils'
+import { AuthIntro } from './AuthIntro'
 import {
   type LoginFormData,
   loginSchema,
@@ -15,7 +16,10 @@ import {
 import type { AuthMode } from './authTypes'
 import { SignInScreen } from './SignInScreen'
 import { SignUpScreen } from './SignUpScreen'
-import type { SocialAuthProvider } from './SocialLoginButtons'
+import {
+  type SocialAuthProvider,
+  SocialLoginButtons,
+} from './SocialLoginButtons'
 
 export type { AuthMode } from './authTypes'
 
@@ -31,7 +35,7 @@ export function AuthFlow({
   initialMode = 'sign-in',
 }: AuthFlowProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode)
-  const [remember, setRemember] = useState(false)
+  const [authStep, setAuthStep] = useState<'providers' | 'email'>('providers')
   const { loginMutation, signUpMutation } = useAuth()
   const { showErrorToast } = useCustomToast()
   const socialErrorShown = useRef(false)
@@ -68,7 +72,6 @@ export function AuthFlow({
       email: '',
       full_name: '',
       password: '',
-      confirm_password: '',
     },
   })
 
@@ -78,41 +81,58 @@ export function AuthFlow({
 
   const submitLogin = (data: LoginFormData) => {
     if (loginMutation.isPending) return
-    loginMutation.mutate({ ...data, remember })
+    loginMutation.mutate(data)
   }
 
   const submitSignUp = (data: SignUpFormData) => {
     if (signUpMutation.isPending) return
 
-    const { confirm_password: _confirmPassword, ...submitData } = data
-    signUpMutation.mutate(submitData)
+    signUpMutation.mutate(data)
+  }
+
+  const switchEmailMode = (nextMode: AuthMode) => {
+    setMode(nextMode)
   }
 
   return (
     <section
       className={cn(
-        'relative flex w-full flex-col items-center bg-white px-6 py-8 text-slate-950 sm:px-10 sm:py-8 dark:bg-card dark:text-card-foreground',
+        'relative flex w-full flex-col items-center bg-white px-6 py-9 text-slate-950 sm:px-10 sm:py-10 dark:bg-card dark:text-card-foreground',
         className,
       )}
     >
       {closeControl}
 
-      {mode === 'sign-in' ? (
+      {authStep === 'providers' ? (
+        <>
+          <AuthIntro
+            title="Welcome to AI Signal"
+            description="Sign in to save articles, tune your feed, and keep your preferences in sync."
+          />
+          <div className="mt-8 w-full">
+            <SocialLoginButtons
+              onEmailClick={() => setAuthStep('email')}
+              onProviderClick={startSocialLogin}
+            />
+          </div>
+          <p className="mt-5 max-w-[20.5rem] text-center text-xs leading-relaxed text-slate-500 dark:text-muted-foreground">
+            We&apos;ll take you back to your feed after sign-in.
+          </p>
+        </>
+      ) : mode === 'sign-in' ? (
         <SignInScreen
           form={loginForm}
           loading={loginMutation.isPending}
-          onCreateAccount={() => setMode('sign-up')}
-          onSocialProviderClick={startSocialLogin}
+          onBackToProviders={() => setAuthStep('providers')}
+          onCreateAccount={() => switchEmailMode('sign-up')}
           onSubmit={submitLogin}
-          remember={remember}
-          setRemember={setRemember}
         />
       ) : (
         <SignUpScreen
           form={signUpForm}
           loading={signUpMutation.isPending}
-          onSignIn={() => setMode('sign-in')}
-          onSocialProviderClick={startSocialLogin}
+          onBackToProviders={() => setAuthStep('providers')}
+          onSignIn={() => switchEmailMode('sign-in')}
           onSubmit={submitSignUp}
         />
       )}

@@ -6,9 +6,11 @@ import {
   ArticleListState,
 } from '@/components/Articles/ArticleList'
 import { MobileSidebar, Sidebar } from '@/components/Landing/Sidebar'
+import { PersonalizationCard } from '@/components/Personalization/PersonalizationCard'
 import { useArticleFeed } from '@/hooks/useArticleFeed'
 import useAuth from '@/hooks/useAuth'
 import { useForYouFeed } from '@/hooks/useForYouFeed'
+import { useInterests } from '@/hooks/useInterests'
 
 export const Route = createFileRoute('/_layout/')({
   component: Dashboard,
@@ -37,6 +39,18 @@ function Dashboard() {
   // unconditionally keeps the hooks order stable.
   const forYou = useForYouFeed()
   const { user } = useAuth()
+  // The activation card needs to know how many preferences the user has set.
+  // useInterests is auth-gated so this is a no-op for anonymous visitors.
+  const { interests } = useInterests()
+
+  // Threshold: show the card while the user has fewer than 3 total signals
+  // across topics, tags, and preferred sources. At 3+ they've meaningfully
+  // engaged and the recommender has enough to differentiate articles.
+  const totalPreferences =
+    (interests?.categories?.length ?? 0) +
+    (interests?.tags?.length ?? 0) +
+    (interests?.preferred_sources?.length ?? 0)
+  const showActivationCard = !!user && totalPreferences < 3
 
   // Build a stable id→reason map. ForYouArticle extends ArticlePublic so
   // the underlying article objects are compatible with ArticleList; the
@@ -98,13 +112,16 @@ function Dashboard() {
 
         {activeTab === 'for-you' &&
           (user ? (
-            <ArticleList
-              {...forYou}
-              showDismiss
-              reasons={forYouReasons}
-              emptyTitle="No personalized signals yet"
-              emptyDescription="Save a few articles or pick interests in Settings to start tailoring your feed."
-            />
+            <>
+              {showActivationCard && <PersonalizationCard />}
+              <ArticleList
+                {...forYou}
+                showDismiss
+                reasons={forYouReasons}
+                emptyTitle="No personalized signals yet"
+                emptyDescription="Save a few articles or pick interests in Settings to start tailoring your feed."
+              />
+            </>
           ) : (
             <ArticleListState
               title="Sign in to personalize your feed"

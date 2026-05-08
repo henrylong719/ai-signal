@@ -1,5 +1,5 @@
-import { MenuIcon, SparklesIcon } from 'lucide-react';
-import { type CSSProperties, useLayoutEffect, useRef, useState } from 'react';
+import { MenuIcon, SparklesIcon } from 'lucide-react'
+import { type CSSProperties, useLayoutEffect, useRef, useState } from 'react'
 import {
   Sheet,
   SheetContent,
@@ -7,15 +7,15 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@/components/ui/sheet';
-import useAuth from '@/hooks/useAuth';
-import ArticleSource from './ArticleSource';
-import RecentBookmarks from './RecentBookmarks';
-import RecommendedTopics from './RecommendedTopics';
-import TodayDigest from './TodayDigest';
+} from '@/components/ui/sheet'
+import useAuth from '@/hooks/useAuth'
+import ArticleSource from './ArticleSource'
+import RecentBookmarks from './RecentBookmarks'
+import RecommendedTopics from './RecommendedTopics'
+import TodayDigest from './TodayDigest'
 
 function SidebarSections() {
-  const { user } = useAuth();
+  const { user } = useAuth()
 
   return (
     <>
@@ -24,7 +24,7 @@ function SidebarSections() {
       <ArticleSource />
       {user && <RecentBookmarks />}
     </>
-  );
+  )
 }
 
 export function MobileSidebar() {
@@ -35,7 +35,7 @@ export function MobileSidebar() {
           <button
             type="button"
             aria-label="Open explore menu"
-            className="mr-4 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-muted/45 dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+            className="mr-4 inline-flex h-9 w-9 -translate-y-0.5 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-muted/45 dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
           >
             <MenuIcon className="h-5 w-5 stroke-[1.7]" />
           </button>
@@ -60,35 +60,35 @@ export function MobileSidebar() {
         </SheetContent>
       </Sheet>
     </div>
-  );
+  )
 }
 
 export function Sidebar() {
-  const sidebarRef = useRef<HTMLElement>(null);
-  const [sidebarHeight, setSidebarHeight] = useState(0);
+  const sidebarRef = useRef<HTMLElement>(null)
+  const [sidebarHeight, setSidebarHeight] = useState(0)
 
   useLayoutEffect(() => {
-    const sidebar = sidebarRef.current;
+    const sidebar = sidebarRef.current
 
     if (!sidebar) {
-      return;
+      return
     }
 
     const updateHeight = () => {
-      setSidebarHeight(Math.ceil(sidebar.getBoundingClientRect().height));
-    };
-
-    updateHeight();
-
-    if (typeof ResizeObserver === 'undefined') {
-      return;
+      setSidebarHeight(Math.ceil(sidebar.getBoundingClientRect().height))
     }
 
-    const observer = new ResizeObserver(updateHeight);
-    observer.observe(sidebar);
+    updateHeight()
 
-    return () => observer.disconnect();
-  }, []);
+    if (typeof ResizeObserver === 'undefined') {
+      return
+    }
+
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(sidebar)
+
+    return () => observer.disconnect()
+  }, [])
 
   // When the rail is taller than the viewport, the negative top lets it
   // scroll with the page until its bottom edge reaches the viewport.
@@ -97,7 +97,7 @@ export function Sidebar() {
       sidebarHeight > 0
         ? `min(6.5rem, calc(100vh - ${sidebarHeight}px - 2rem))`
         : '6.5rem',
-  };
+  }
 
   return (
     <aside
@@ -109,5 +109,5 @@ export function Sidebar() {
         <SidebarSections />
       </div>
     </aside>
-  );
+  )
 }

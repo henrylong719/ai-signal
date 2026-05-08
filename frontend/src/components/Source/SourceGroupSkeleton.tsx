@@ -1,7 +1,7 @@
-import { Skeleton } from '../ui/skeleton';
+import { Skeleton } from '../ui/skeleton'
 
-const SOURCE_SKELETON_GROUPS = ['official', 'research', 'media'];
-const SOURCE_SKELETON_ITEMS = ['first', 'second', 'third', 'fourth'];
+const SOURCE_SKELETON_GROUPS = ['official', 'research', 'media']
+const SOURCE_SKELETON_ITEMS = ['first', 'second', 'third', 'fourth']
 
 function SourceGroupSkeleton() {
   return (
@@ -33,6 +33,6 @@ function SourceGroupSkeleton() {
         </section>
       ))}
     </div>
-  );
+  )
 }
-export default SourceGroupSkeleton;
+export default SourceGroupSkeleton

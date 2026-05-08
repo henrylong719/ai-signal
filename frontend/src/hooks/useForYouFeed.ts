@@ -13,13 +13,25 @@ interface ForYouPage {
   data: ForYouArticle[]
   count: number
   candidate_pool_cap: number
+  // Surfaced only when the request asks for debug AND the caller is a
+  // superuser. Always undefined on normal responses.
+  weights?: {
+    semantic: number
+    explicit: number
+    source: number
+    recency: number
+  } | null
 }
 
-const fetchPage = async (skip: number): Promise<ForYouPage> => {
+const fetchPage = async (skip: number, debug: boolean): Promise<ForYouPage> => {
   return ArticlesService.readForYou({
     skip,
     limit: ARTICLES_PAGE_SIZE,
-  })
+    // The generated client picks up `debug` after OpenAPI codegen runs.
+    // Until then this property is ignored at the TS level and
+    // forwarded as a query string by the underlying fetch call.
+    ...(debug ? { debug: true } : {}),
+  } as Parameters<typeof ArticlesService.readForYou>[0])
 }
 
 /**
@@ -28,8 +40,16 @@ const fetchPage = async (skip: number): Promise<ForYouPage> => {
  * scored output (see services/for_you.py) — once we've shown all the
  * ranked candidates, hasNextPage becomes false even if more recent
  * articles exist that didn't make the candidate pool.
+ *
+ * The optional ``debug`` flag asks the backend for the per-article
+ * scoring breakdown and exploration-injection flags. Backend silently
+ * ignores it for non-superusers, so passing it from the route is safe;
+ * the panel just won't render anything for regular users. The query
+ * key includes ``debug`` so toggling it from the URL refetches rather
+ * than reusing the no-debug cache.
  */
-export function useForYouFeed() {
+export function useForYouFeed(opts: { debug?: boolean } = {}) {
+  const debug = !!opts.debug
   const observerRef = useRef<IntersectionObserver | null>(null)
 
   const {
@@ -40,9 +60,10 @@ export function useForYouFeed() {
     isPending,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ['forYouFeed'],
+    queryKey: ['forYouFeed', { debug }],
     initialPageParam: 0,
-    queryFn: ({ pageParam }: { pageParam: number }) => fetchPage(pageParam),
+    queryFn: ({ pageParam }: { pageParam: number }) =>
+      fetchPage(pageParam, debug),
     getNextPageParam: (lastPage: ForYouPage, allPages: ForYouPage[]) => {
       const loaded = allPages.reduce(
         (total, page) => total + page.data.length,
@@ -93,5 +114,9 @@ export function useForYouFeed() {
     [fetchNextPage, hasNextPage, isFetchingNextPage],
   )
 
-  return { articles, feedStatus, loadMoreRef, isPending, isError }
+  // The active scoring weights from the latest page. Surfaced only on
+  // debug responses; consumers that aren't in debug mode get undefined.
+  const weights = lastPage?.weights ?? null
+
+  return { articles, feedStatus, loadMoreRef, isPending, isError, weights }
 }

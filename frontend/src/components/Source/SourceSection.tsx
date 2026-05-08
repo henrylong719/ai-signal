@@ -1,24 +1,24 @@
-import { Link } from '@tanstack/react-router';
-import { CheckIcon, PlusIcon } from 'lucide-react';
-import AuthModal from '../Auth/AuthModal';
-import { cn } from '@/lib/utils';
-import { SOURCE_FILTER_LABELS, type source_types } from '@/lib/constants';
-import type { source_type, SourcePublic } from '@/client';
+import { Link } from '@tanstack/react-router'
+import { CheckIcon, PlusIcon } from 'lucide-react'
+import type { SourcePublic, source_type } from '@/client'
+import { SOURCE_FILTER_LABELS, type source_types } from '@/lib/constants'
+import { cn } from '@/lib/utils'
+import AuthModal from '../Auth/AuthModal'
 
 interface SourceSectionProps {
-  type: source_type;
-  items: SourcePublic[];
-  sourceFilter: source_types;
-  preferredSources: string[];
-  updatingSource: string | null;
-  isSaving: boolean;
-  followDisabled: boolean;
-  userIsLoggedIn: boolean;
-  onTogglePreferredSource: (sourceName: string) => void;
+  type: source_type
+  items: SourcePublic[]
+  sourceFilter: source_types
+  preferredSources: string[]
+  updatingSource: string | null
+  isSaving: boolean
+  followDisabled: boolean
+  userIsLoggedIn: boolean
+  onTogglePreferredSource: (sourceName: string) => void
 }
 
 const getSourceCountLabel = (count: number) =>
-  `${count} ${count === 1 ? 'source' : 'sources'}`;
+  `${count} ${count === 1 ? 'source' : 'sources'}`
 
 function SourceSection({
   type,
@@ -44,8 +44,8 @@ function SourceSection({
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {items.map((source) => {
-          const isPreferredSource = preferredSources.includes(source.name);
-          const isUpdatingSource = updatingSource === source.name && isSaving;
+          const isPreferredSource = preferredSources.includes(source.name)
+          const isUpdatingSource = updatingSource === source.name && isSaving
 
           return (
             <SourceCard
@@ -58,21 +58,21 @@ function SourceSection({
               followDisabled={followDisabled}
               onTogglePreferredSource={onTogglePreferredSource}
             />
-          );
+          )
         })}
       </div>
     </section>
-  );
+  )
 }
 
 interface SourceCardProps {
-  source: SourcePublic;
-  sourceFilter: source_types;
-  userIsLoggedIn: boolean;
-  isPreferredSource: boolean;
-  isUpdatingSource: boolean;
-  followDisabled: boolean;
-  onTogglePreferredSource: (sourceName: string) => void;
+  source: SourcePublic
+  sourceFilter: source_types
+  userIsLoggedIn: boolean
+  isPreferredSource: boolean
+  isUpdatingSource: boolean
+  followDisabled: boolean
+  onTogglePreferredSource: (sourceName: string) => void
 }
 
 function SourceCard({
@@ -159,7 +159,7 @@ function SourceCard({
         </p>
       </div>
     </article>
-  );
+  )
 }
 
-export default SourceSection;
+export default SourceSection

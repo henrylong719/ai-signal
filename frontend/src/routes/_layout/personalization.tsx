@@ -1,19 +1,19 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { AlertCircleIcon, CheckIcon, LogInIcon } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { category as Category, UserInterestPublic } from '@/client';
-import { ArticleListState } from '@/components/Articles/ArticleList';
-import AuthModal from '@/components/Auth/AuthModal';
-import { PageContainer, PageHeader } from '@/components/Layout/Page';
-import { SourcesField } from '@/components/Personalization/SourcesField';
-import { TagsField } from '@/components/Personalization/TagsField';
-import { TopicsField } from '@/components/Personalization/TopicsField';
-import { LoadingButton } from '@/components/ui/loading-button';
-import useAuth from '@/hooks/useAuth';
-import { useInterests } from '@/hooks/useInterests';
-import { cn } from '@/lib/utils';
-import PersonalizationSkeleton from '@/components/Personalization/PersonalizationSkeleton';
-import TasteSection from '@/components/Personalization/TasteSection';
+import { createFileRoute } from '@tanstack/react-router'
+import { AlertCircleIcon, CheckIcon, LogInIcon } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { category as Category, UserInterestPublic } from '@/client'
+import { ArticleListState } from '@/components/Articles/ArticleList'
+import AuthModal from '@/components/Auth/AuthModal'
+import { PageContainer, PageHeader } from '@/components/Layout/Page'
+import PersonalizationSkeleton from '@/components/Personalization/PersonalizationSkeleton'
+import { SourcesField } from '@/components/Personalization/SourcesField'
+import { TagsField } from '@/components/Personalization/TagsField'
+import TasteSection from '@/components/Personalization/TasteSection'
+import { TopicsField } from '@/components/Personalization/TopicsField'
+import { LoadingButton } from '@/components/ui/loading-button'
+import useAuth from '@/hooks/useAuth'
+import { useInterests } from '@/hooks/useInterests'
+import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/_layout/personalization')({
   component: Personalization,
@@ -24,63 +24,63 @@ export const Route = createFileRoute('/_layout/personalization')({
       },
     ],
   }),
-});
+})
 
 const sameItems = <T extends string>(current: T[], saved: T[]) =>
   current.length === saved.length &&
-  current.every((item) => saved.includes(item));
+  current.every((item) => saved.includes(item))
 
 const formatCount = (
   count: number,
   singular: string,
   plural = `${singular}s`,
-) => `${count} ${count === 1 ? singular : plural}`;
+) => `${count} ${count === 1 ? singular : plural}`
 
 function Personalization() {
-  const { user, isLoading: authLoading, isError: authError } = useAuth();
-  const { interests, isLoading, isError, save, isSaving } = useInterests();
+  const { user, isLoading: authLoading, isError: authError } = useAuth()
+  const { interests, isLoading, isError, save, isSaving } = useInterests()
 
   // Working copy of the form. Initialised from the server value, then
   // mutated locally as the user clicks. We compare against the server
   // value to compute the dirty flag.
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
-  const [preferredSources, setPreferredSources] = useState<string[]>([]);
-  const [hasSyncedInterests, setHasSyncedInterests] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([])
+  const [tags, setTags] = useState<string[]>([])
+  const [preferredSources, setPreferredSources] = useState<string[]>([])
+  const [hasSyncedInterests, setHasSyncedInterests] = useState(false)
 
   const syncInterests = useCallback((nextInterests: UserInterestPublic) => {
-    setCategories(nextInterests.categories ?? []);
-    setTags(nextInterests.tags ?? []);
-    setPreferredSources(nextInterests.preferred_sources ?? []);
-    setHasSyncedInterests(true);
-  }, []);
+    setCategories(nextInterests.categories ?? [])
+    setTags(nextInterests.tags ?? [])
+    setPreferredSources(nextInterests.preferred_sources ?? [])
+    setHasSyncedInterests(true)
+  }, [])
 
   const isDirty = useMemo(() => {
     if (!interests) {
       return (
         categories.length > 0 || tags.length > 0 || preferredSources.length > 0
-      );
+      )
     }
-    const savedCategories = interests.categories ?? [];
-    const savedTags = interests.tags ?? [];
-    const savedSources = interests.preferred_sources ?? [];
-    const sameCategories = sameItems(categories, savedCategories);
-    const sameTags = sameItems(tags, savedTags);
-    const sameSources = sameItems(preferredSources, savedSources);
-    return !(sameCategories && sameTags && sameSources);
-  }, [categories, tags, preferredSources, interests]);
+    const savedCategories = interests.categories ?? []
+    const savedTags = interests.tags ?? []
+    const savedSources = interests.preferred_sources ?? []
+    const sameCategories = sameItems(categories, savedCategories)
+    const sameTags = sameItems(tags, savedTags)
+    const sameSources = sameItems(preferredSources, savedSources)
+    return !(sameCategories && sameTags && sameSources)
+  }, [categories, tags, preferredSources, interests])
 
   // Sync initial server values and clean refetches. Dirty local edits are left
   // alone so a background query refresh cannot overwrite in-progress choices.
   useEffect(() => {
     if (!interests) {
-      return;
+      return
     }
     if (hasSyncedInterests && isDirty) {
-      return;
+      return
     }
-    syncInterests(interests);
-  }, [hasSyncedInterests, interests, isDirty, syncInterests]);
+    syncInterests(interests)
+  }, [hasSyncedInterests, interests, isDirty, syncInterests])
 
   // The introductory note only shifts into onboarding mode when all three
   // lists are empty. Once the user starts, summarize their current signals.
@@ -89,36 +89,36 @@ function Personalization() {
     !isError &&
     categories.length === 0 &&
     tags.length === 0 &&
-    preferredSources.length === 0;
+    preferredSources.length === 0
 
   const selectionSummary = useMemo(() => {
-    const parts = [];
+    const parts = []
     if (categories.length > 0) {
-      parts.push(formatCount(categories.length, 'topic'));
+      parts.push(formatCount(categories.length, 'topic'))
     }
     if (preferredSources.length > 0) {
-      parts.push(formatCount(preferredSources.length, 'source'));
+      parts.push(formatCount(preferredSources.length, 'source'))
     }
     if (tags.length > 0) {
-      parts.push(formatCount(tags.length, 'tag'));
+      parts.push(formatCount(tags.length, 'tag'))
     }
 
     if (parts.length === 0) {
-      return 'Start with a few topics. Sources and tags can stay light until you know what you want more of.';
+      return 'Start with a few topics. Sources and tags can stay light until you know what you want more of.'
     }
 
-    return `Your profile currently has ${parts.join(', ')}.`;
-  }, [categories.length, preferredSources.length, tags.length]);
+    return `Your profile currently has ${parts.join(', ')}.`
+  }, [categories.length, preferredSources.length, tags.length])
 
   const handleSave = () => {
     save(
       { categories, tags, preferred_sources: preferredSources },
       { onSuccess: syncInterests },
-    );
-  };
+    )
+  }
 
   if (authLoading) {
-    return <PersonalizationSkeleton />;
+    return <PersonalizationSkeleton />
   }
 
   if (authError) {
@@ -134,7 +134,7 @@ function Personalization() {
           icon={<AlertCircleIcon className="h-5 w-5 stroke-[1.5]" />}
         />
       </PageContainer>
-    );
+    )
   }
 
   if (!user) {
@@ -164,11 +164,11 @@ function Personalization() {
           }
         />
       </PageContainer>
-    );
+    )
   }
 
   if (isLoading) {
-    return <PersonalizationSkeleton />;
+    return <PersonalizationSkeleton />
   }
 
   if (isError) {
@@ -184,10 +184,10 @@ function Personalization() {
           icon={<AlertCircleIcon className="h-5 w-5 stroke-[1.5]" />}
         />
       </PageContainer>
-    );
+    )
   }
 
-  const showStickySave = isDirty || isSaving;
+  const showStickySave = isDirty || isSaving
 
   return (
     <PageContainer
@@ -295,5 +295,5 @@ function Personalization() {
         </div>
       )}
     </PageContainer>
-  );
+  )
 }

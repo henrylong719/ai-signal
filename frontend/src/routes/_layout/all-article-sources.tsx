@@ -1,56 +1,56 @@
-import { createFileRoute, Outlet, useLocation } from '@tanstack/react-router';
-import { AlertCircleIcon, RadioTowerIcon } from 'lucide-react';
-import { useLayoutEffect, useRef, useState } from 'react';
-import type { source_type } from '@/client';
-import { ArticleListState } from '@/components/Articles/ArticleList';
-import { PageContainer, PageHeader } from '@/components/Layout/Page';
-import { useInterests } from '@/hooks/useInterests';
-import { useSources } from '@/hooks/useSources';
-import { isLoggedIn } from '@/lib/auth-state';
-import SourceSection from '@/components/Source/SourceSection';
+import { createFileRoute, Outlet, useLocation } from '@tanstack/react-router'
+import { AlertCircleIcon, RadioTowerIcon } from 'lucide-react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import type { source_type } from '@/client'
+import { ArticleListState } from '@/components/Articles/ArticleList'
+import { PageContainer, PageHeader } from '@/components/Layout/Page'
+import SourceFilterBar from '@/components/Source/SourceFilterBar'
+import SourceGroupSkeleton from '@/components/Source/SourceGroupSkeleton'
+import SourceSection from '@/components/Source/SourceSection'
+import { useInterests } from '@/hooks/useInterests'
+import { useSources } from '@/hooks/useSources'
+import { isLoggedIn } from '@/lib/auth-state'
 import {
   SOURCE_FILTER_LABELS,
-  type source_types,
   SOURCE_TYPES,
-} from '@/lib/constants';
-import SourceGroupSkeleton from '@/components/Source/SourceGroupSkeleton';
-import SourceFilterBar from '@/components/Source/SourceFilterBar';
+  type source_types,
+} from '@/lib/constants'
 
 export const Route = createFileRoute('/_layout/all-article-sources')({
   component: AllArticleSources,
-});
+})
 
 const getSourceCountLabel = (count: number) =>
-  `${count} ${count === 1 ? 'source' : 'sources'}`;
+  `${count} ${count === 1 ? 'source' : 'sources'}`
 
 const isSourceType = (value: unknown): value is source_types =>
-  typeof value === 'string' && SOURCE_TYPES.includes(value as source_types);
+  typeof value === 'string' && SOURCE_TYPES.includes(value as source_types)
 
 function AllArticleSources() {
-  const location = useLocation();
+  const location = useLocation()
   const savedRouteState = location.state as {
-    allArticleSourcesFilter?: unknown;
-    allArticleSourcesScrollY?: unknown;
-  };
+    allArticleSourcesFilter?: unknown
+    allArticleSourcesScrollY?: unknown
+  }
   const [sourceFilter, setSourceFilter] = useState<source_types>(() =>
     isSourceType(savedRouteState.allArticleSourcesFilter)
       ? savedRouteState.allArticleSourcesFilter
       : 'all',
-  );
-  const [updatingSource, setUpdatingSource] = useState<string | null>(null);
-  const hasRestoredScroll = useRef(false);
-  const userIsLoggedIn = isLoggedIn();
+  )
+  const [updatingSource, setUpdatingSource] = useState<string | null>(null)
+  const hasRestoredScroll = useRef(false)
+  const userIsLoggedIn = isLoggedIn()
 
-  const { sources, isLoading, isError } = useSources();
+  const { sources, isLoading, isError } = useSources()
   const {
     interests,
     isLoading: interestsLoading,
     isError: interestsError,
     save,
     isSaving,
-  } = useInterests();
+  } = useInterests()
 
-  const savedScrollY = savedRouteState.allArticleSourcesScrollY;
+  const savedScrollY = savedRouteState.allArticleSourcesScrollY
 
   useLayoutEffect(() => {
     if (
@@ -58,19 +58,19 @@ function AllArticleSources() {
       isLoading ||
       typeof savedScrollY !== 'number'
     ) {
-      return;
+      return
     }
 
-    hasRestoredScroll.current = true;
+    hasRestoredScroll.current = true
     window.requestAnimationFrame(() => {
-      window.scrollTo({ top: savedScrollY });
-    });
-  }, [isLoading, savedScrollY]);
+      window.scrollTo({ top: savedScrollY })
+    })
+  }, [isLoading, savedScrollY])
 
   const filteredSources =
     sourceFilter === 'all'
       ? sources
-      : sources.filter((source) => source.source_type === sourceFilter);
+      : sources.filter((source) => source.source_type === sourceFilter)
 
   const groups = SOURCE_TYPES.filter(
     (type): type is source_type => type !== 'all',
@@ -79,23 +79,23 @@ function AllArticleSources() {
       type,
       items: filteredSources.filter((source) => source.source_type === type),
     }))
-    .filter((group) => group.items.length > 0);
+    .filter((group) => group.items.length > 0)
 
-  const sourceCount = sources.length;
-  const preferredSources = interests?.preferred_sources ?? [];
-  const followDisabled = interestsLoading || interestsError || isSaving;
+  const sourceCount = sources.length
+  const preferredSources = interests?.preferred_sources ?? []
+  const followDisabled = interestsLoading || interestsError || isSaving
 
   const togglePreferredSource = (sourceName: string) => {
     if (!userIsLoggedIn || interestsLoading || interestsError) {
-      return;
+      return
     }
 
-    const isRemovingSource = preferredSources.includes(sourceName);
+    const isRemovingSource = preferredSources.includes(sourceName)
     const nextPreferredSources = isRemovingSource
       ? preferredSources.filter((source) => source !== sourceName)
-      : [...preferredSources, sourceName];
+      : [...preferredSources, sourceName]
 
-    setUpdatingSource(sourceName);
+    setUpdatingSource(sourceName)
     save(
       {
         categories: interests?.categories ?? [],
@@ -108,8 +108,8 @@ function AllArticleSources() {
           : `You're now following ${sourceName}.`,
         onSettled: () => setUpdatingSource(null),
       },
-    );
-  };
+    )
+  }
 
   return (
     <PageContainer variant="wide">
@@ -177,5 +177,5 @@ function AllArticleSources() {
       </div>
       <Outlet />
     </PageContainer>
-  );
+  )
 }

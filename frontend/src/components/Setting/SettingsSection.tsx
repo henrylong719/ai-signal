@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 function SettingsSection({
   title,
@@ -9,12 +9,12 @@ function SettingsSection({
   children,
   className,
 }: {
-  title: string;
-  description: string;
-  icon: ReactNode;
-  danger?: boolean;
-  children: ReactNode;
-  className?: string;
+  title: string
+  description: string
+  icon: ReactNode
+  danger?: boolean
+  children: ReactNode
+  className?: string
 }) {
   return (
     <section
@@ -69,7 +69,7 @@ function SettingsSection({
       </div>
       <div className="p-5 sm:p-6">{children}</div>
     </section>
-  );
+  )
 }
 
-export default SettingsSection;
+export default SettingsSection

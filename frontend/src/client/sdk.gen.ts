@@ -164,17 +164,11 @@ export class ArticlesService {
      * Read For You
      * Personalized feed for the current user.
      *
-     * The candidate pool is the most-recent N articles minus already-saved
-     * and dismissed ones (see ``services.for_you.rank_for_you``). Scoring
-     * happens in Python; only the requested page slice is returned.
-     *
-     * The ``count`` returned is the total scored pool size — the number of
-     * articles the recommender would have ranked for this user — not the
-     * DB-wide article count. This is the right shape for the frontend's
-     * infinite-scroll pagination.
+     * [... see full docstring in /home/claude/ai-signal-main/backend/app/api/routes/article.py ...]
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
+     * @param data.debug Admin diagnostic: include per-article scoring breakdown and exploration-injection flags. Silently ignored for non-superusers.
      * @param data.accessToken
      * @returns ForYouArticlesPublic Successful Response
      * @throws ApiError
@@ -188,7 +182,8 @@ export class ArticlesService {
             },
             query: {
                 skip: data.skip,
-                limit: data.limit
+                limit: data.limit,
+                debug: data.debug
             },
             errors: {
                 422: 'Validation Error'

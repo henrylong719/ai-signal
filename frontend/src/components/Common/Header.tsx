@@ -1,43 +1,43 @@
-import { Link, useNavigate } from '@tanstack/react-router';
-import { Check, Library, Monitor, Moon, SearchIcon, Sun } from 'lucide-react';
-import { useState } from 'react';
-import { type UseFormReturn, useForm } from 'react-hook-form';
-import { PageContainer } from '@/components/Layout/Page';
-import { type Theme, useTheme } from '@/components/theme-provider';
+import { Link, useNavigate } from '@tanstack/react-router'
+import { Check, Library, Monitor, Moon, SearchIcon, Sun } from 'lucide-react'
+import { useState } from 'react'
+import { type UseFormReturn, useForm } from 'react-hook-form'
+import { PageContainer } from '@/components/Layout/Page'
+import { type Theme, useTheme } from '@/components/theme-provider'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import useAuth from '@/hooks/useAuth';
-import AuthModal from '../Auth/AuthModal';
-import { Form, FormControl, FormField, FormItem } from '../ui/form';
+} from '@/components/ui/dropdown-menu'
+import useAuth from '@/hooks/useAuth'
+import AuthModal from '../Auth/AuthModal'
+import { Form, FormControl, FormField, FormItem } from '../ui/form'
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '../ui/sheet';
-import { HeaderActionsMenu } from './HeaderActionsMenu';
+} from '../ui/sheet'
+import { HeaderActionsMenu } from './HeaderActionsMenu'
 
 interface SearchFormInputs {
-  query: string;
+  query: string
 }
 
 const themeOptions: { value: Theme; label: string; icon: typeof Monitor }[] = [
   { value: 'system', label: 'System Default', icon: Monitor },
   { value: 'light', label: 'Light', icon: Sun },
   { value: 'dark', label: 'Dark', icon: Moon },
-];
+]
 
 interface HeaderSearchFormProps {
-  form: UseFormReturn<SearchFormInputs>;
-  onSubmit: (data: SearchFormInputs) => void;
-  placeholder: string;
-  className?: string;
-  inputClassName?: string;
+  form: UseFormReturn<SearchFormInputs>
+  onSubmit: (data: SearchFormInputs) => void
+  placeholder: string
+  className?: string
+  inputClassName?: string
 }
 
 function HeaderSearchForm({
@@ -72,13 +72,13 @@ function HeaderSearchForm({
         />
       </form>
     </Form>
-  );
+  )
 }
 
 function LoggedOutAppearanceMenu() {
-  const { setTheme, theme } = useTheme();
-  const currentTheme = themeOptions.find((option) => option.value === theme);
-  const CurrentThemeIcon = currentTheme?.icon ?? Monitor;
+  const { setTheme, theme } = useTheme()
+  const currentTheme = themeOptions.find((option) => option.value === theme)
+  const CurrentThemeIcon = currentTheme?.icon ?? Monitor
 
   return (
     <DropdownMenu modal={false}>
@@ -97,7 +97,7 @@ function LoggedOutAppearanceMenu() {
         className="w-52 rounded-lg border-slate-200/80 bg-white p-2 shadow-[0_18px_45px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.06)] dark:border-border dark:bg-popover dark:shadow-[0_18px_45px_rgba(0,0,0,0.28),0_2px_8px_rgba(0,0,0,0.22)]"
       >
         {themeOptions.map((option) => {
-          const OptionIcon = option.icon;
+          const OptionIcon = option.icon
 
           return (
             <DropdownMenuItem
@@ -112,36 +112,36 @@ function LoggedOutAppearanceMenu() {
               )}
               {option.label}
             </DropdownMenuItem>
-          );
+          )
         })}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }
 
 const Header = () => {
-  const navigate = useNavigate();
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const navigate = useNavigate()
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
 
-  const { user } = useAuth();
+  const { user } = useAuth()
 
   const searchForm = useForm<SearchFormInputs>({
     defaultValues: {
       query: '',
     },
-  });
+  })
   const mobileSearchForm = useForm<SearchFormInputs>({
     defaultValues: {
       query: '',
     },
-  });
+  })
 
   const onSubmit = (data: SearchFormInputs) => {
     if (data.query.trim()) {
-      navigate({ to: '/search-feed/$q', params: { q: data.query.trim() } });
-      setMobileSearchOpen(false);
+      navigate({ to: '/search-feed/$q', params: { q: data.query.trim() } })
+      setMobileSearchOpen(false)
     }
-  };
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.02)] backdrop-blur dark:border-border dark:bg-background/92 dark:shadow-none">
@@ -230,7 +230,7 @@ const Header = () => {
         </div>
       </PageContainer>
     </header>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

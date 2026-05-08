@@ -1,4 +1,4 @@
-import { Skeleton } from '../ui/skeleton';
+import { Skeleton } from '../ui/skeleton'
 
 function DigestSkeleton() {
   return (
@@ -22,7 +22,7 @@ function DigestSkeleton() {
         </section>
       ))}
     </div>
-  );
+  )
 }
 
-export default DigestSkeleton;
+export default DigestSkeleton

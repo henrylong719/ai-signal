@@ -4,8 +4,11 @@ from app.schemas.article import (
     ArticlePublic,
     ArticlesPublic,
     ArticleUpdate,
+    ForYouArticleDebugPublic,
     ForYouArticlePublic,
     ForYouArticlesPublic,
+    ScoreBreakdownPublic,
+    ScoringWeightsPublic,
 )
 from app.schemas.common import Message
 from app.schemas.feedback import (
@@ -75,4 +78,7 @@ __all__ = [
     "UserUpdateMe",
     "IngestRunPublic",
     "IngestRunsPublic",
+    "ForYouArticleDebugPublic",
+    "ScoreBreakdownPublic",
+    "ScoringWeightsPublic",
 ]

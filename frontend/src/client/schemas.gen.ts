@@ -534,6 +534,26 @@ export const FeedbackPublicSchema = {
     title: 'FeedbackPublic'
 } as const;
 
+export const ForYouArticleDebugPublicSchema = {
+    properties: {
+        breakdown: {
+            '$ref': '#/components/schemas/ScoreBreakdownPublic'
+        },
+        was_exploration_injection: {
+            type: 'boolean',
+            title: 'Was Exploration Injection'
+        }
+    },
+    type: 'object',
+    required: ['breakdown', 'was_exploration_injection'],
+    title: 'ForYouArticleDebugPublic',
+    description: `Diagnostic payload attached to each For-You article when \`\`?debug=1\`\`.
+
+Populated only when the request asks for debug AND the caller is a
+superuser — non-superusers always see \`\`None\`\` here regardless of the
+query param (see the route handler for the silent-ignore policy).`
+} as const;
+
 export const ForYouArticlePublicSchema = {
     properties: {
         url: {
@@ -626,16 +646,32 @@ export const ForYouArticlePublicSchema = {
                 }
             ],
             title: 'Reason'
+        },
+        debug: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ForYouArticleDebugPublic'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     type: 'object',
     required: ['url', 'title', 'source', 'category', 'id', 'fetched_at'],
     title: 'ForYouArticlePublic',
-    description: `Article + recommendation reason label.
+    description: `Article + recommendation reason label, plus optional debug payload.
 
 The reason is built server-side from the dominant scoring component
 (see \`\`services.recommender.reason_for\`\`). Optional because pure-recency
-recommendations may not justify a badge.`
+recommendations may not justify a badge.
+
+\`\`debug\`\` is populated only when the caller is a superuser AND passed
+\`\`?debug=1\`\`. Non-superusers always see \`\`None\`\` here, even if they
+pass the query param — the route handler silently ignores the flag
+rather than 403'ing, so a superuser's debug URL pasted to a regular
+user just renders the normal feed.`
 } as const;
 
 export const ForYouArticlesPublicSchema = {
@@ -654,6 +690,16 @@ export const ForYouArticlesPublicSchema = {
         candidate_pool_cap: {
             type: 'integer',
             title: 'Candidate Pool Cap'
+        },
+        weights: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ScoringWeightsPublic'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     type: 'object',
@@ -917,6 +963,98 @@ export const SavedArticlesPublicSchema = {
     title: 'SavedArticlesPublic'
 } as const;
 
+export const ScoreBreakdownPublicSchema = {
+    properties: {
+        semantic: {
+            type: 'number',
+            title: 'Semantic'
+        },
+        explicit: {
+            type: 'number',
+            title: 'Explicit'
+        },
+        source: {
+            type: 'number',
+            title: 'Source'
+        },
+        recency: {
+            type: 'number',
+            title: 'Recency'
+        },
+        weighted_semantic: {
+            type: 'number',
+            title: 'Weighted Semantic'
+        },
+        weighted_explicit: {
+            type: 'number',
+            title: 'Weighted Explicit'
+        },
+        weighted_source: {
+            type: 'number',
+            title: 'Weighted Source'
+        },
+        weighted_recency: {
+            type: 'number',
+            title: 'Weighted Recency'
+        },
+        total: {
+            type: 'number',
+            title: 'Total'
+        },
+        dominant_signal: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Dominant Signal'
+        }
+    },
+    type: 'object',
+    required: ['semantic', 'explicit', 'source', 'recency', 'weighted_semantic', 'weighted_explicit', 'weighted_source', 'weighted_recency', 'total', 'dominant_signal'],
+    title: 'ScoreBreakdownPublic',
+    description: `Per-article scoring components, surfaced for the admin debug panel.
+
+Mirrors \`\`services.recommender.ScoreBreakdown\`\` but pre-computes the
+weighted contributions (\`\`weighted_*\`\`) server-side. The frontend
+wants weighted values to render the dominant signal — making the FE
+recompute would mean duplicating \`\`ScoringWeights\`\` constants in JS
+and risking drift when we tune. Sending both raw and weighted is
+four extra floats and removes that whole class of bug.`
+} as const;
+
+export const ScoringWeightsPublicSchema = {
+    properties: {
+        semantic: {
+            type: 'number',
+            title: 'Semantic'
+        },
+        explicit: {
+            type: 'number',
+            title: 'Explicit'
+        },
+        source: {
+            type: 'number',
+            title: 'Source'
+        },
+        recency: {
+            type: 'number',
+            title: 'Recency'
+        }
+    },
+    type: 'object',
+    required: ['semantic', 'explicit', 'source', 'recency'],
+    title: 'ScoringWeightsPublic',
+    description: `The four weights used by the recommender, surfaced in the debug envelope.
+
+Lets the debug panel header show "weights: 0.30 / 0.40 / 0.15 / 0.15"
+so a weight tuning experiment is visible at a glance without reading
+code. Only included when the request asks for debug.`
+} as const;
+
 export const SourcePublicSchema = {
     properties: {
         name: {
@@ -1118,7 +1256,7 @@ export const UserInterestUpdateSchema = {
                 type: 'string'
             },
             type: 'array',
-            maxItems: 44,
+            maxItems: 88,
             title: 'Preferred Sources'
         }
     },

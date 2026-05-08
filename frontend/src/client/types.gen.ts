@@ -119,11 +119,29 @@ export type FeedbackPublic = {
 };
 
 /**
- * Article + recommendation reason label.
+ * Diagnostic payload attached to each For-You article when ``?debug=1``.
+ *
+ * Populated only when the request asks for debug AND the caller is a
+ * superuser — non-superusers always see ``None`` here regardless of the
+ * query param (see the route handler for the silent-ignore policy).
+ */
+export type ForYouArticleDebugPublic = {
+    breakdown: ScoreBreakdownPublic;
+    was_exploration_injection: boolean;
+};
+
+/**
+ * Article + recommendation reason label, plus optional debug payload.
  *
  * The reason is built server-side from the dominant scoring component
  * (see ``services.recommender.reason_for``). Optional because pure-recency
  * recommendations may not justify a badge.
+ *
+ * ``debug`` is populated only when the caller is a superuser AND passed
+ * ``?debug=1``. Non-superusers always see ``None`` here, even if they
+ * pass the query param — the route handler silently ignores the flag
+ * rather than 403'ing, so a superuser's debug URL pasted to a regular
+ * user just renders the normal feed.
  */
 export type ForYouArticlePublic = {
     url: string;
@@ -138,12 +156,14 @@ export type ForYouArticlePublic = {
     id: string;
     fetched_at: string;
     reason?: (string | null);
+    debug?: (ForYouArticleDebugPublic | null);
 };
 
 export type ForYouArticlesPublic = {
     data: Array<ForYouArticlePublic>;
     count: number;
     candidate_pool_cap: number;
+    weights?: (ScoringWeightsPublic | null);
 };
 
 export type HTTPValidationError = {
@@ -218,6 +238,43 @@ export type SavedArticleIdsPublic = {
 export type SavedArticlesPublic = {
     data: Array<ArticlePublic>;
     count: number;
+};
+
+/**
+ * Per-article scoring components, surfaced for the admin debug panel.
+ *
+ * Mirrors ``services.recommender.ScoreBreakdown`` but pre-computes the
+ * weighted contributions (``weighted_*``) server-side. The frontend
+ * wants weighted values to render the dominant signal — making the FE
+ * recompute would mean duplicating ``ScoringWeights`` constants in JS
+ * and risking drift when we tune. Sending both raw and weighted is
+ * four extra floats and removes that whole class of bug.
+ */
+export type ScoreBreakdownPublic = {
+    semantic: number;
+    explicit: number;
+    source: number;
+    recency: number;
+    weighted_semantic: number;
+    weighted_explicit: number;
+    weighted_source: number;
+    weighted_recency: number;
+    total: number;
+    dominant_signal: (string | null);
+};
+
+/**
+ * The four weights used by the recommender, surfaced in the debug envelope.
+ *
+ * Lets the debug panel header show "weights: 0.30 / 0.40 / 0.15 / 0.15"
+ * so a weight tuning experiment is visible at a glance without reading
+ * code. Only included when the request asks for debug.
+ */
+export type ScoringWeightsPublic = {
+    semantic: number;
+    explicit: number;
+    source: number;
+    recency: number;
 };
 
 export type SourcePublic = {
@@ -372,6 +429,10 @@ export type ArticlesReadArticlesResponse = (ArticlesPublic);
 
 export type ArticlesReadForYouData = {
     accessToken?: (string | null);
+    /**
+     * Admin diagnostic: include per-article scoring breakdown and exploration-injection flags. Silently ignored for non-superusers.
+     */
+    debug?: boolean;
     limit?: number;
     skip?: number;
 };

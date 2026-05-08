@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { SavedArticleList } from '@/components/Articles/SavedArticleList';
-import { PageContainer, PageHeader } from '@/components/Layout/Page';
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { SavedArticleList } from '@/components/Articles/SavedArticleList'
+import { PageContainer, PageHeader } from '@/components/Layout/Page'
 
 export const Route = createFileRoute('/_layout/saved-articles')({
   component: SavedArticles,
@@ -11,7 +11,7 @@ export const Route = createFileRoute('/_layout/saved-articles')({
       },
     ],
   }),
-});
+})
 
 function SavedArticles() {
   return (
@@ -34,5 +34,5 @@ function SavedArticles() {
       </PageHeader>
       <SavedArticleList />
     </PageContainer>
-  );
+  )
 }

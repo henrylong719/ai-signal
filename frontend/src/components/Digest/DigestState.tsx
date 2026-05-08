@@ -2,8 +2,8 @@ function DigestState({
   title,
   description,
 }: {
-  title: string;
-  description: string;
+  title: string
+  description: string
 }) {
   return (
     <div className="rounded-lg border border-slate-200/80 bg-white px-6 py-10 text-center dark:border-border dark:bg-card/35">
@@ -14,7 +14,7 @@ function DigestState({
         {description}
       </p>
     </div>
-  );
+  )
 }
 
-export default DigestState;
+export default DigestState

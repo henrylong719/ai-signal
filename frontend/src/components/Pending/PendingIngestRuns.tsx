@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -6,7 +6,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/ui/table'
 
 /**
  * Loading skeleton for the ingest-runs table.
@@ -57,6 +57,6 @@ const PendingIngestRuns = () => (
       ))}
     </TableBody>
   </Table>
-);
+)
 
-export default PendingIngestRuns;
+export default PendingIngestRuns

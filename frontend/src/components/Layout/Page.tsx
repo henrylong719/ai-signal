@@ -1,28 +1,28 @@
-import type { ComponentPropsWithoutRef, ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import type { ComponentPropsWithoutRef, ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 export const pageContainerWidths = {
   shell: 'max-w-[1265px]',
   wide: 'max-w-[1200px]',
   default: 'max-w-6xl',
   narrow: 'max-w-5xl',
-} as const;
+} as const
 
-export const pageContainerGutters = 'px-4 sm:px-6 lg:px-8';
+export const pageContainerGutters = 'px-4 sm:px-6 lg:px-8'
 
 const pageContainerSpacing = {
   none: '',
   compact: 'pb-16 pt-8 sm:pb-20 sm:pt-10',
   spacious: 'pb-16 pt-10 sm:pb-20 sm:pt-12',
-} as const;
+} as const
 
-type PageContainerVariant = keyof typeof pageContainerWidths;
-type PageContainerSpacing = keyof typeof pageContainerSpacing;
+type PageContainerVariant = keyof typeof pageContainerWidths
+type PageContainerSpacing = keyof typeof pageContainerSpacing
 
 interface PageContainerProps extends ComponentPropsWithoutRef<'div'> {
-  variant?: PageContainerVariant;
-  spacing?: PageContainerSpacing;
-  gutters?: boolean;
+  variant?: PageContainerVariant
+  spacing?: PageContainerSpacing
+  gutters?: boolean
 }
 
 export function PageContainer({
@@ -43,22 +43,20 @@ export function PageContainer({
       )}
       {...props}
     />
-  );
+  )
 }
 
-interface PageHeaderProps extends Omit<
-  ComponentPropsWithoutRef<'header'>,
-  'title'
-> {
-  eyebrow?: ReactNode;
-  title: ReactNode;
-  description?: ReactNode;
-  actions?: ReactNode;
-  children?: ReactNode;
-  contentClassName?: string;
-  eyebrowClassName?: string;
-  titleClassName?: string;
-  descriptionClassName?: string;
+interface PageHeaderProps
+  extends Omit<ComponentPropsWithoutRef<'header'>, 'title'> {
+  eyebrow?: ReactNode
+  title: ReactNode
+  description?: ReactNode
+  actions?: ReactNode
+  children?: ReactNode
+  contentClassName?: string
+  eyebrowClassName?: string
+  titleClassName?: string
+  descriptionClassName?: string
 }
 
 export function PageHeader({
@@ -115,5 +113,5 @@ export function PageHeader({
       </div>
       {actions}
     </header>
-  );
+  )
 }

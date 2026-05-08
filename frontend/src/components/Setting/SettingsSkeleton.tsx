@@ -1,6 +1,6 @@
-import { cn } from '@/lib/utils';
-import { PageContainer } from '../Layout/Page';
-import { Skeleton } from '../ui/skeleton';
+import { cn } from '@/lib/utils'
+import { PageContainer } from '../Layout/Page'
+import { Skeleton } from '../ui/skeleton'
 
 function SettingsSkeleton() {
   return (
@@ -24,7 +24,7 @@ function SettingsSkeleton() {
         ))}
       </div>
     </PageContainer>
-  );
+  )
 }
 
-export default SettingsSkeleton;
+export default SettingsSkeleton

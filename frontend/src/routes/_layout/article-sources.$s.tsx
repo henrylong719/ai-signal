@@ -1,27 +1,27 @@
-import { createFileRoute, Link, useLocation } from '@tanstack/react-router';
-import { AlertCircleIcon, ArrowLeftIcon } from 'lucide-react';
+import { createFileRoute, Link, useLocation } from '@tanstack/react-router'
+import { AlertCircleIcon, ArrowLeftIcon } from 'lucide-react'
 import {
   ArticleList,
   ArticleListState,
-} from '@/components/Articles/ArticleList';
-import { PageContainer, PageHeader } from '@/components/Layout/Page';
-import { useArticleFeed } from '@/hooks/useArticleFeed';
-import { useSources } from '@/hooks/useSources';
-import { capitalize } from '@/lib/utils';
-import ArticleSourceSkeleton from '@/components/Source/ArticleSourceSkeleton';
+} from '@/components/Articles/ArticleList'
+import { PageContainer, PageHeader } from '@/components/Layout/Page'
+import ArticleSourceSkeleton from '@/components/Source/ArticleSourceSkeleton'
+import { useArticleFeed } from '@/hooks/useArticleFeed'
+import { useSources } from '@/hooks/useSources'
+import { capitalize } from '@/lib/utils'
 
 export const Route = createFileRoute('/_layout/article-sources/$s')({
   component: ArticlesSources,
-});
+})
 
 function ArticlesSources() {
-  const { s } = Route.useParams();
-  const location = useLocation();
+  const { s } = Route.useParams()
+  const location = useLocation()
   const articleSourcesState = location.state as {
-    allArticleSourcesFilter?: unknown;
-    allArticleSourcesScrollY?: unknown;
-  };
-  const allArticleSourcesScrollY = articleSourcesState.allArticleSourcesScrollY;
+    allArticleSourcesFilter?: unknown
+    allArticleSourcesScrollY?: unknown
+  }
+  const allArticleSourcesScrollY = articleSourcesState.allArticleSourcesScrollY
   const backToAllSourcesState =
     typeof allArticleSourcesScrollY === 'number'
       ? (previousState: object) =>
@@ -31,20 +31,20 @@ function ArticlesSources() {
               articleSourcesState.allArticleSourcesFilter,
             allArticleSourcesScrollY,
           }) as never
-      : undefined;
+      : undefined
 
-  const feed = useArticleFeed({ source: s });
+  const feed = useArticleFeed({ source: s })
 
   const {
     sources,
     isLoading: sourcesLoading,
     isError: sourcesError,
-  } = useSources();
+  } = useSources()
 
-  const source = sources.find((source) => source.name === s);
+  const source = sources.find((source) => source.name === s)
 
   if (sourcesLoading) {
-    return <ArticleSourceSkeleton />;
+    return <ArticleSourceSkeleton />
   }
 
   if (sourcesError) {
@@ -66,7 +66,7 @@ function ArticlesSources() {
           }
         />
       </PageContainer>
-    );
+    )
   }
 
   if (!source) {
@@ -87,7 +87,7 @@ function ArticlesSources() {
           }
         />
       </PageContainer>
-    );
+    )
   }
 
   return (
@@ -136,5 +136,5 @@ function ArticlesSources() {
         errorTitle={`Could not load articles from ${source.name}`}
       />
     </PageContainer>
-  );
+  )
 }

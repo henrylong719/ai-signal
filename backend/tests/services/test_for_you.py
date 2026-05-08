@@ -591,3 +591,265 @@ def test_rank_for_you_skips_exploration_for_cold_start_users(
     )
 
     assert all(it.reason != "Outside your usual interests" for it in items)
+
+
+# ---------------------------------------------------------------------------
+# Admin debug payload
+# ---------------------------------------------------------------------------
+
+
+def test_rank_for_you_sets_exploration_flag_consistent_with_reason(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The new ``was_exploration_injection`` flag on ForYouItem should
+    agree exactly with the EXPLORATION_REASON label.
+
+    Uses the same pool shape as
+    test_rank_for_you_injects_exploration_items_with_dedicated_reason
+    so we know there will be at least some injected items, plus
+    plenty of non-injected items, in the same response.
+    """
+    user_id = uuid4()
+
+    matching = [
+        _article(
+            title=f"Rag {i}",
+            category="rag",
+            source=f"RagSrc{i % 3}",
+            tags=["rag"],
+            age_days=1,
+        )
+        for i in range(25)
+    ]
+    outside = [
+        _article(
+            title=f"Outside {i}",
+            category="hardware",
+            source=f"OutsideSrc{i % 5}",
+            tags=["gpu"],
+            age_days=0,
+        )
+        for i in range(15)
+    ]
+    all_articles = matching + outside
+
+    monkeypatch.setattr(
+        for_you,
+        "build_user_profile",
+        lambda *, session, user_id: UserProfile(
+            interest_categories=frozenset({"rag"}),
+            interest_tags=frozenset({"rag"}),
+        ),
+    )
+    monkeypatch.setattr(
+        app_crud,
+        "get_recent_articles_excluding",
+        lambda **kwargs: all_articles,
+    )
+    monkeypatch.setattr(app_crud, "get_user_embedding", lambda **kwargs: None)
+    monkeypatch.setattr(
+        for_you,
+        "compute_and_save_user_vector",
+        lambda **kwargs: None,
+    )
+
+    fake_session: Any = object()
+    items, _total = for_you.rank_for_you(
+        session=fake_session, user_id=user_id, skip=0, limit=40
+    )
+
+    # The flag and the reason label must agree exactly. If they ever
+    # diverge it means the API layer can't trust the flag — and
+    # consumers that pre-empt rendering on the flag would silently
+    # render the wrong badge. Both are derived from the same
+    # explored_ids set in rank_for_you, so they must be lockstep.
+    for it in items:
+        if it.was_exploration_injection:
+            assert it.reason == "Outside your usual interests", (
+                f"flag set but reason is {it.reason!r}"
+            )
+        else:
+            assert it.reason != "Outside your usual interests", (
+                "flag clear but reason is the exploration label"
+            )
+
+    # Sanity: the test setup actually exercises both branches.
+    assert any(it.was_exploration_injection for it in items)
+    assert any(not it.was_exploration_injection for it in items)
+
+
+def test_build_debug_payload_preserves_raw_components_and_total() -> None:
+    """The projection should round-trip every breakdown field the
+    debug panel needs to render — no rounding, no rescaling.
+    """
+    from app.services.recommender import (
+        CandidateArticle,
+        ScoreBreakdown,
+        ScoredArticle,
+        ScoringWeights,
+    )
+
+    article = CandidateArticle(
+        id=uuid4(),
+        title="t",
+        source="Example",
+        category="models",
+        tags=("rag",),
+        published_at=NOW,
+    )
+    weights = ScoringWeights()
+    breakdown = ScoreBreakdown(
+        semantic=0.5,
+        explicit=0.8,
+        source=0.2,
+        recency=0.9,
+        weights=weights,
+    )
+    item = for_you.ForYouItem(
+        scored=ScoredArticle(article=article, breakdown=breakdown),
+        reason="Matches your interest in rag",
+        was_exploration_injection=False,
+    )
+
+    payload = for_you.build_debug_payload(item)
+
+    assert payload.breakdown.semantic == 0.5
+    assert payload.breakdown.explicit == 0.8
+    assert payload.breakdown.source == 0.2
+    assert payload.breakdown.recency == 0.9
+    # Total is computed from breakdown.total (which uses weights).
+    # Re-derive here to assert lockstep, not to recompute it inside the
+    # test in a way that could mask a bug.
+    assert payload.breakdown.total == breakdown.total
+    assert payload.was_exploration_injection is False
+
+
+def test_build_debug_payload_pre_computes_weighted_contributions() -> None:
+    """The point of the helper is to send weighted contributions so
+    the FE doesn't have to reproduce ScoringWeights. Verify the math.
+    """
+    from app.services.recommender import (
+        CandidateArticle,
+        ScoreBreakdown,
+        ScoredArticle,
+        ScoringWeights,
+    )
+
+    article = CandidateArticle(
+        id=uuid4(),
+        title="t",
+        source="Example",
+        category="models",
+        tags=(),
+        published_at=NOW,
+    )
+    # Defaults: 0.30, 0.40, 0.15, 0.15
+    weights = ScoringWeights()
+    breakdown = ScoreBreakdown(
+        semantic=1.0,
+        explicit=1.0,
+        source=1.0,
+        recency=1.0,
+        weights=weights,
+    )
+    item = for_you.ForYouItem(
+        scored=ScoredArticle(article=article, breakdown=breakdown),
+        reason=None,
+        was_exploration_injection=False,
+    )
+
+    payload = for_you.build_debug_payload(item)
+
+    assert payload.breakdown.weighted_semantic == pytest.approx(0.30)
+    assert payload.breakdown.weighted_explicit == pytest.approx(0.40)
+    assert payload.breakdown.weighted_source == pytest.approx(0.15)
+    assert payload.breakdown.weighted_recency == pytest.approx(0.15)
+    # All four components at 1.0 with weights summing to 1.0 → total 1.0.
+    assert payload.breakdown.total == pytest.approx(1.0)
+
+
+def test_build_debug_payload_dominant_signal_matches_breakdown() -> None:
+    """The dominant_signal we send should be the same one the
+    recommender computes — the FE shouldn't have to recompute it.
+    """
+    from app.services.recommender import (
+        CandidateArticle,
+        ScoreBreakdown,
+        ScoredArticle,
+        ScoringWeights,
+    )
+
+    article = CandidateArticle(
+        id=uuid4(),
+        title="t",
+        source="Example",
+        category="models",
+        tags=(),
+        published_at=NOW,
+    )
+    weights = ScoringWeights()
+    # Explicit dominates: weighted contribution 0.40 * 0.9 = 0.36
+    # vs semantic 0.30 * 1.0 = 0.30, source 0.15 * 1.0 = 0.15,
+    # recency 0.15 * 1.0 = 0.15.
+    breakdown = ScoreBreakdown(
+        semantic=1.0,
+        explicit=0.9,
+        source=1.0,
+        recency=1.0,
+        weights=weights,
+    )
+    item = for_you.ForYouItem(
+        scored=ScoredArticle(article=article, breakdown=breakdown),
+        reason=None,
+        was_exploration_injection=False,
+    )
+
+    payload = for_you.build_debug_payload(item)
+
+    assert payload.breakdown.dominant_signal == "explicit"
+    # And it agrees with what the breakdown itself reports — the only
+    # thing worse than not sending dominant_signal is sending one that
+    # disagrees with the recommender's view of itself.
+    assert payload.breakdown.dominant_signal == breakdown.dominant_signal()
+
+
+def test_build_debug_payload_carries_exploration_flag() -> None:
+    """When the orchestrator sets was_exploration_injection on the
+    ForYouItem, it must surface on the payload — that's the only way
+    the FE can render the exploration badge."""
+    from app.services.recommender import (
+        CandidateArticle,
+        ScoreBreakdown,
+        ScoredArticle,
+        ScoringWeights,
+    )
+
+    article = CandidateArticle(
+        id=uuid4(),
+        title="t",
+        source="Example",
+        category="models",
+        tags=(),
+        published_at=NOW,
+    )
+    # Exploration items have semantic = explicit = source = 0; only
+    # recency is non-zero. We don't validate that invariant here (the
+    # exploration module's tests do that) — we just verify the flag
+    # plumbing.
+    weights = ScoringWeights()
+    breakdown = ScoreBreakdown(
+        semantic=0.0,
+        explicit=0.0,
+        source=0.0,
+        recency=0.7,
+        weights=weights,
+    )
+    item = for_you.ForYouItem(
+        scored=ScoredArticle(article=article, breakdown=breakdown),
+        reason="Outside your usual interests",
+        was_exploration_injection=True,
+    )
+
+    payload = for_you.build_debug_payload(item)
+
+    assert payload.was_exploration_injection is True

@@ -8,6 +8,7 @@ import useCustomToast from '@/hooks/useCustomToast'
 import { useSavedArticles } from '@/hooks/useSavedArticles'
 import { ArticleCard } from './ArticleCard'
 import { ArticleCardSkeleton } from './ArticleCardSkeleton'
+import type { RecommenderDebugPayload } from './RecommenderDebugPanel'
 
 interface ArticleListProps {
   articles: ArticlePublic[]
@@ -31,6 +32,13 @@ interface ArticleListProps {
    * feed; chronological feeds leave it undefined and no badges render.
    */
   reasons?: Map<string, string | null>
+  /**
+   * Map of article id → admin debug payload. Populated only when the
+   * For-You feed was fetched with ``debug: true`` and the caller is a
+   * superuser. Undefined for all other feeds and for non-debug
+   * For-You requests; in that case no debug panels render.
+   */
+  debug?: Map<string, RecommenderDebugPayload>
 }
 
 interface ArticleListStateProps {
@@ -75,6 +83,7 @@ export function ArticleList({
   errorDescription = 'Please refresh the page or try again in a moment.',
   showDismiss = false,
   reasons,
+  debug,
 }: ArticleListProps) {
   const { savedArticleIds, toggleSave } = useSavedArticles()
   const { dismissedIds, dismiss } = useDismissArticle()
@@ -171,6 +180,7 @@ export function ArticleList({
           isBookmarked={savedArticleIds.has(article.id)}
           onDismiss={showDismiss ? handleDismiss(article.id) : undefined}
           reason={reasons?.get(article.id) ?? undefined}
+          debug={debug?.get(article.id)}
         />
       ))}
       <div

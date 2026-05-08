@@ -1,13 +1,13 @@
 import {
   SOURCE_FILTER_LABELS,
-  source_types,
   SOURCE_TYPES,
-} from '@/lib/constants';
-import { cn } from '@/lib/utils';
+  type source_types,
+} from '@/lib/constants'
+import { cn } from '@/lib/utils'
 
 interface SourceFilterBarProps {
-  selected: source_types;
-  onSelect: (type: source_types) => void;
+  selected: source_types
+  onSelect: (type: source_types) => void
 }
 
 function SourceFilterBar({ selected, onSelect }: SourceFilterBarProps) {
@@ -33,7 +33,7 @@ function SourceFilterBar({ selected, onSelect }: SourceFilterBarProps) {
         ))}
       </fieldset>
     </div>
-  );
+  )
 }
 
-export default SourceFilterBar;
+export default SourceFilterBar

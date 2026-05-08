@@ -1,5 +1,5 @@
-import { PageContainer } from '../Layout/Page';
-import { Skeleton } from '../ui/skeleton';
+import { PageContainer } from '../Layout/Page'
+import { Skeleton } from '../ui/skeleton'
 
 function PersonalizationSkeleton() {
   return (
@@ -29,7 +29,7 @@ function PersonalizationSkeleton() {
         ))}
       </div>
     </PageContainer>
-  );
+  )
 }
 
-export default PersonalizationSkeleton;
+export default PersonalizationSkeleton

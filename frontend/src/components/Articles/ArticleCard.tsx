@@ -12,6 +12,10 @@ import { isLoggedIn } from '@/hooks/useAuth'
 import { redirectHref } from '@/lib/article-urls'
 import { capitalize, cn } from '@/lib/utils'
 import { Badge } from '../ui/badge'
+import {
+  RecommenderDebugPanel,
+  type RecommenderDebugPayload,
+} from './RecommenderDebugPanel'
 
 interface ArticleCardProps {
   article: ArticlePublic
@@ -32,6 +36,13 @@ interface ArticleCardProps {
    * unset on chronological feeds where there's no ranking signal to explain.
    */
   reason?: string | null
+  /**
+   * Admin-only diagnostic payload. Set only when the For-You feed was
+   * fetched with ``?debug=1`` by a superuser; renders the inline
+   * scoring-breakdown panel below the card. Undefined in every other
+   * case, in which case nothing extra renders.
+   */
+  debug?: RecommenderDebugPayload
 }
 
 export function ArticleCard({
@@ -43,6 +54,7 @@ export function ArticleCard({
   isBookmarked = false,
   onDismiss,
   reason,
+  debug,
 }: ArticleCardProps) {
   // Outbound links go through our redirect endpoint so we can record
   // the click as a behavioral signal for the recommender. Cookie auth
@@ -226,6 +238,7 @@ export function ArticleCard({
             </div>
           )}
         </div>
+        {debug && <RecommenderDebugPanel payload={debug} />}
       </div>
     </article>
   )

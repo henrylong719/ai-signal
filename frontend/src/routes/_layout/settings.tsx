@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   AlertCircleIcon,
   LinkIcon,
@@ -6,18 +6,18 @@ import {
   ShieldCheckIcon,
   Trash2Icon,
   UserRoundIcon,
-} from 'lucide-react';
+} from 'lucide-react'
 
-import { ArticleListState } from '@/components/Articles/ArticleList';
-import AuthModal from '@/components/Auth/AuthModal';
-import { PageContainer, PageHeader } from '@/components/Layout/Page';
-import ChangePassword from '@/components/UserSettings/ChangePassword';
-import ConnectedAccounts from '@/components/UserSettings/ConnectedAccounts';
-import DeleteAccount from '@/components/UserSettings/DeleteAccount';
-import UserInformation from '@/components/UserSettings/UserInformation';
-import useAuth from '@/hooks/useAuth';
-import SettingsSection from '@/components/Setting/SettingsSection';
-import SettingsSkeleton from '@/components/Setting/SettingsSkeleton';
+import { ArticleListState } from '@/components/Articles/ArticleList'
+import AuthModal from '@/components/Auth/AuthModal'
+import { PageContainer, PageHeader } from '@/components/Layout/Page'
+import SettingsSection from '@/components/Setting/SettingsSection'
+import SettingsSkeleton from '@/components/Setting/SettingsSkeleton'
+import ChangePassword from '@/components/UserSettings/ChangePassword'
+import ConnectedAccounts from '@/components/UserSettings/ConnectedAccounts'
+import DeleteAccount from '@/components/UserSettings/DeleteAccount'
+import UserInformation from '@/components/UserSettings/UserInformation'
+import useAuth from '@/hooks/useAuth'
 
 export const Route = createFileRoute('/_layout/settings')({
   component: UserSettings,
@@ -28,13 +28,13 @@ export const Route = createFileRoute('/_layout/settings')({
       },
     ],
   }),
-});
+})
 
 function UserSettings() {
-  const { user: currentUser, isLoading, isError } = useAuth();
+  const { user: currentUser, isLoading, isError } = useAuth()
 
   if (isLoading) {
-    return <SettingsSkeleton />;
+    return <SettingsSkeleton />
   }
 
   if (isError) {
@@ -50,7 +50,7 @@ function UserSettings() {
           icon={<AlertCircleIcon className="h-5 w-5 stroke-[1.5]" />}
         />
       </PageContainer>
-    );
+    )
   }
 
   if (!currentUser) {
@@ -80,10 +80,10 @@ function UserSettings() {
           }
         />
       </PageContainer>
-    );
+    )
   }
 
-  const hasPassword = currentUser.has_password ?? true;
+  const hasPassword = currentUser.has_password ?? true
 
   return (
     <PageContainer spacing="compact">
@@ -154,5 +154,5 @@ function UserSettings() {
         </SettingsSection>
       </div>
     </PageContainer>
-  );
+  )
 }

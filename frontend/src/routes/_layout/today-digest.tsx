@@ -1,12 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { CalendarIcon } from 'lucide-react';
-import { DateTime } from 'luxon';
-import type { DigestPublicSchema } from '@/client';
-import { PageContainer } from '@/components/Layout/Page';
-import { useTodayDigest } from '@/hooks/useTodayDigest';
-import DigestArticle from '@/components/Digest/DigestArticle';
-import DigestState from '@/components/Digest/DigestState';
-import DigestSkeleton from '@/components/Digest/DigestSkeleton';
+import { createFileRoute } from '@tanstack/react-router'
+import { CalendarIcon } from 'lucide-react'
+import { DateTime } from 'luxon'
+import type { DigestPublicSchema } from '@/client'
+import DigestArticle from '@/components/Digest/DigestArticle'
+import DigestSkeleton from '@/components/Digest/DigestSkeleton'
+import DigestState from '@/components/Digest/DigestState'
+import { PageContainer } from '@/components/Layout/Page'
+import { useTodayDigest } from '@/hooks/useTodayDigest'
 
 export const Route = createFileRoute('/_layout/today-digest')({
   component: TodayDigest,
@@ -17,36 +17,36 @@ export const Route = createFileRoute('/_layout/today-digest')({
       },
     ],
   }),
-});
+})
 
 const formatDigestDate = (date: string | undefined) => {
   if (!date) {
-    return DateTime.now().toLocaleString(DateTime.DATE_FULL);
+    return DateTime.now().toLocaleString(DateTime.DATE_FULL)
   }
 
-  const parsed = DateTime.fromISO(date);
+  const parsed = DateTime.fromISO(date)
   return parsed.isValid
     ? parsed.toLocaleString(DateTime.DATE_FULL)
-    : DateTime.now().toLocaleString(DateTime.DATE_FULL);
-};
+    : DateTime.now().toLocaleString(DateTime.DATE_FULL)
+}
 
 const digestIntro = (digest: DigestPublicSchema | undefined) => {
   if (!digest) {
-    return 'The most important AI engineering updates, organized for a focused morning read.';
+    return 'The most important AI engineering updates, organized for a focused morning read.'
   }
 
   const articleCount = digest.sections.reduce(
     (count, section) => count + section.articles.length,
     0,
-  );
-  const cadence = articleCount === 1 ? '1 signal' : `${articleCount} signals`;
-  const mode = digest.is_personalized ? 'personalized' : 'curated';
+  )
+  const cadence = articleCount === 1 ? '1 signal' : `${articleCount} signals`
+  const mode = digest.is_personalized ? 'personalized' : 'curated'
 
-  return `A ${mode} briefing of ${cadence} from today's AI research, engineering, models, and industry coverage.`;
-};
+  return `A ${mode} briefing of ${cadence} from today's AI research, engineering, models, and industry coverage.`
+}
 
 function TodayDigest() {
-  const { data, isLoading, isError } = useTodayDigest();
+  const { data, isLoading, isError } = useTodayDigest()
 
   return (
     <PageContainer
@@ -125,5 +125,5 @@ function TodayDigest() {
         </div>
       )}
     </PageContainer>
-  );
+  )
 }

@@ -48,6 +48,8 @@ from app.services.recommender import (
     score_candidates,
 )
 
+from app.schemas.article import ForYouArticleDebugPublic, ScoreBreakdownPublic
+
 logger = logging.getLogger(__name__)
 
 # Size of the candidate pool we score in Python. See
@@ -62,10 +64,19 @@ class ForYouItem:
     Carries enough breakdown for the API layer to render reason badges
     and to surface debug info if we ever want a "why am I seeing this?"
     affordance for users.
+
+    ``was_exploration_injection`` is set by the orchestrator when the
+    item was swapped in by ``inject_exploration``. Carrying this as a
+    field rather than reconstructing it from ``reason == EXPLORATION_REASON``
+    in the API layer keeps the determination at the point where it's
+    actually known (the same id-set check that drives the reason label),
+    and avoids cross-layer coupling between presentation strings and
+    diagnostic flags.
     """
 
     scored: ScoredArticle
     reason: str | None
+    was_exploration_injection: bool = False
 
 
 def build_user_profile(*, session: Session, user_id: uuid.UUID) -> UserProfile:
@@ -347,6 +358,43 @@ def rank_for_you(
                     most_similar_saved_title=most_similar_titles.get(item.article.id),
                 )
             ),
+            was_exploration_injection=item.article.id in explored_ids,
         )
         for item in page
     ], total
+
+
+def build_debug_payload(item: ForYouItem) -> ForYouArticleDebugPublic:
+    """Project a ``ForYouItem`` to its admin-debug response shape.
+
+    Pre-computes the weighted contributions server-side rather than
+    sending raw components and weights for the frontend to multiply.
+    The dominant-signal logic in the recommender already compares
+    weighted contributions (see ``ScoreBreakdown.dominant_signal``);
+    making the FE recompute would mean duplicating ``ScoringWeights``
+    constants in JS and risking drift on every weight tune. Four extra
+    floats per article on the wire is cheap insurance.
+
+    Pure projection — no DB access, no IO. Lives here rather than in
+    the route handler because the API layer should stay thin and
+    because this function is exactly what's testable in the no-DB
+    services test suite. The route just calls this for each item when
+    the effective debug flag is true.
+    """
+    breakdown = item.scored.breakdown
+    weights = breakdown.weights
+    return ForYouArticleDebugPublic(
+        breakdown=ScoreBreakdownPublic(
+            semantic=breakdown.semantic,
+            explicit=breakdown.explicit,
+            source=breakdown.source,
+            recency=breakdown.recency,
+            weighted_semantic=weights.semantic * breakdown.semantic,
+            weighted_explicit=weights.explicit * breakdown.explicit,
+            weighted_source=weights.source * breakdown.source,
+            weighted_recency=weights.recency * breakdown.recency,
+            total=breakdown.total,
+            dominant_signal=breakdown.dominant_signal(),
+        ),
+        was_exploration_injection=item.was_exploration_injection,
+    )

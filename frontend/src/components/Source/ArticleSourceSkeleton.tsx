@@ -1,6 +1,6 @@
-import { ArticleCardSkeleton } from '../Articles/ArticleCardSkeleton';
-import { PageContainer } from '../Layout/Page';
-import { Skeleton } from '../ui/skeleton';
+import { ArticleCardSkeleton } from '../Articles/ArticleCardSkeleton'
+import { PageContainer } from '../Layout/Page'
+import { Skeleton } from '../ui/skeleton'
 
 function ArticleSourceSkeleton() {
   return (
@@ -20,7 +20,7 @@ function ArticleSourceSkeleton() {
         <ArticleCardSkeleton />
       </div>
     </PageContainer>
-  );
+  )
 }
 
-export default ArticleSourceSkeleton;
+export default ArticleSourceSkeleton

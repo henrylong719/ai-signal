@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react'
 
 function TasteSection({
   eyebrow,
@@ -7,11 +7,11 @@ function TasteSection({
   count,
   children,
 }: {
-  eyebrow: string;
-  title: string;
-  description: string;
-  count: string;
-  children: ReactNode;
+  eyebrow: string
+  title: string
+  description: string
+  count: string
+  children: ReactNode
 }) {
   return (
     <section className="py-8 sm:py-10">
@@ -33,7 +33,7 @@ function TasteSection({
       </div>
       {children}
     </section>
-  );
+  )
 }
 
-export default TasteSection;
+export default TasteSection

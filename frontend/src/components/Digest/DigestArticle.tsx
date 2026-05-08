@@ -1,9 +1,9 @@
-import { DigestArticlePublic } from '@/client';
-import { redirectHref } from '@/lib/article-urls';
-import { ChevronRightIcon } from 'lucide-react';
+import { ChevronRightIcon } from 'lucide-react'
+import type { DigestArticlePublic } from '@/client'
+import { redirectHref } from '@/lib/article-urls'
 
 function DigestArticle({ article }: { article: DigestArticlePublic }) {
-  const href = redirectHref(article.id);
+  const href = redirectHref(article.id)
 
   return (
     <article className="group">
@@ -47,7 +47,7 @@ function DigestArticle({ article }: { article: DigestArticlePublic }) {
         </a>
       </div>
     </article>
-  );
+  )
 }
 
-export default DigestArticle;
+export default DigestArticle

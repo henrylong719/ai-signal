@@ -15,6 +15,7 @@ from app.schemas import (
     ArticlesPublic,
     ForYouArticlePublic,
     ForYouArticlesPublic,
+    ScoringWeightsPublic,
 )
 from app.schemas.source import (
     SOURCES,
@@ -25,7 +26,7 @@ from app.schemas.source import (
 )
 from app.services.article_search import search_articles
 from app.services.embeddings import compute_and_save_user_vector
-from app.services.for_you import _CANDIDATE_POOL_SIZE, rank_for_you
+from app.services.for_you import _CANDIDATE_POOL_SIZE, build_debug_payload, rank_for_you
 
 logger = logging.getLogger(__name__)
 
@@ -75,18 +76,22 @@ def read_for_you(
     current_user: CurrentUser,
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
+    debug: bool = Query(
+        default=False,
+        description=(
+            "Admin diagnostic: include per-article scoring breakdown and "
+            "exploration-injection flags. Silently ignored for non-superusers."
+        ),
+    ),
 ) -> Any:
     """Personalized feed for the current user.
 
-    The candidate pool is the most-recent N articles minus already-saved
-    and dismissed ones (see ``services.for_you.rank_for_you``). Scoring
-    happens in Python; only the requested page slice is returned.
-
-    The ``count`` returned is the total scored pool size — the number of
-    articles the recommender would have ranked for this user — not the
-    DB-wide article count. This is the right shape for the frontend's
-    infinite-scroll pagination.
+    [... see full docstring in /home/claude/ai-signal-main/backend/app/api/routes/article.py ...]
     """
+    # Effective debug = requested AND privileged. Silent ignore on the
+    # privilege check, deliberate — see route docstring above.
+    effective_debug = debug and current_user.is_superuser
+
     items, total = rank_for_you(
         session=session, user_id=current_user.id, skip=skip, limit=limit
     )
@@ -103,13 +108,26 @@ def read_for_you(
                 articles_by_id[item.scored.article.id]
             ).model_dump(),
             reason=item.reason,
+            debug=build_debug_payload(item) if effective_debug else None,
         )
         for item in items
     ]
+
+    weights_public: ScoringWeightsPublic | None = None
+    if effective_debug and items:
+        active_weights = items[0].scored.breakdown.weights
+        weights_public = ScoringWeightsPublic(
+            semantic=active_weights.semantic,
+            explicit=active_weights.explicit,
+            source=active_weights.source,
+            recency=active_weights.recency,
+        )
+
     return ForYouArticlesPublic(
         data=data,
         count=total,
         candidate_pool_cap=_CANDIDATE_POOL_SIZE,
+        weights=weights_public,
     )
 
 

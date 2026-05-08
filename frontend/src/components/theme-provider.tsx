@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useState,
 } from 'react'
 
@@ -54,25 +55,24 @@ export function ThemeProvider({
   const updateTheme = useCallback((newTheme: Theme) => {
     const root = window.document.documentElement
 
+    const resolved =
+      newTheme === 'system'
+        ? window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light'
+        : newTheme
+
     root.classList.remove('light', 'dark')
-
-    if (newTheme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
-        .matches
-        ? 'dark'
-        : 'light'
-
-      root.classList.add(systemTheme)
-      return
-    }
-
-    root.classList.add(newTheme)
+    root.classList.add(resolved)
+    root.style.colorScheme = resolved
   }, [])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     updateTheme(theme)
     setResolvedTheme(getResolvedTheme(theme))
+  }, [theme, updateTheme, getResolvedTheme])
 
+  useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
 
     const handleChange = () => {
@@ -92,9 +92,25 @@ export function ThemeProvider({
   const value = {
     theme,
     resolvedTheme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
+    setTheme: (newTheme: Theme) => {
+      localStorage.setItem(storageKey, newTheme)
+
+      // Suppress transitions so theme switch is instant, not a crossfade
+      const root = document.documentElement
+      root.classList.add('no-transitions')
+
+      // Apply DOM class immediately (don't wait for React re-render)
+      updateTheme(newTheme)
+      setResolvedTheme(getResolvedTheme(newTheme))
+
+      // Re-enable transitions after the browser has repainted
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          root.classList.remove('no-transitions')
+        })
+      })
+
+      setTheme(newTheme)
     },
   }
 

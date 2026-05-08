@@ -17,8 +17,13 @@ export const CATEGORIES: category[] = [
 export const previewSourceTypes: SourcePublic['source_type'][] = [
   'official',
   'research',
+  'analysis',
+  'policy',
+  'education',
+  'papers',
   'media',
   'newsletter',
+  'podcast',
   'independent',
   'community',
 ]

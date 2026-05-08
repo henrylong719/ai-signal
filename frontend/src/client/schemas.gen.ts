@@ -930,7 +930,7 @@ export const SourcePublicSchema = {
         },
         source_type: {
             type: 'string',
-            enum: ['official', 'independent', 'community', 'research', 'media', 'newsletter'],
+            enum: ['official', 'independent', 'community', 'research', 'media', 'newsletter', 'analysis', 'policy', 'education', 'papers', 'podcast'],
             title: 'Source Type'
         },
         topic: {

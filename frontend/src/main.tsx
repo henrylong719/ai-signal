@@ -56,14 +56,7 @@ declare module '@tanstack/react-router' {
 function AppToaster() {
   const { resolvedTheme } = useTheme()
 
-  return (
-    <Toaster
-      theme={resolvedTheme}
-      richColors
-      closeButton
-      position="top-right"
-    />
-  )
+  return <Toaster theme={resolvedTheme} closeButton position="top-right" />
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

@@ -103,7 +103,7 @@ export function Sidebar() {
     <aside
       ref={sidebarRef}
       style={sidebarStyle}
-      className="hidden self-start border-l border-slate-200/70 pb-8 pt-8 lg:sticky lg:block lg:w-[340px] lg:pl-10 dark:border-border/70"
+      className="hidden self-start border-l border-slate-200/70 pb-8 pt-8 lg:sticky lg:block lg:w-[320px] lg:pl-8 dark:border-border/70"
     >
       <div className="space-y-10">
         <SidebarSections />

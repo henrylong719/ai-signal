@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { SlidersHorizontalIcon } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { ArticleList } from '@/components/Articles/ArticleList'
 import AuthModal from '@/components/Auth/AuthModal'
@@ -89,7 +90,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-12">
+    <div className="mx-auto grid w-full max-w-[1360px] gap-8 lg:grid-cols-[minmax(0,1fr)_320px] xl:gap-10">
       <div className="min-w-0">
         <div
           ref={feedTopRef}
@@ -129,7 +130,16 @@ function Dashboard() {
               showDismiss
               reasons={forYouReasons}
               emptyTitle="No personalized signals yet"
-              emptyDescription="Save a few articles or pick interests in Settings to start tailoring your feed."
+              emptyDescription="Save a few articles or choose the topics and sources that should shape your For You feed."
+              emptyAction={
+                <Link
+                  to="/personalization"
+                  className="inline-flex h-9 items-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                >
+                  <SlidersHorizontalIcon className="h-4 w-4 stroke-[1.7]" />
+                  Tune your signal
+                </Link>
+              }
             />
           </>
         )}

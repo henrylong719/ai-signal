@@ -14,7 +14,7 @@ function CategoryFeed() {
   const feed = useArticleFeed({ category: cat as category })
 
   return (
-    <div className="mx-auto w-full max-w-5xl pb-16 pt-10 sm:pb-20 sm:pt-12">
+    <div className="mx-auto w-full max-w-4xl pb-16 pt-10 sm:pb-20 sm:pt-12">
       <header className="mb-7 border-b border-slate-200/80 pb-7 dark:border-border">
         <p className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-muted-foreground">
           Topic
@@ -46,7 +46,7 @@ function CategoryFeed() {
           ))}
         </div>
       </div>
-      <div className="max-w-4xl">
+      <div>
         <ArticleList
           {...feed}
           emptyTitle={`No ${capitalize(cat)} articles yet`}

@@ -17,9 +17,14 @@ interface SourcesFieldProps {
 const SOURCE_TYPE_LABELS: Record<SourcePublic['source_type'], string> = {
   official: 'AI Labs',
   research: 'Research',
+  analysis: 'Analysis',
+  policy: 'Policy',
+  education: 'Education',
+  papers: 'Paper feeds',
   independent: 'Independent voices',
   community: 'Community',
   newsletter: 'Newsletters',
+  podcast: 'Podcasts',
   media: 'Media',
 }
 
@@ -28,9 +33,14 @@ const SOURCE_TYPE_LABELS: Record<SourcePublic['source_type'], string> = {
 const SOURCE_TYPE_ORDER: SourcePublic['source_type'][] = [
   'official',
   'research',
-  'independent',
+  'analysis',
+  'policy',
+  'education',
+  'papers',
   'newsletter',
+  'podcast',
   'media',
+  'independent',
   'community',
 ]
 

@@ -13,7 +13,7 @@ export function useFeedback() {
   const mutation = useMutation({
     mutationFn: submitFeedback,
     onSuccess: () => {
-      showSuccessToast('Feedback sent.')
+      showSuccessToast('Thanks, your feedback was sent.')
     },
     onError: handleError.bind(showErrorToast),
   })

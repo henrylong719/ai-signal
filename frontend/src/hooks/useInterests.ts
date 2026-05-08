@@ -10,8 +10,19 @@ import useCustomToast from './useCustomToast'
 
 const INTERESTS_KEY = ['userInterests'] as const
 
-const putInterests = (requestBody: UserInterestUpdate) =>
-  InterestsService.updateInterests({ requestBody })
+type SaveInterestsPayload = {
+  values: UserInterestUpdate
+  successMessage?: string
+}
+
+type SaveInterestsOptions = {
+  successMessage?: string
+  onSuccess?: (data: UserInterestPublic) => void
+  onSettled?: () => void
+}
+
+const putInterests = ({ values }: SaveInterestsPayload) =>
+  InterestsService.updateInterests({ requestBody: values })
 
 /**
  * Read + write the current user's stored interests.
@@ -36,7 +47,7 @@ export function useInterests() {
 
   const saveMutation = useMutation({
     mutationFn: putInterests,
-    onMutate: async (newValues) => {
+    onMutate: async ({ values: newValues }) => {
       await queryClient.cancelQueries({ queryKey: INTERESTS_KEY })
       const previous =
         queryClient.getQueryData<UserInterestPublic>(INTERESTS_KEY)
@@ -60,12 +71,12 @@ export function useInterests() {
       }
       showErrorToast('Could not save your preferences. Please try again.')
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       // Replace the optimistic value with the canonical one returned by
       // the server. This catches normalization (e.g., "RAG " → "rag" for
       // tags, sort + dedupe for sources).
       queryClient.setQueryData(INTERESTS_KEY, data)
-      showSuccessToast('Preferences saved.')
+      showSuccessToast(variables.successMessage ?? 'Taste profile saved.')
     },
     onSettled: () => {
       // Future For-You feed will key off this; invalidating now means
@@ -74,11 +85,21 @@ export function useInterests() {
     },
   })
 
+  const save = (values: UserInterestUpdate, options?: SaveInterestsOptions) => {
+    saveMutation.mutate(
+      { values, successMessage: options?.successMessage },
+      {
+        onSuccess: (data) => options?.onSuccess?.(data),
+        onSettled: () => options?.onSettled?.(),
+      },
+    )
+  }
+
   return {
     interests: data,
     isLoading,
     isError,
-    save: saveMutation.mutate,
+    save,
     isSaving: saveMutation.isPending,
   }
 }

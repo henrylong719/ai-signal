@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { AlertCircleIcon, BookmarkIcon, LogInIcon } from 'lucide-react'
 import { ArticlesService } from '@/client'
 import AuthModal from '@/components/Auth/AuthModal'
@@ -67,8 +68,16 @@ export function SavedArticleList() {
     return (
       <ArticleListState
         title="No saved articles yet"
-        description="Click the bookmark icon on any article to save it here."
+        description="Bookmark articles as you read, or choose topics and sources now so your For You feed has a stronger starting point."
         icon={<BookmarkIcon className="h-5 w-5 stroke-[1.5]" />}
+        action={
+          <Link
+            to="/personalization"
+            className="inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+          >
+            Tune your signal
+          </Link>
+        }
       />
     )
   }

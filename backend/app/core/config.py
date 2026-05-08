@@ -77,7 +77,7 @@ class Settings(BaseSettings):
     INGEST_INTERVAL_MINUTES: int = 30
     # Delay before the first run after process startup. Gives the DB,
     # the embedding model load, and any other startup work time to settle
-    # before we hammer 44 RSS feeds and start writing rows.
+    # before we hammer the configured RSS feeds and start writing rows.
     INGEST_INITIAL_DELAY_SECONDS: int = 60
 
     @computed_field  # type: ignore[prop-decorator]

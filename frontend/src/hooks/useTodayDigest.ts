@@ -7,9 +7,8 @@ export function useTodayDigest() {
     queryKey: ['todayDigest', isLoggedIn()],
     queryFn: () => DigestService.readTodayDigest(),
     // Digest is a fixed daily artifact — don't auto-refetch on a timer.
-    // Invalidate ['todayDigest'] from save/unsave/dismiss mutations so
-    // the digest updates when the user's signal changes; otherwise it
-    // stays stable for the day, which is the whole point of a digest.
+    // Dismiss can still invalidate ['todayDigest'] when the user explicitly
+    // removes an item, but saving articles should not reshuffle this surface.
     staleTime: Infinity,
   })
 }

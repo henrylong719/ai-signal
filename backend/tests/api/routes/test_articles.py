@@ -542,6 +542,21 @@ def test_go_to_article_redirects_and_records_click_for_authenticated_user(
     assert [event.article_id for event in events].count(article.id) == 1
 
 
+def test_go_to_no_priors_legacy_homepage_link_uses_reachable_fallback(
+    client: TestClient,
+    db: Session,
+) -> None:
+    article = _create_article(db, source="No Priors", url="https://no-priors.com/")
+
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/{article.id}/go",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    assert response.headers["location"] == article_routes._NO_PRIORS_FALLBACK_URL
+
+
 def test_user_vector_refresh_failure_does_not_break_article_signal_endpoints(
     client: TestClient,
     db: Session,

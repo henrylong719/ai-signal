@@ -223,14 +223,14 @@ export type SavedArticlesPublic = {
 export type SourcePublic = {
     name: string;
     default_category: 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other';
-    source_type: 'official' | 'independent' | 'community' | 'research' | 'media' | 'newsletter';
+    source_type: 'official' | 'independent' | 'community' | 'research' | 'media' | 'newsletter' | 'analysis' | 'policy' | 'education' | 'papers' | 'podcast';
     topic: string;
     description: string;
 };
 
 export type default_category = 'agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other';
 
-export type source_type = 'official' | 'independent' | 'community' | 'research' | 'media' | 'newsletter';
+export type source_type = 'official' | 'independent' | 'community' | 'research' | 'media' | 'newsletter' | 'analysis' | 'policy' | 'education' | 'papers' | 'podcast';
 
 export type SourcesPublic = {
     data: Array<SourcePublic>;
@@ -379,7 +379,7 @@ export type ArticlesReadForYouData = {
 export type ArticlesReadForYouResponse = (ForYouArticlesPublic);
 
 export type ArticlesReadSourcesData = {
-    sourceType?: ('official' | 'independent' | 'community' | 'research' | 'media' | 'newsletter' | null);
+    sourceType?: ('official' | 'independent' | 'community' | 'research' | 'media' | 'newsletter' | 'analysis' | 'policy' | 'education' | 'papers' | 'podcast' | null);
 };
 
 export type ArticlesReadSourcesResponse = (SourcesPublic);

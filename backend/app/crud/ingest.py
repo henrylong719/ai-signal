@@ -4,6 +4,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import urlparse
 
 import feedparser  # type: ignore[import-untyped]
 import httpx
@@ -28,10 +29,40 @@ RSS_REQUEST_HEADERS = {
     "User-Agent": "AI Signal RSS Reader/1.0",
     "Accept": "application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.5",
 }
+_NO_PRIORS_DEAD_HOSTS = {"no-priors.com", "www.no-priors.com"}
 
 
 def _clean_text(value: Any) -> str:
     return html.unescape(str(value)).strip()
+
+
+def _audio_enclosure_url(entry: dict[str, Any]) -> str | None:
+    for link in entry.get("links", []) or []:
+        if not isinstance(link, dict):
+            continue
+        href = link.get("href")
+        link_type = str(link.get("type") or "")
+        if href and link_type.startswith("audio/"):
+            return str(href)
+    for enclosure in entry.get("enclosures", []) or []:
+        if not isinstance(enclosure, dict):
+            continue
+        href = enclosure.get("href")
+        enclosure_type = str(enclosure.get("type") or "")
+        if href and enclosure_type.startswith("audio/"):
+            return str(href)
+    return None
+
+
+def _entry_url(source: Source, entry: dict[str, Any]) -> str | None:
+    url = entry.get("link")
+
+    if source.name == "No Priors":
+        parsed = urlparse(str(url or ""))
+        if not url or parsed.netloc.lower() in _NO_PRIORS_DEAD_HOSTS:
+            return _audio_enclosure_url(entry) or (str(url) if url else None)
+
+    return str(url) if url else None
 
 
 async def _fetch_one(
@@ -125,7 +156,7 @@ async def ingest_all() -> IngestResult:
     async with AsyncSession(async_engine) as session:
         for source, entries in results:
             for entry in entries:
-                url = entry.get("link")
+                url = _entry_url(source, entry)
                 title = entry.get("title")
                 if not url or not title:
                     continue

@@ -33,15 +33,14 @@ export function useSavedArticles() {
     },
     onError: (_err, _articleId, context) => {
       queryClient.setQueryData(SAVED_IDS_KEY, context?.previous)
-      showErrorToast('Failed to save article, please try again later.')
+      showErrorToast('Could not save this article. Please try again.')
     },
     onSuccess: () => {
-      showSuccessToast('Article saved!')
+      showSuccessToast('Saved to your reading list.')
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: SAVED_IDS_KEY })
       queryClient.invalidateQueries({ queryKey: ['savedArticles'] })
-      queryClient.invalidateQueries({ queryKey: ['todayDigest'] })
     },
   })
 
@@ -63,15 +62,14 @@ export function useSavedArticles() {
     },
     onError: (_err, _articleId, context) => {
       queryClient.setQueryData(SAVED_IDS_KEY, context?.previous)
-      showErrorToast('Failed to remove article, please try again later.')
+      showErrorToast('Could not remove this article. Please try again.')
     },
     onSuccess: () => {
-      showSuccessToast('Article removed!')
+      showSuccessToast('Removed from your reading list.')
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: SAVED_IDS_KEY })
       queryClient.invalidateQueries({ queryKey: ['savedArticles'] })
-      queryClient.invalidateQueries({ queryKey: ['todayDigest'] })
     },
   })
 

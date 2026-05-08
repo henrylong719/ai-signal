@@ -25,6 +25,11 @@ const sourceTypeIcons: Record<SourcePublic['source_type'], LucideIcon> = {
   research: FlaskConicalIcon,
   media: MegaphoneIcon,
   newsletter: MailIcon,
+  analysis: NewspaperIcon,
+  policy: Library,
+  education: Library,
+  papers: FlaskConicalIcon,
+  podcast: MegaphoneIcon,
 }
 
 const shuffle = <T,>(items: T[]) => {

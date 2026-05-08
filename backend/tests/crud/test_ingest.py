@@ -105,6 +105,46 @@ def test_ingest_stores_long_article_author(
     assert article.author == long_author
 
 
+def test_ingest_uses_no_priors_audio_enclosure_for_dead_homepage_link(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    audio_url = f"https://traffic.megaphone.fm/{uuid.uuid4()}.mp3"
+    source = Source(
+        "No Priors",
+        "https://feeds.megaphone.fm/nopriors",
+        "business",
+        "podcast",
+    )
+
+    async def fake_fetch_one(
+        source: Source, client: object
+    ) -> tuple[Source, list[dict[str, Any]]]:
+        del client
+        return source, [
+            {
+                "link": "https://no-priors.com/",
+                "title": "Podcast episode with stale homepage link",
+                "links": [
+                    {
+                        "href": audio_url,
+                        "type": "audio/mpeg",
+                        "rel": "enclosure",
+                    }
+                ],
+            }
+        ]
+
+    monkeypatch.setattr(ingest, "SOURCES", (source,))
+    monkeypatch.setattr(ingest, "_fetch_one", fake_fetch_one)
+
+    result = asyncio.run(ingest.ingest_all())
+
+    assert result["inserted"] == 1
+    article = crud.get_article_by_url(session=db, url=audio_url)
+    assert article is not None
+    assert article.source == "No Priors"
+
+
 def test_fetch_one_sends_rss_reader_headers() -> None:
     source = Source("Example", "https://example.com/feed.xml", "models")
 

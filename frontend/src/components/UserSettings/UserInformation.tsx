@@ -45,7 +45,7 @@ const UserInformation = () => {
     mutationFn: (data: UserUpdateMe) =>
       UsersService.updateUserMe({ requestBody: data }),
     onSuccess: () => {
-      showSuccessToast('User updated successfully')
+      showSuccessToast('Account details updated.')
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {

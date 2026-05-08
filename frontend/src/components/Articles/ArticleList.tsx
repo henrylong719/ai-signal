@@ -17,6 +17,7 @@ interface ArticleListProps {
   isError: boolean
   emptyTitle?: string
   emptyDescription?: string
+  emptyAction?: ReactNode
   errorTitle?: string
   errorDescription?: string
   /**
@@ -69,6 +70,7 @@ export function ArticleList({
   isError,
   emptyTitle = 'No articles yet',
   emptyDescription = 'New signals will appear here as soon as they are available.',
+  emptyAction,
   errorTitle = 'Could not load articles',
   errorDescription = 'Please refresh the page or try again in a moment.',
   showDismiss = false,
@@ -150,7 +152,11 @@ export function ArticleList({
 
   if (visibleArticles.length === 0) {
     return (
-      <ArticleListState title={emptyTitle} description={emptyDescription} />
+      <ArticleListState
+        title={emptyTitle}
+        description={emptyDescription}
+        action={emptyAction}
+      />
     )
   }
 

@@ -253,6 +253,18 @@ def unsave_article(
 
 
 _ALLOWED_REDIRECT_SCHEMES = {"http", "https"}
+_NO_PRIORS_DEAD_HOSTS = {"no-priors.com", "www.no-priors.com"}
+_NO_PRIORS_FALLBACK_URL = (
+    "https://podcasts.apple.com/us/podcast/"
+    "no-priors-artificial-intelligence-technology-startups/id1668002688"
+)
+
+
+def _article_redirect_url(article: Any) -> str:
+    parsed = urlparse(article.url)
+    if article.source == "No Priors" and parsed.netloc.lower() in _NO_PRIORS_DEAD_HOSTS:
+        return _NO_PRIORS_FALLBACK_URL
+    return article.url
 
 
 @router.get("/{article_id}/go")
@@ -275,7 +287,8 @@ def go_to_article(
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
 
-    parsed = urlparse(article.url)
+    destination_url = _article_redirect_url(article)
+    parsed = urlparse(destination_url)
     if parsed.scheme not in _ALLOWED_REDIRECT_SCHEMES or not parsed.netloc:
         # Should never happen for ingested articles, but defense in depth.
         raise HTTPException(status_code=400, detail="Article URL is invalid")
@@ -302,7 +315,7 @@ def go_to_article(
                 user.id,
             )
 
-    return RedirectResponse(url=article.url, status_code=302)
+    return RedirectResponse(url=destination_url, status_code=302)
 
 
 @router.post("/{article_id}/dismiss", status_code=204)

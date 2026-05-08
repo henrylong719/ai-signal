@@ -29,10 +29,15 @@ export type source_types = 'all' | source_type
 const SOURCE_TYPES: source_types[] = [
   'all',
   'official',
-  'independent',
   'research',
+  'analysis',
+  'policy',
+  'education',
+  'papers',
   'media',
   'newsletter',
+  'podcast',
+  'independent',
   'community',
 ]
 
@@ -139,7 +144,8 @@ function AllArticleSources() {
       return
     }
 
-    const nextPreferredSources = preferredSources.includes(sourceName)
+    const isRemovingSource = preferredSources.includes(sourceName)
+    const nextPreferredSources = isRemovingSource
       ? preferredSources.filter((source) => source !== sourceName)
       : [...preferredSources, sourceName]
 
@@ -151,6 +157,9 @@ function AllArticleSources() {
         preferred_sources: nextPreferredSources,
       },
       {
+        successMessage: isRemovingSource
+          ? `${sourceName} removed from your followed sources.`
+          : `You're now following ${sourceName}.`,
         onSettled: () => setUpdatingSource(null),
       },
     )
@@ -167,8 +176,8 @@ function AllArticleSources() {
             Sources
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-7 text-slate-500 dark:text-muted-foreground">
-            Explore the official publications, research feeds, media outlets,
-            newsletters, independent writers, and community sites behind AI
+            Explore the labs, research feeds, analysis, policy groups, media
+            outlets, newsletters, podcasts, and community sites behind AI
             Signal.
           </p>
         </div>

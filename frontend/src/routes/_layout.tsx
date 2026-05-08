@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
+import ScrollAuthPrompt from '@/components/Auth/ScrollAuthPrompt'
 import Header from '@/components/Common/Header'
 
 export const Route = createFileRoute('/_layout')({
@@ -14,6 +15,7 @@ function Layout() {
           <Outlet />
         </div>
       </main>
+      <ScrollAuthPrompt />
     </div>
   )
 }

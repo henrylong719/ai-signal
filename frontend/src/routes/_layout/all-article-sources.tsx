@@ -14,6 +14,7 @@ import {
 import { useLayoutEffect, useRef, useState } from 'react'
 import { ArticlesService, type source_type } from '@/client'
 import { ArticleListState } from '@/components/Articles/ArticleList'
+import AuthModal from '@/components/Auth/AuthModal'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInterests } from '@/hooks/useInterests'
 import { isLoggedIn } from '@/lib/auth-state'
@@ -312,12 +313,16 @@ function AllArticleSources() {
                                       : 'Follow'}
                                 </button>
                               ) : (
-                                <Link
-                                  to="/login"
-                                  className="inline-flex h-8 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 shadow-sm shadow-slate-950/[0.02] transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-                                >
-                                  Follow
-                                </Link>
+                                <AuthModal
+                                  trigger={
+                                    <button
+                                      type="button"
+                                      className="inline-flex h-8 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 shadow-sm shadow-slate-950/[0.02] transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                                    >
+                                      Follow
+                                    </button>
+                                  }
+                                />
                               )}
                             </div>
                           </div>

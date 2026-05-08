@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { useLocation, useNavigate } from '@tanstack/react-router'
 
 import {
   type Body_login_login_access_token as AccessToken,
@@ -14,6 +14,7 @@ import useCustomToast from './useCustomToast'
 
 const useAuth = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
 
@@ -60,11 +61,19 @@ const useAuth = () => {
 
   const loginMutation = useMutation({
     mutationFn: login,
-    onSuccess: () => {
+    onSuccess: async () => {
       // After login the marker cookie is set — invalidate any cached
       // queries that were gated on logged-in state.
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] })
-      navigate({ to: '/' })
+      try {
+        const currentUser = await UsersService.readUserMe()
+        queryClient.setQueryData(['currentUser'], currentUser)
+      } catch {
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+      }
+
+      if (location.pathname === '/login' || location.pathname === '/signup') {
+        navigate({ to: '/' })
+      }
     },
     onError: handleError.bind(showErrorToast),
   })

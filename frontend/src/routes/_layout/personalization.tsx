@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { AlertCircleIcon, CheckIcon, LogInIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { category as Category, UserInterestPublic } from '@/client'
 import { ArticleListState } from '@/components/Articles/ArticleList'
+import AuthModal from '@/components/Auth/AuthModal'
 import { SourcesField } from '@/components/Personalization/SourcesField'
 import { TagsField } from '@/components/Personalization/TagsField'
 import { TopicsField } from '@/components/Personalization/TopicsField'
@@ -139,12 +140,16 @@ function Personalization() {
           description="Personalization is built from your saved articles and the topics you follow. Sign in to start."
           icon={<LogInIcon className="h-5 w-5 stroke-[1.5]" />}
           action={
-            <Link
-              to="/login"
-              className="inline-flex h-9 items-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring dark:focus-visible:ring-offset-background"
-            >
-              Sign in
-            </Link>
+            <AuthModal
+              trigger={
+                <button
+                  type="button"
+                  className="inline-flex h-9 items-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring dark:focus-visible:ring-offset-background"
+                >
+                  Sign in
+                </button>
+              }
+            />
           }
         />
       </div>

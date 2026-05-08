@@ -1,6 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useCallback, useRef } from 'react'
 import { type ArticlesPublic, ArticlesService, type category } from '@/client'
+import { notifyArticleFeedLoadMore } from '@/lib/auth-prompt'
 import { ARTICLES_PAGE_SIZE } from '@/lib/constants'
 
 interface UseArticleFeedOptions {
@@ -71,6 +72,7 @@ export function useArticleFeed(options: UseArticleFeedOptions = {}) {
       observerRef.current = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting && !isFetchingNextPage) {
+            notifyArticleFeedLoadMore()
             void fetchNextPage()
           }
         },

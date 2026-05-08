@@ -146,7 +146,7 @@ SOURCES: tuple[Source, ...] = (
     ),
     Source(
         "Microsoft AI",
-        "https://blogs.microsoft.com/ai/feed/",
+        "https://blogs.microsoft.com/blog/tag/ai/feed/",
         "models",
         "official",
         topic="AI Company Updates",
@@ -306,7 +306,7 @@ SOURCES: tuple[Source, ...] = (
     ),
     Source(
         "Netflix TechBlog",
-        "https://netflixtechblog.com/feed",
+        "https://medium.com/feed/netflix-techblog",
         "engineering",
         "official",
         topic="Engineering Blog",

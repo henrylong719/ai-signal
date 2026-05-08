@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 IngestResult = dict[str, int | list[str]]
 
+RSS_REQUEST_HEADERS = {
+    "User-Agent": "AI Signal RSS Reader/1.0",
+    "Accept": "application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.5",
+}
+
 
 def _clean_text(value: Any) -> str:
     return html.unescape(str(value)).strip()
@@ -33,7 +38,12 @@ async def _fetch_one(
     source: Source, client: httpx.AsyncClient
 ) -> tuple[Source, list[dict[str, Any]]]:
     try:
-        resp = await client.get(source.rss_url, timeout=10.0, follow_redirects=True)
+        resp = await client.get(
+            source.rss_url,
+            timeout=10.0,
+            follow_redirects=True,
+            headers=RSS_REQUEST_HEADERS,
+        )
         resp.raise_for_status()
         feed = feedparser.parse(resp.text)
         return source, list(feed.entries)

@@ -10,6 +10,7 @@ import {
 import type { ReactNode } from 'react'
 
 import { ArticleListState } from '@/components/Articles/ArticleList'
+import AuthModal from '@/components/Auth/AuthModal'
 import ChangePassword from '@/components/UserSettings/ChangePassword'
 import ConnectedAccounts from '@/components/UserSettings/ConnectedAccounts'
 import DeleteAccount from '@/components/UserSettings/DeleteAccount'
@@ -81,12 +82,16 @@ function UserSettings() {
           description="Account settings are available after you sign in."
           icon={<LogInIcon className="h-5 w-5 stroke-[1.5]" />}
           action={
-            <Link
-              to="/login"
-              className="inline-flex h-9 items-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring dark:focus-visible:ring-offset-background"
-            >
-              Sign in
-            </Link>
+            <AuthModal
+              trigger={
+                <button
+                  type="button"
+                  className="inline-flex h-9 items-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring dark:focus-visible:ring-offset-background"
+                >
+                  Sign in
+                </button>
+              }
+            />
           }
         />
       </div>

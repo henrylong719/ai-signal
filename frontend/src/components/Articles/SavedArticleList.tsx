@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
 import { AlertCircleIcon, BookmarkIcon, LogInIcon } from 'lucide-react'
 import { ArticlesService } from '@/client'
+import AuthModal from '@/components/Auth/AuthModal'
 import { isLoggedIn } from '@/hooks/useAuth'
 import { useSavedArticles } from '@/hooks/useSavedArticles'
 import { ArticleCard } from './ArticleCard'
@@ -25,12 +25,16 @@ export function SavedArticleList() {
         description="Saved articles are tied to your account so you can return to them later."
         icon={<LogInIcon className="h-5 w-5 stroke-[1.5]" />}
         action={
-          <Link
-            to="/login"
-            className="inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-          >
-            Sign in
-          </Link>
+          <AuthModal
+            trigger={
+              <button
+                type="button"
+                className="inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+              >
+                Sign in
+              </button>
+            }
+          />
         }
       />
     )

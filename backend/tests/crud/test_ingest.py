@@ -2,6 +2,7 @@ import asyncio
 import uuid
 from typing import Any
 
+import httpx
 import pytest
 from sqlmodel import Session
 
@@ -102,3 +103,34 @@ def test_ingest_stores_long_article_author(
     article = crud.get_article_by_url(session=db, url=article_url)
     assert article is not None
     assert article.author == long_author
+
+
+def test_fetch_one_sends_rss_reader_headers() -> None:
+    source = Source("Example", "https://example.com/feed.xml", "models")
+
+    class FakeClient:
+        request_headers: dict[str, str] | None = None
+
+        async def get(self, _url: str, **kwargs: Any) -> httpx.Response:
+            self.request_headers = kwargs.get("headers")
+            request = httpx.Request("GET", source.rss_url)
+            return httpx.Response(
+                200,
+                request=request,
+                text="""<?xml version="1.0"?>
+                <rss version="2.0">
+                  <channel>
+                    <item>
+                      <title>Article</title>
+                      <link>https://example.com/article</link>
+                    </item>
+                  </channel>
+                </rss>""",
+            )
+
+    client = FakeClient()
+
+    _, entries = asyncio.run(ingest._fetch_one(source, client))  # type: ignore[arg-type]
+
+    assert client.request_headers == ingest.RSS_REQUEST_HEADERS
+    assert len(entries) == 1

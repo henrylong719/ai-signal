@@ -69,6 +69,7 @@ const themeOptions: { value: Theme; label: string; icon: typeof Monitor }[] = [
 
 export const HeaderActionsMenu = () => {
   const [open, setOpen] = useState(false)
+  const [mobileAppearanceOpen, setMobileAppearanceOpen] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const { user, logout } = useAuth()
   const { setTheme, theme } = useTheme()
@@ -81,14 +82,17 @@ export const HeaderActionsMenu = () => {
     void logout()
   }
 
-  const renderThemeOption = (option: (typeof themeOptions)[number]) => {
+  const renderThemeOption = (
+    option: (typeof themeOptions)[number],
+    nested = false,
+  ) => {
     const OptionIcon = option.icon
 
     return (
       <DropdownMenuItem
         key={option.value}
         onClick={() => setTheme(option.value)}
-        className="h-10 rounded-md px-2.5 text-[0.925rem] font-medium text-slate-700 transition-colors focus:bg-slate-50 focus:text-slate-950 data-[highlighted]:bg-slate-50 dark:text-foreground/86 dark:focus:bg-accent dark:focus:text-foreground dark:data-[highlighted]:bg-accent [&_svg]:text-slate-400 dark:[&_svg]:text-muted-foreground"
+        className={`h-10 rounded-md px-2.5 text-[0.925rem] font-medium text-slate-700 transition-colors focus:bg-slate-50 focus:text-slate-950 data-[highlighted]:bg-slate-50 dark:text-foreground/86 dark:focus:bg-accent dark:focus:text-foreground dark:data-[highlighted]:bg-accent [&_svg]:text-slate-400 dark:[&_svg]:text-muted-foreground ${nested ? 'pl-8' : ''}`}
       >
         {theme === option.value ? (
           <Check className="h-4 w-4 stroke-[1.9]" />
@@ -102,7 +106,15 @@ export const HeaderActionsMenu = () => {
 
   return (
     <>
-      <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenu
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen)
+          if (nextOpen) {
+            setMobileAppearanceOpen(false)
+          }
+        }}
+      >
         <DropdownMenuTrigger asChild>
           <button
             type="button"
@@ -180,11 +192,21 @@ export const HeaderActionsMenu = () => {
 
           {isMobile ? (
             <>
-              <DropdownMenuLabel className="flex h-10 items-center gap-2 rounded-md px-2.5 py-0 text-[0.925rem] font-medium text-slate-700 dark:text-foreground/86 [&_svg]:text-slate-400 dark:[&_svg]:text-muted-foreground">
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  event.preventDefault()
+                  setMobileAppearanceOpen((value) => !value)
+                }}
+                className="h-10 rounded-md bg-slate-100 px-2.5 text-[0.925rem] font-medium text-slate-700 transition-colors focus:bg-slate-100 focus:text-slate-950 data-[highlighted]:bg-slate-100 dark:bg-accent dark:text-foreground/86 dark:focus:bg-accent dark:focus:text-foreground dark:data-[highlighted]:bg-accent [&_svg]:text-slate-400 dark:[&_svg]:text-muted-foreground"
+              >
                 <CurrentThemeIcon className="h-4 w-4 stroke-[1.7]" />
                 Appearance
-              </DropdownMenuLabel>
-              {themeOptions.map(renderThemeOption)}
+                <ChevronDown
+                  className={`ml-auto h-4 w-4 stroke-[1.7] transition-transform ${mobileAppearanceOpen ? 'rotate-180' : ''}`}
+                />
+              </DropdownMenuItem>
+              {mobileAppearanceOpen &&
+                themeOptions.map((option) => renderThemeOption(option, true))}
             </>
           ) : (
             <DropdownMenuSub>
@@ -193,7 +215,7 @@ export const HeaderActionsMenu = () => {
                 Appearance
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="min-w-52 rounded-lg border-slate-200/80 bg-white p-2 shadow-[0_18px_45px_rgba(15,23,42,0.12),0_2px_8px_rgba(15,23,42,0.06)] dark:border-border dark:bg-popover dark:shadow-[0_18px_45px_rgba(0,0,0,0.28),0_2px_8px_rgba(0,0,0,0.22)]">
-                {themeOptions.map(renderThemeOption)}
+                {themeOptions.map((option) => renderThemeOption(option))}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
           )}

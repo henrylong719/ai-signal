@@ -1,9 +1,9 @@
-import { source_type, SourcePublic } from '@/client';
 import { Link } from '@tanstack/react-router';
 import { CheckIcon, PlusIcon } from 'lucide-react';
 import AuthModal from '../Auth/AuthModal';
 import { cn } from '@/lib/utils';
 import { SOURCE_FILTER_LABELS, type source_types } from '@/lib/constants';
+import type { source_type, SourcePublic } from '@/client';
 
 interface SourceSectionProps {
   type: source_type;

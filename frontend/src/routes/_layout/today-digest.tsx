@@ -1,11 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { CalendarIcon, ChevronRightIcon } from 'lucide-react'
-import { DateTime } from 'luxon'
-import type { DigestArticlePublic, DigestPublicSchema } from '@/client'
-import { PageContainer } from '@/components/Layout/Page'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useTodayDigest } from '@/hooks/useTodayDigest'
-import { redirectHref } from '@/lib/article-urls'
+import { createFileRoute } from '@tanstack/react-router';
+import { CalendarIcon } from 'lucide-react';
+import { DateTime } from 'luxon';
+import type { DigestPublicSchema } from '@/client';
+import { PageContainer } from '@/components/Layout/Page';
+import { useTodayDigest } from '@/hooks/useTodayDigest';
+import DigestArticle from '@/components/Digest/DigestArticle';
+import DigestState from '@/components/Digest/DigestState';
+import DigestSkeleton from '@/components/Digest/DigestSkeleton';
 
 export const Route = createFileRoute('/_layout/today-digest')({
   component: TodayDigest,
@@ -16,36 +17,36 @@ export const Route = createFileRoute('/_layout/today-digest')({
       },
     ],
   }),
-})
+});
 
 const formatDigestDate = (date: string | undefined) => {
   if (!date) {
-    return DateTime.now().toLocaleString(DateTime.DATE_FULL)
+    return DateTime.now().toLocaleString(DateTime.DATE_FULL);
   }
 
-  const parsed = DateTime.fromISO(date)
+  const parsed = DateTime.fromISO(date);
   return parsed.isValid
     ? parsed.toLocaleString(DateTime.DATE_FULL)
-    : DateTime.now().toLocaleString(DateTime.DATE_FULL)
-}
+    : DateTime.now().toLocaleString(DateTime.DATE_FULL);
+};
 
 const digestIntro = (digest: DigestPublicSchema | undefined) => {
   if (!digest) {
-    return 'The most important AI engineering updates, organized for a focused morning read.'
+    return 'The most important AI engineering updates, organized for a focused morning read.';
   }
 
   const articleCount = digest.sections.reduce(
     (count, section) => count + section.articles.length,
     0,
-  )
-  const cadence = articleCount === 1 ? '1 signal' : `${articleCount} signals`
-  const mode = digest.is_personalized ? 'personalized' : 'curated'
+  );
+  const cadence = articleCount === 1 ? '1 signal' : `${articleCount} signals`;
+  const mode = digest.is_personalized ? 'personalized' : 'curated';
 
-  return `A ${mode} briefing of ${cadence} from today's AI research, engineering, models, and industry coverage.`
-}
+  return `A ${mode} briefing of ${cadence} from today's AI research, engineering, models, and industry coverage.`;
+};
 
 function TodayDigest() {
-  const { data, isLoading, isError } = useTodayDigest()
+  const { data, isLoading, isError } = useTodayDigest();
 
   return (
     <PageContainer
@@ -124,97 +125,5 @@ function TodayDigest() {
         </div>
       )}
     </PageContainer>
-  )
-}
-
-function DigestArticle({ article }: { article: DigestArticlePublic }) {
-  const href = redirectHref(article.id)
-
-  return (
-    <article className="group">
-      {article.reason && (
-        <div className="mb-3 inline-flex rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-stone-700 dark:border-border dark:bg-muted/55 dark:text-muted-foreground">
-          {article.reason}
-        </div>
-      )}
-
-      <a
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-4 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-      >
-        <h3 className="font-serif text-2xl font-medium leading-snug tracking-normal text-slate-950 transition-colors group-hover:text-slate-700 dark:text-foreground dark:group-hover:text-foreground/82">
-          {article.title}
-        </h3>
-      </a>
-
-      <p className="mt-3 font-serif text-lg leading-8 text-slate-600 dark:text-muted-foreground">
-        {article.excerpt ?? 'No summary available yet.'}
-      </p>
-
-      <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-        <span className="font-semibold text-slate-950 dark:text-foreground">
-          {article.source}
-        </span>
-
-        <span className="text-slate-300 dark:text-muted-foreground/45">
-          &bull;
-        </span>
-        <a
-          href={href}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center rounded-sm text-slate-400 transition-colors hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:text-muted-foreground dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-        >
-          Read more
-          <ChevronRightIcon className="ml-0.5 h-3.5 w-3.5 stroke-2" />
-        </a>
-      </div>
-    </article>
-  )
-}
-
-function DigestSkeleton() {
-  return (
-    <div className="space-y-16">
-      {['top', 'research'].map((section) => (
-        <section key={section}>
-          <div className="mb-9 flex items-center gap-4">
-            <Skeleton className="h-3 w-24 rounded bg-slate-100 dark:bg-muted" />
-            <Skeleton className="h-px flex-1 rounded bg-slate-100 dark:bg-muted" />
-          </div>
-          <div className="space-y-12">
-            {['a', 'b'].map((item) => (
-              <div key={item}>
-                <Skeleton className="h-7 w-11/12 rounded bg-slate-100 dark:bg-muted" />
-                <Skeleton className="mt-4 h-5 w-full rounded bg-slate-100 dark:bg-muted" />
-                <Skeleton className="mt-2 h-5 w-4/5 rounded bg-slate-100 dark:bg-muted" />
-                <Skeleton className="mt-5 h-4 w-48 rounded bg-slate-100 dark:bg-muted" />
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
-    </div>
-  )
-}
-
-function DigestState({
-  title,
-  description,
-}: {
-  title: string
-  description: string
-}) {
-  return (
-    <div className="rounded-lg border border-slate-200/80 bg-white px-6 py-10 text-center dark:border-border dark:bg-card/35">
-      <h2 className="font-serif text-2xl font-medium text-slate-950 dark:text-foreground">
-        {title}
-      </h2>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500 dark:text-muted-foreground">
-        {description}
-      </p>
-    </div>
-  )
+  );
 }

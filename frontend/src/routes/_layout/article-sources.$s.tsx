@@ -1,49 +1,27 @@
-import { createFileRoute, Link, useLocation } from '@tanstack/react-router'
-import { AlertCircleIcon, ArrowLeftIcon } from 'lucide-react'
-import { ArticleCardSkeleton } from '@/components/Articles/ArticleCardSkeleton'
+import { createFileRoute, Link, useLocation } from '@tanstack/react-router';
+import { AlertCircleIcon, ArrowLeftIcon } from 'lucide-react';
 import {
   ArticleList,
   ArticleListState,
-} from '@/components/Articles/ArticleList'
-import { PageContainer, PageHeader } from '@/components/Layout/Page'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useArticleFeed } from '@/hooks/useArticleFeed'
-import { useSources } from '@/hooks/useSources'
-import { capitalize } from '@/lib/utils'
+} from '@/components/Articles/ArticleList';
+import { PageContainer, PageHeader } from '@/components/Layout/Page';
+import { useArticleFeed } from '@/hooks/useArticleFeed';
+import { useSources } from '@/hooks/useSources';
+import { capitalize } from '@/lib/utils';
+import ArticleSourceSkeleton from '@/components/Source/ArticleSourceSkeleton';
 
 export const Route = createFileRoute('/_layout/article-sources/$s')({
   component: ArticlesSources,
-})
-
-function ArticleSourceSkeleton() {
-  return (
-    <PageContainer variant="default">
-      <header className="mb-7 border-b border-slate-200/80 pb-7 dark:border-border">
-        <Skeleton className="h-9 w-32 rounded-md" />
-        <div className="mt-8 max-w-2xl">
-          <Skeleton className="h-4 w-24 rounded" />
-          <Skeleton className="mt-4 h-10 w-72 max-w-full rounded" />
-          <Skeleton className="mt-3 h-5 w-full max-w-xl rounded" />
-        </div>
-      </header>
-
-      <div className="rounded-lg border border-slate-200/80 bg-white px-5 sm:px-6 dark:border-border dark:bg-card/35">
-        <ArticleCardSkeleton />
-        <ArticleCardSkeleton />
-        <ArticleCardSkeleton />
-      </div>
-    </PageContainer>
-  )
-}
+});
 
 function ArticlesSources() {
-  const { s } = Route.useParams()
-  const location = useLocation()
+  const { s } = Route.useParams();
+  const location = useLocation();
   const articleSourcesState = location.state as {
-    allArticleSourcesFilter?: unknown
-    allArticleSourcesScrollY?: unknown
-  }
-  const allArticleSourcesScrollY = articleSourcesState.allArticleSourcesScrollY
+    allArticleSourcesFilter?: unknown;
+    allArticleSourcesScrollY?: unknown;
+  };
+  const allArticleSourcesScrollY = articleSourcesState.allArticleSourcesScrollY;
   const backToAllSourcesState =
     typeof allArticleSourcesScrollY === 'number'
       ? (previousState: object) =>
@@ -53,20 +31,20 @@ function ArticlesSources() {
               articleSourcesState.allArticleSourcesFilter,
             allArticleSourcesScrollY,
           }) as never
-      : undefined
+      : undefined;
 
-  const feed = useArticleFeed({ source: s })
+  const feed = useArticleFeed({ source: s });
 
   const {
     sources,
     isLoading: sourcesLoading,
     isError: sourcesError,
-  } = useSources()
+  } = useSources();
 
-  const source = sources.find((source) => source.name === s)
+  const source = sources.find((source) => source.name === s);
 
   if (sourcesLoading) {
-    return <ArticleSourceSkeleton />
+    return <ArticleSourceSkeleton />;
   }
 
   if (sourcesError) {
@@ -88,7 +66,7 @@ function ArticlesSources() {
           }
         />
       </PageContainer>
-    )
+    );
   }
 
   if (!source) {
@@ -109,7 +87,7 @@ function ArticlesSources() {
           }
         />
       </PageContainer>
-    )
+    );
   }
 
   return (
@@ -158,5 +136,5 @@ function ArticlesSources() {
         errorTitle={`Could not load articles from ${source.name}`}
       />
     </PageContainer>
-  )
+  );
 }

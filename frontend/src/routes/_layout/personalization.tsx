@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { AlertCircleIcon, CheckIcon, LogInIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { category as Category, UserInterestPublic } from '@/client';
 import { ArticleListState } from '@/components/Articles/ArticleList';
@@ -10,10 +9,11 @@ import { SourcesField } from '@/components/Personalization/SourcesField';
 import { TagsField } from '@/components/Personalization/TagsField';
 import { TopicsField } from '@/components/Personalization/TopicsField';
 import { LoadingButton } from '@/components/ui/loading-button';
-import { Skeleton } from '@/components/ui/skeleton';
 import useAuth from '@/hooks/useAuth';
 import { useInterests } from '@/hooks/useInterests';
 import { cn } from '@/lib/utils';
+import PersonalizationSkeleton from '@/components/Personalization/PersonalizationSkeleton';
+import TasteSection from '@/components/Personalization/TasteSection';
 
 export const Route = createFileRoute('/_layout/personalization')({
   component: Personalization,
@@ -295,72 +295,5 @@ function Personalization() {
         </div>
       )}
     </PageContainer>
-  );
-}
-
-function PersonalizationSkeleton() {
-  return (
-    <PageContainer
-      variant="narrow"
-      spacing="none"
-      className="pb-16 pt-8 sm:pb-20 sm:pt-12"
-    >
-      <header className="border-b border-slate-200/70 pb-8 dark:border-border">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="mt-5 h-12 w-full max-w-xl" />
-        <Skeleton className="mt-4 h-6 w-full max-w-2xl" />
-        <Skeleton className="mt-2 h-6 w-full max-w-lg" />
-      </header>
-      <div className="divide-y divide-slate-200/70 dark:divide-border">
-        {[0, 1, 2].map((i) => (
-          <section key={i} className="py-8 sm:py-10">
-            <Skeleton className="h-5 w-24" />
-            <Skeleton className="mt-3 h-7 w-56" />
-            <Skeleton className="mt-2 h-4 w-full max-w-md" />
-            <div className="mt-6 flex flex-wrap gap-2.5">
-              {[0, 1, 2, 3, 4].map((j) => (
-                <Skeleton key={j} className="h-11 w-24 rounded-full" />
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
-    </PageContainer>
-  );
-}
-
-function TasteSection({
-  eyebrow,
-  title,
-  description,
-  count,
-  children,
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-  count: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="py-8 sm:py-10">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="max-w-xl">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-muted-foreground">
-            {eyebrow}
-          </p>
-          <h2 className="font-display text-2xl font-semibold tracking-normal text-slate-950 dark:text-foreground">
-            {title}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-muted-foreground">
-            {description}
-          </p>
-        </div>
-        <span className="inline-flex min-h-8 w-fit items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-500 shadow-sm shadow-slate-950/[0.02] dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
-          {count}
-        </span>
-      </div>
-      {children}
-    </section>
   );
 }

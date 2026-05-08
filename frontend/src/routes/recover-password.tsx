@@ -1,16 +1,16 @@
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 import {
   createFileRoute,
   Link as RouterLink,
   redirect,
-} from '@tanstack/react-router'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+} from '@tanstack/react-router';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
-import { LoginService } from '@/client'
-import { primaryButtonClass } from '@/components/Auth/AuthShared'
-import { AuthLayout } from '@/components/Common/AuthLayout'
+import { LoginService } from '@/client';
+import { primaryButtonClass } from '@/components/Auth/AuthShared';
+import { AuthLayout } from '@/components/Common/AuthLayout';
 import {
   Form,
   FormControl,
@@ -18,18 +18,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { LoadingButton } from '@/components/ui/loading-button'
-import { isLoggedIn } from '@/hooks/useAuth'
-import useCustomToast from '@/hooks/useCustomToast'
-import { handleError } from '@/utils'
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { LoadingButton } from '@/components/ui/loading-button';
+import { isLoggedIn } from '@/hooks/useAuth';
+import useCustomToast from '@/hooks/useCustomToast';
+import { handleError } from '@/utils';
 
 const formSchema = z.object({
   email: z.email(),
-})
+});
 
-type FormData = z.infer<typeof formSchema>
+type FormData = z.infer<typeof formSchema>;
 
 export const Route = createFileRoute('/recover-password')({
   component: RecoverPassword,
@@ -37,7 +37,7 @@ export const Route = createFileRoute('/recover-password')({
     if (isLoggedIn()) {
       throw redirect({
         to: '/',
-      })
+      });
     }
   },
   head: () => ({
@@ -47,7 +47,7 @@ export const Route = createFileRoute('/recover-password')({
       },
     ],
   }),
-})
+});
 
 function RecoverPassword() {
   const form = useForm<FormData>({
@@ -55,28 +55,28 @@ function RecoverPassword() {
     defaultValues: {
       email: '',
     },
-  })
-  const { showSuccessToast, showErrorToast } = useCustomToast()
+  });
+  const { showSuccessToast, showErrorToast } = useCustomToast();
 
   const recoverPassword = async (data: FormData) => {
     await LoginService.recoverPassword({
       email: data.email,
-    })
-  }
+    });
+  };
 
   const mutation = useMutation({
     mutationFn: recoverPassword,
     onSuccess: () => {
-      showSuccessToast('Recovery email sent. Check your inbox.')
-      form.reset()
+      showSuccessToast('Recovery email sent. Check your inbox.');
+      form.reset();
     },
     onError: handleError.bind(showErrorToast),
-  })
+  });
 
   const onSubmit = async (data: FormData) => {
-    if (mutation.isPending) return
-    mutation.mutate(data)
-  }
+    if (mutation.isPending) return;
+    mutation.mutate(data);
+  };
 
   return (
     <AuthLayout>
@@ -127,5 +127,5 @@ function RecoverPassword() {
         </form>
       </Form>
     </AuthLayout>
-  )
+  );
 }

@@ -120,10 +120,10 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
       <DialogContent className="gap-0 overflow-hidden border-slate-200/80 bg-white p-0 shadow-[0_22px_60px_rgba(15,23,42,0.18)] sm:max-w-[30rem] dark:border-border dark:bg-popover dark:shadow-[0_22px_60px_rgba(0,0,0,0.36)]">
         <DialogHeader className="border-b border-slate-100 px-5 py-5 text-left sm:px-6 dark:border-border">
           <DialogTitle className="font-display text-xl font-semibold tracking-normal text-slate-950 dark:text-foreground">
-            Send feedback
+            Share your feedback
           </DialogTitle>
           <DialogDescription className="text-sm leading-6 text-slate-500 dark:text-muted-foreground">
-            Tell us what to improve.
+            We appreciate your suggestions for improving AI Signal.
           </DialogDescription>
         </DialogHeader>
 

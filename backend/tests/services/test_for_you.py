@@ -466,3 +466,128 @@ def test_rank_for_you_skips_saved_lookup_when_user_has_no_vector(
     assert not saved_lookup_called, (
         "saved-titles lookup should be skipped when the user has no vector"
     )
+
+
+# ---------------------------------------------------------------------------
+# Exploration injection — reserves ~14% of slots for "outside your bubble"
+# items so the feed doesn't compound into a narrow filter bubble.
+# ---------------------------------------------------------------------------
+
+
+def test_rank_for_you_injects_exploration_items_with_dedicated_reason(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """End-to-end: pool with both personalized and outside-profile articles
+    should produce a feed where some items carry the exploration label.
+
+    The user has stated interest "rag". We feed in 25 rag-tagged
+    articles (which will match explicitly) and 15 unrelated articles
+    from sources/categories the user has zero signal for. The
+    exploration step should pull some of the unrelated items into
+    fixed slots and label them "Outside your usual interests".
+    """
+    user_id = uuid4()
+
+    matching = [
+        _article(
+            title=f"Rag {i}",
+            category="rag",
+            source=f"RagSrc{i % 3}",
+            tags=["rag"],
+            age_days=1,
+        )
+        for i in range(25)
+    ]
+    # Outside-profile: different category, different sources, no
+    # overlapping tags. Fresher than the matching articles so they
+    # rank well on recency alone (which is what makes them eligible
+    # for the exploration pool — exploration items are pure recency).
+    outside = [
+        _article(
+            title=f"Outside {i}",
+            category="hardware",  # not in user's interest_categories
+            source=f"OutsideSrc{i % 5}",
+            tags=["gpu"],  # not in user's interest_tags
+            age_days=0,
+        )
+        for i in range(15)
+    ]
+    all_articles = matching + outside
+
+    monkeypatch.setattr(
+        for_you,
+        "build_user_profile",
+        lambda *, session, user_id: UserProfile(
+            interest_categories=frozenset({"rag"}),
+            interest_tags=frozenset({"rag"}),
+        ),
+    )
+    monkeypatch.setattr(
+        app_crud,
+        "get_recent_articles_excluding",
+        lambda **kwargs: all_articles,
+    )
+    monkeypatch.setattr(app_crud, "get_user_embedding", lambda **kwargs: None)
+    monkeypatch.setattr(
+        for_you,
+        "compute_and_save_user_vector",
+        lambda **kwargs: None,
+    )
+
+    fake_session: Any = object()
+    items, _total = for_you.rank_for_you(
+        session=fake_session, user_id=user_id, skip=0, limit=40
+    )
+
+    exploration_items = [
+        it for it in items if it.reason == "Outside your usual interests"
+    ]
+    # 40-item page: slots at positions 2, 9, 16, 23, 30, 37 → 6 slots.
+    # Pool has 15 exploration candidates available, so all 6 should
+    # fill (we have plenty of pool to draw from).
+    assert len(exploration_items) >= 4, (
+        f"expected ~6 exploration slots filled, got {len(exploration_items)}"
+    )
+    # And every exploration item should actually be an outside-profile
+    # article (its category/source/tags should not match the user's
+    # interests).
+    for it in exploration_items:
+        article = it.scored.article
+        assert article.category == "hardware"
+        assert "rag" not in article.tags
+
+
+def test_rank_for_you_skips_exploration_for_cold_start_users(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A user with no signal at all should see no exploration items —
+    every article would qualify, which is meaningless. The chronological
+    ordering is already exploration."""
+    user_id = uuid4()
+    articles = [
+        _article(title=f"a-{i}", source=f"S{i % 3}", age_days=i) for i in range(20)
+    ]
+
+    monkeypatch.setattr(
+        for_you,
+        "build_user_profile",
+        lambda *, session, user_id: UserProfile(),  # cold start
+    )
+    monkeypatch.setattr(
+        app_crud,
+        "get_recent_articles_excluding",
+        lambda **kwargs: articles,
+    )
+    monkeypatch.setattr(app_crud, "get_user_embedding", lambda **kwargs: None)
+    monkeypatch.setattr(
+        for_you,
+        "compute_and_save_user_vector",
+        lambda **kwargs: None,
+    )
+
+    fake_session: Any = object()
+    items, _total = for_you.rank_for_you(
+        session=fake_session, user_id=user_id, skip=0, limit=20
+    )
+
+    assert all(it.reason != "Outside your usual interests" for it in items)

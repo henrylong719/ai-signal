@@ -15,12 +15,11 @@ semantic step entirely — the scorer falls back to the explicit, source,
 and recency layers exactly as it did before embeddings existed.
 """
 
-# Add this import near the other service imports:
-
 import logging
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from sqlmodel import Session
 
@@ -35,6 +34,10 @@ from app.services.embeddings import (
     compute_and_save_user_vector,
     cosine_similarities,
     cosine_similarity,
+)
+from app.services.exploration import (
+    EXPLORATION_REASON,
+    inject_exploration,
 )
 from app.services.recommender import (
     CandidateArticle,
@@ -307,16 +310,42 @@ def rank_for_you(
         preferred_sources=profile.preferred_sources,
     )
     scored = [scored_by_id[it.item.id] for it in reranked]
+
+    # Exploration injection. Reserves ~14% of slots for items the
+    # recommender thinks the user *won't* like — items with high
+    # recency but zero personalization signal — to break the filter-
+    # bubble compounding feedback loop. Runs after the rerank, on the
+    # full pre-pagination list, so slot positions are stable across
+    # page boundaries (page 2 doesn't get different exploration
+    # positions just because page 1 ended where it did).
+    #
+    # Determinism is per (user_id, today_utc): refreshing the page
+    # within a day produces the same picks. New ingests during the
+    # day can shift picks slightly because the candidate pool
+    # changes, which matches user mental model ("the feed updated").
+    #
+    # Cold-start users (no signal at all) skip injection entirely —
+    # for them the chronological feed already *is* exploration.
+    today = datetime.now(timezone.utc).date()
+    exploration_result = inject_exploration(
+        scored, profile=profile, user_id=user_id, today=today
+    )
+    scored = exploration_result.items
+    explored_ids = exploration_result.injected_ids
     total = len(scored)
 
     page = scored[skip : skip + limit]
     return [
         ForYouItem(
             scored=item,
-            reason=reason_for(
-                item,
-                profile,
-                most_similar_saved_title=most_similar_titles.get(item.article.id),
+            reason=(
+                EXPLORATION_REASON
+                if item.article.id in explored_ids
+                else reason_for(
+                    item,
+                    profile,
+                    most_similar_saved_title=most_similar_titles.get(item.article.id),
+                )
             ),
         )
         for item in page

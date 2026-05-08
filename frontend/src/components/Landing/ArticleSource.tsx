@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import {
   BadgeCheckIcon,
@@ -12,8 +11,9 @@ import {
   UsersIcon,
 } from 'lucide-react'
 import { useMemo } from 'react'
-import { ArticlesService, type SourcePublic } from '@/client'
+import type { SourcePublic } from '@/client'
 import { Badge } from '@/components/ui/badge'
+import { useSources } from '@/hooks/useSources'
 import { previewSourceTypes } from '@/lib/constants'
 import { capitalize } from '@/lib/utils'
 import { Skeleton } from '../ui/skeleton'
@@ -81,16 +81,13 @@ const getPreviewSources = (sources: SourcePublic[], limit = 4) => {
 }
 
 const ArticleSource = () => {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['articleSources'],
-    queryFn: () => ArticlesService.readSources(),
-  })
+  const { sources: allSources, isLoading, isError } = useSources()
 
-  const sources = useMemo(() => getPreviewSources(data?.data ?? []), [data])
+  const sources = useMemo(() => getPreviewSources(allSources), [allSources])
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-2.5">
+      <div className="mb-3 flex items-center gap-2.5 lg:mb-4">
         <div className="text-slate-400 dark:text-muted-foreground">
           <Library className="h-4 w-4 stroke-[1.6]" />
         </div>
@@ -98,14 +95,16 @@ const ArticleSource = () => {
           Browse sources
         </span>
       </div>
-      <div className="mt-3 space-y-1">
+      <div className="mt-2 space-y-1 lg:mt-3">
         {isLoading ? (
-          ['a', 'b', 'c', 'd'].map((key) => (
+          ['a', 'b', 'c', 'd'].map((key, index) => (
             <div
               key={key}
-              className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 dark:border-border"
+              className={`flex items-center gap-3 rounded-lg border border-slate-100 p-2.5 lg:p-3 dark:border-border ${
+                index === 3 ? 'hidden lg:flex' : ''
+              }`}
             >
-              <Skeleton className="h-9 w-9 rounded-md bg-slate-100 dark:bg-muted" />
+              <Skeleton className="h-8 w-8 rounded-md bg-slate-100 lg:h-9 lg:w-9 dark:bg-muted" />
               <div className="min-w-0 flex-1 space-y-2">
                 <Skeleton className="h-4 w-32 rounded bg-slate-100 dark:bg-muted" />
                 <Skeleton className="h-3 w-24 rounded bg-slate-100 dark:bg-muted" />
@@ -121,7 +120,7 @@ const ArticleSource = () => {
             No sources available yet.
           </p>
         ) : (
-          sources.map((source: SourcePublic) => {
+          sources.map((source: SourcePublic, index) => {
             const SourceTypeIcon = sourceTypeIcons[source.source_type]
 
             return (
@@ -129,17 +128,19 @@ const ArticleSource = () => {
                 key={source.name}
                 to="/article-sources/$s"
                 params={{ s: source.name }}
-                className="group flex items-center gap-3 rounded-lg border border-transparent p-2.5 transition-all hover:border-slate-200/80 hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:border-border dark:hover:bg-card/45 dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                className={`group flex items-center gap-3 rounded-lg border border-transparent p-2 transition-all hover:border-slate-200/80 hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 lg:p-2.5 dark:hover:border-border dark:hover:bg-card/45 dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background ${
+                  index === 3 ? 'hidden lg:flex' : ''
+                }`}
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-50 text-slate-400 ring-1 ring-slate-100 transition-colors group-hover:bg-slate-950 group-hover:text-white group-hover:ring-slate-950 dark:bg-muted/45 dark:text-muted-foreground dark:ring-border dark:group-hover:bg-primary dark:group-hover:text-primary-foreground dark:group-hover:ring-primary">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-50 text-slate-400 ring-1 ring-slate-100 transition-colors group-hover:bg-slate-950 group-hover:text-white group-hover:ring-slate-950 lg:h-9 lg:w-9 dark:bg-muted/45 dark:text-muted-foreground dark:ring-border dark:group-hover:bg-primary dark:group-hover:text-primary-foreground dark:group-hover:ring-primary">
                   <SourceTypeIcon className="h-4 w-4 stroke-[1.5]" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-3 ">
-                    <h4 className="truncate font-serif font-medium leading-snug text-slate-950 transition-colors group-hover:text-slate-700 dark:text-foreground dark:group-hover:text-foreground/78">
+                  <div className="flex items-center justify-between gap-3">
+                    <h4 className="truncate text-[0.9375rem] font-medium leading-6 text-slate-950 transition-colors group-hover:text-slate-700 lg:font-serif lg:text-base lg:leading-snug dark:text-foreground dark:group-hover:text-foreground/78">
                       {source.name}
                     </h4>
-                    {/* <ChevronRightIcon className="pt-4 h-3.5 w-3.5 shrink-0 text-slate-300 transition-colors group-hover:text-slate-500" /> */}
+                    <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-slate-300 opacity-0 transition-all group-hover:opacity-100 group-hover:text-slate-500 dark:text-muted-foreground/50 dark:group-hover:text-muted-foreground" />
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-muted-foreground">
                     <Badge

@@ -9,6 +9,7 @@ import { isLoggedIn } from '@/lib/auth-state'
 import useCustomToast from './useCustomToast'
 
 const INTERESTS_KEY = ['userInterests'] as const
+const INTERESTS_STALE_TIME_MS = 1000 * 60 * 5
 
 type SaveInterestsPayload = {
   values: UserInterestUpdate
@@ -43,6 +44,7 @@ export function useInterests() {
     queryKey: INTERESTS_KEY,
     queryFn: () => InterestsService.readInterests(),
     enabled: isLoggedIn(),
+    staleTime: INTERESTS_STALE_TIME_MS,
   })
 
   const saveMutation = useMutation({

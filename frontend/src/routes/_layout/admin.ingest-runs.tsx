@@ -6,6 +6,7 @@ import { Suspense, useState } from 'react'
 import { AdminService } from '@/client'
 import { ingestRunColumns } from '@/components/Admin/ingestRunColumns'
 import { DataTable } from '@/components/Common/DataTable'
+import { PageContainer, PageHeader } from '@/components/Layout/Page'
 import PendingIngestRuns from '@/components/Pending/PendingIngestRuns'
 import { Button } from '@/components/ui/button'
 import useCustomToast from '@/hooks/useCustomToast'
@@ -75,9 +76,14 @@ function IngestRunsPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-16 pt-8 sm:pb-20 sm:pt-10">
-      <header className="flex flex-col gap-4 border-b border-slate-200/70 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-border">
-        <div>
+    <PageContainer
+      variant="default"
+      spacing="compact"
+      className="flex flex-col gap-6"
+    >
+      <PageHeader
+        className="mb-0 border-slate-200/70 pb-6"
+        eyebrow={
           <Link
             to="/admin"
             className="mb-3 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 transition-colors hover:text-slate-600 dark:text-muted-foreground dark:hover:text-foreground"
@@ -85,29 +91,29 @@ function IngestRunsPage() {
             <ArrowLeft className="size-3" />
             Admin
           </Link>
-          <h1 className="font-display text-3xl font-semibold tracking-normal text-slate-950 sm:text-4xl dark:text-foreground">
-            Ingest Runs
-          </h1>
-          <p className="mt-3 max-w-xl text-base leading-7 text-slate-500 dark:text-muted-foreground">
-            Recent ingestion runs from the scheduled cron and any manual
-            triggers. The 50 most recent runs are shown.
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          aria-busy={isRefreshing}
-          className="gap-2"
-        >
-          <RefreshCw
-            className={cn('size-3.5', isRefreshing && 'animate-spin')}
-          />
-          {isRefreshing ? 'Refreshing' : 'Refresh'}
-        </Button>
-      </header>
+        }
+        eyebrowClassName="mb-3"
+        title="Ingest Runs"
+        titleClassName="tracking-normal"
+        description="Recent ingestion runs from the scheduled cron and any manual triggers. The 50 most recent runs are shown."
+        descriptionClassName="max-w-xl"
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            aria-busy={isRefreshing}
+            className="gap-2"
+          >
+            <RefreshCw
+              className={cn('size-3.5', isRefreshing && 'animate-spin')}
+            />
+            {isRefreshing ? 'Refreshing' : 'Refresh'}
+          </Button>
+        }
+      />
       <IngestRunsTable />
-    </div>
+    </PageContainer>
   )
 }

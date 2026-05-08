@@ -1,18 +1,19 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { AlertCircleIcon, CheckIcon, LogInIcon } from 'lucide-react'
-import type { ReactNode } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { category as Category, UserInterestPublic } from '@/client'
-import { ArticleListState } from '@/components/Articles/ArticleList'
-import AuthModal from '@/components/Auth/AuthModal'
-import { SourcesField } from '@/components/Personalization/SourcesField'
-import { TagsField } from '@/components/Personalization/TagsField'
-import { TopicsField } from '@/components/Personalization/TopicsField'
-import { LoadingButton } from '@/components/ui/loading-button'
-import { Skeleton } from '@/components/ui/skeleton'
-import useAuth from '@/hooks/useAuth'
-import { useInterests } from '@/hooks/useInterests'
-import { cn } from '@/lib/utils'
+import { createFileRoute } from '@tanstack/react-router';
+import { AlertCircleIcon, CheckIcon, LogInIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { category as Category, UserInterestPublic } from '@/client';
+import { ArticleListState } from '@/components/Articles/ArticleList';
+import AuthModal from '@/components/Auth/AuthModal';
+import { PageContainer, PageHeader } from '@/components/Layout/Page';
+import { SourcesField } from '@/components/Personalization/SourcesField';
+import { TagsField } from '@/components/Personalization/TagsField';
+import { TopicsField } from '@/components/Personalization/TopicsField';
+import { LoadingButton } from '@/components/ui/loading-button';
+import { Skeleton } from '@/components/ui/skeleton';
+import useAuth from '@/hooks/useAuth';
+import { useInterests } from '@/hooks/useInterests';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_layout/personalization')({
   component: Personalization,
@@ -23,63 +24,63 @@ export const Route = createFileRoute('/_layout/personalization')({
       },
     ],
   }),
-})
+});
 
 const sameItems = <T extends string>(current: T[], saved: T[]) =>
   current.length === saved.length &&
-  current.every((item) => saved.includes(item))
+  current.every((item) => saved.includes(item));
 
 const formatCount = (
   count: number,
   singular: string,
   plural = `${singular}s`,
-) => `${count} ${count === 1 ? singular : plural}`
+) => `${count} ${count === 1 ? singular : plural}`;
 
 function Personalization() {
-  const { user, isLoading: authLoading, isError: authError } = useAuth()
-  const { interests, isLoading, isError, save, isSaving } = useInterests()
+  const { user, isLoading: authLoading, isError: authError } = useAuth();
+  const { interests, isLoading, isError, save, isSaving } = useInterests();
 
   // Working copy of the form. Initialised from the server value, then
   // mutated locally as the user clicks. We compare against the server
   // value to compute the dirty flag.
-  const [categories, setCategories] = useState<Category[]>([])
-  const [tags, setTags] = useState<string[]>([])
-  const [preferredSources, setPreferredSources] = useState<string[]>([])
-  const [hasSyncedInterests, setHasSyncedInterests] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [preferredSources, setPreferredSources] = useState<string[]>([]);
+  const [hasSyncedInterests, setHasSyncedInterests] = useState(false);
 
   const syncInterests = useCallback((nextInterests: UserInterestPublic) => {
-    setCategories(nextInterests.categories ?? [])
-    setTags(nextInterests.tags ?? [])
-    setPreferredSources(nextInterests.preferred_sources ?? [])
-    setHasSyncedInterests(true)
-  }, [])
+    setCategories(nextInterests.categories ?? []);
+    setTags(nextInterests.tags ?? []);
+    setPreferredSources(nextInterests.preferred_sources ?? []);
+    setHasSyncedInterests(true);
+  }, []);
 
   const isDirty = useMemo(() => {
     if (!interests) {
       return (
         categories.length > 0 || tags.length > 0 || preferredSources.length > 0
-      )
+      );
     }
-    const savedCategories = interests.categories ?? []
-    const savedTags = interests.tags ?? []
-    const savedSources = interests.preferred_sources ?? []
-    const sameCategories = sameItems(categories, savedCategories)
-    const sameTags = sameItems(tags, savedTags)
-    const sameSources = sameItems(preferredSources, savedSources)
-    return !(sameCategories && sameTags && sameSources)
-  }, [categories, tags, preferredSources, interests])
+    const savedCategories = interests.categories ?? [];
+    const savedTags = interests.tags ?? [];
+    const savedSources = interests.preferred_sources ?? [];
+    const sameCategories = sameItems(categories, savedCategories);
+    const sameTags = sameItems(tags, savedTags);
+    const sameSources = sameItems(preferredSources, savedSources);
+    return !(sameCategories && sameTags && sameSources);
+  }, [categories, tags, preferredSources, interests]);
 
   // Sync initial server values and clean refetches. Dirty local edits are left
   // alone so a background query refresh cannot overwrite in-progress choices.
   useEffect(() => {
     if (!interests) {
-      return
+      return;
     }
     if (hasSyncedInterests && isDirty) {
-      return
+      return;
     }
-    syncInterests(interests)
-  }, [hasSyncedInterests, interests, isDirty, syncInterests])
+    syncInterests(interests);
+  }, [hasSyncedInterests, interests, isDirty, syncInterests]);
 
   // The introductory note only shifts into onboarding mode when all three
   // lists are empty. Once the user starts, summarize their current signals.
@@ -88,53 +89,61 @@ function Personalization() {
     !isError &&
     categories.length === 0 &&
     tags.length === 0 &&
-    preferredSources.length === 0
+    preferredSources.length === 0;
 
   const selectionSummary = useMemo(() => {
-    const parts = []
+    const parts = [];
     if (categories.length > 0) {
-      parts.push(formatCount(categories.length, 'topic'))
+      parts.push(formatCount(categories.length, 'topic'));
     }
     if (preferredSources.length > 0) {
-      parts.push(formatCount(preferredSources.length, 'source'))
+      parts.push(formatCount(preferredSources.length, 'source'));
     }
     if (tags.length > 0) {
-      parts.push(formatCount(tags.length, 'tag'))
+      parts.push(formatCount(tags.length, 'tag'));
     }
 
     if (parts.length === 0) {
-      return 'Start with a few topics. Sources and tags can stay light until you know what you want more of.'
+      return 'Start with a few topics. Sources and tags can stay light until you know what you want more of.';
     }
 
-    return `Your profile currently has ${parts.join(', ')}.`
-  }, [categories.length, preferredSources.length, tags.length])
+    return `Your profile currently has ${parts.join(', ')}.`;
+  }, [categories.length, preferredSources.length, tags.length]);
 
   const handleSave = () => {
     save(
       { categories, tags, preferred_sources: preferredSources },
       { onSuccess: syncInterests },
-    )
-  }
+    );
+  };
 
   if (authLoading) {
-    return <PersonalizationSkeleton />
+    return <PersonalizationSkeleton />;
   }
 
   if (authError) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pt-10">
+      <PageContainer
+        // variant="narrow"
+        spacing="compact"
+        className="flex flex-col gap-6"
+      >
         <ArticleListState
           title="Could not load personalization"
           description="Please refresh the page or try again in a moment."
           icon={<AlertCircleIcon className="h-5 w-5 stroke-[1.5]" />}
         />
-      </div>
-    )
+      </PageContainer>
+    );
   }
 
   if (!user) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pt-10">
+      <PageContainer
+        variant="narrow"
+        spacing="compact"
+        className="flex flex-col gap-6"
+      >
         <ArticleListState
           title="Sign in to tune your signal"
           description="Personalization is built from your saved articles and the topics you follow. Sign in to start."
@@ -154,47 +163,50 @@ function Personalization() {
             />
           }
         />
-      </div>
-    )
+      </PageContainer>
+    );
   }
 
   if (isLoading) {
-    return <PersonalizationSkeleton />
+    return <PersonalizationSkeleton />;
   }
 
   if (isError) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pt-10">
+      <PageContainer
+        variant="narrow"
+        spacing="compact"
+        className="flex flex-col gap-6"
+      >
         <ArticleListState
           title="Could not load your preferences"
           description="Please refresh the page or try again in a moment."
           icon={<AlertCircleIcon className="h-5 w-5 stroke-[1.5]" />}
         />
-      </div>
-    )
+      </PageContainer>
+    );
   }
 
-  const showStickySave = isDirty || isSaving
+  const showStickySave = isDirty || isSaving;
 
   return (
-    <div
+    <PageContainer
+      // variant="narrow"
+      spacing="none"
       className={cn(
-        'mx-auto w-full max-w-3xl pt-8 sm:pt-12',
+        'pt-8 sm:pt-12',
         showStickySave ? 'pb-36 sm:pb-40' : 'pb-16 sm:pb-20',
       )}
     >
-      <header className="border-b border-slate-200/70 pb-8 dark:border-border">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-muted-foreground">
-          Taste profile
-        </p>
-        <h1 className="max-w-2xl font-display text-4xl font-semibold tracking-normal text-slate-950 sm:text-5xl dark:text-foreground">
-          Teach AI Signal what matters
-        </h1>
-        <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-600 dark:text-muted-foreground">
-          Start with the subjects you never want to miss. Add trusted sources
-          and personal tags only when they sharpen the feed.
-        </p>
-
+      <PageHeader
+        className="mb-0 border-slate-200/70 pb-8"
+        eyebrow="Taste profile"
+        eyebrowClassName="mb-4 tracking-[0.18em] text-slate-400"
+        title="Teach AI Signal what matters"
+        // titleClassName=" text-4xl tracking-normal sm:text-5xl"
+        description="Start with the subjects you never want to miss. Add trusted sources and personal tags only when they sharpen the feed."
+        // descriptionClassName="mt-4 text-lg leading-8 text-slate-600"
+      >
         <div className="mt-6 border-l border-slate-300 pl-4 dark:border-border">
           <p className="text-sm leading-6 text-slate-500 dark:text-muted-foreground">
             {showOnboarding
@@ -202,7 +214,7 @@ function Personalization() {
               : selectionSummary}
           </p>
         </div>
-      </header>
+      </PageHeader>
 
       <div className="divide-y divide-slate-200/70 dark:divide-border">
         <TasteSection
@@ -254,7 +266,11 @@ function Personalization() {
 
       {showStickySave && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/92 px-4 py-3 shadow-[0_-12px_34px_rgba(15,23,42,0.08)] backdrop-blur-md sm:px-6 lg:px-8 dark:border-border dark:bg-background/90 dark:shadow-[0_-12px_34px_rgba(0,0,0,0.22)]">
-          <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <PageContainer
+            variant="narrow"
+            spacing="none"
+            className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+          >
             <div>
               <p className="text-sm font-medium text-slate-950 dark:text-foreground">
                 {isSaving ? 'Saving your taste profile' : 'Unsaved choices'}
@@ -275,16 +291,20 @@ function Personalization() {
               <CheckIcon className="h-4 w-4" />
               Save taste profile
             </LoadingButton>
-          </div>
+          </PageContainer>
         </div>
       )}
-    </div>
-  )
+    </PageContainer>
+  );
 }
 
 function PersonalizationSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-3xl pb-16 pt-8 sm:pb-20 sm:pt-12">
+    <PageContainer
+      variant="narrow"
+      spacing="none"
+      className="pb-16 pt-8 sm:pb-20 sm:pt-12"
+    >
       <header className="border-b border-slate-200/70 pb-8 dark:border-border">
         <Skeleton className="h-4 w-32" />
         <Skeleton className="mt-5 h-12 w-full max-w-xl" />
@@ -305,8 +325,8 @@ function PersonalizationSkeleton() {
           </section>
         ))}
       </div>
-    </div>
-  )
+    </PageContainer>
+  );
 }
 
 function TasteSection({
@@ -316,11 +336,11 @@ function TasteSection({
   count,
   children,
 }: {
-  eyebrow: string
-  title: string
-  description: string
-  count: string
-  children: ReactNode
+  eyebrow: string;
+  title: string;
+  description: string;
+  count: string;
+  children: ReactNode;
 }) {
   return (
     <section className="py-8 sm:py-10">
@@ -342,5 +362,5 @@ function TasteSection({
       </div>
       {children}
     </section>
-  )
+  );
 }

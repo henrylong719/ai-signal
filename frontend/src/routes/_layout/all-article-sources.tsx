@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import {
   createFileRoute,
   Link,
@@ -12,11 +11,13 @@ import {
   RadioTowerIcon,
 } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
-import { ArticlesService, type source_type } from '@/client'
+import type { source_type } from '@/client'
 import { ArticleListState } from '@/components/Articles/ArticleList'
 import AuthModal from '@/components/Auth/AuthModal'
+import { PageContainer, PageHeader } from '@/components/Layout/Page'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInterests } from '@/hooks/useInterests'
+import { useSources } from '@/hooks/useSources'
 import { isLoggedIn } from '@/lib/auth-state'
 import { capitalize, cn } from '@/lib/utils'
 
@@ -56,7 +57,7 @@ function SourceGroupSkeleton() {
             <Skeleton className="h-5 w-28 rounded" />
             <Skeleton className="h-7 w-10 rounded-full" />
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {SOURCE_SKELETON_ITEMS.map((item) => (
               <div
                 key={`${group}-${item}`}
@@ -95,10 +96,7 @@ function AllArticleSources() {
   const hasRestoredScroll = useRef(false)
   const userIsLoggedIn = isLoggedIn()
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['articleSources'],
-    queryFn: () => ArticlesService.readSources(),
-  })
+  const { sources, isLoading, isError } = useSources()
   const {
     interests,
     isLoading: interestsLoading,
@@ -126,8 +124,8 @@ function AllArticleSources() {
 
   const filteredSources =
     sourceFilter === 'all'
-      ? data?.data
-      : data?.data.filter((s) => s.source_type === sourceFilter)
+      ? sources
+      : sources.filter((s) => s.source_type === sourceFilter)
 
   const groups = SOURCE_TYPES.filter((type) => type !== 'all')
     .map((type) => ({
@@ -136,7 +134,7 @@ function AllArticleSources() {
     }))
     .filter((group) => (group.items || []).length > 0)
 
-  const sourceCount = data?.data.length ?? 0
+  const sourceCount = sources.length
   const preferredSources = interests?.preferred_sources ?? []
 
   const togglePreferredSource = (sourceName: string) => {
@@ -166,28 +164,20 @@ function AllArticleSources() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl pb-16 pt-10 sm:pb-20 sm:pt-12">
-      <header className="mb-7 flex flex-col gap-5 border-b border-slate-200/80 pb-7 md:flex-row md:items-end md:justify-between dark:border-border">
-        <div className="max-w-2xl">
-          <p className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-muted-foreground">
-            Directory
-          </p>
-          <h1 className="font-display text-3xl font-semibold text-slate-950 sm:text-4xl dark:text-foreground">
-            Sources
-          </h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-500 dark:text-muted-foreground">
-            Explore the labs, research feeds, analysis, policy groups, media
-            outlets, newsletters, podcasts, and community sites behind AI
-            Signal.
-          </p>
-        </div>
-        <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm md:self-auto dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
-          <RadioTowerIcon className="h-4 w-4 stroke-[1.8] text-slate-400 dark:text-muted-foreground" />
-          <span>
-            {isLoading ? 'Loading sources' : `${sourceCount} sources`}
-          </span>
-        </div>
-      </header>
+    <PageContainer variant="wide">
+      <PageHeader
+        eyebrow="Directory"
+        title="Sources"
+        description="Explore the labs, research feeds, analysis, policy groups, media outlets, newsletters, podcasts, and community sites behind AI Signal."
+        actions={
+          <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm md:self-auto dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
+            <RadioTowerIcon className="h-4 w-4 stroke-[1.8] text-slate-400 dark:text-muted-foreground" />
+            <span>
+              {isLoading ? 'Loading sources' : `${sourceCount} sources`}
+            </span>
+          </div>
+        }
+      />
 
       <div className="mb-6 rounded-lg border border-slate-200/80 bg-white p-2 shadow-[0_1px_2px_rgba(15,23,42,0.03)] dark:border-border dark:bg-transparent dark:shadow-none">
         <div className="flex flex-wrap gap-2">
@@ -251,7 +241,7 @@ function AllArticleSources() {
                       {group.items.length}
                     </span>
                   </div>
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {group.items.map((source) => {
                       const isPreferredSource = preferredSources.includes(
                         source.name,
@@ -347,6 +337,6 @@ function AllArticleSources() {
         )}
       </div>
       <Outlet />
-    </div>
+    </PageContainer>
   )
 }

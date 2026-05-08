@@ -210,7 +210,7 @@ export function ArticleCard({
           </div>
 
           {article.image_url && (
-            <div className="aspect-[4/3] w-24 shrink-0 overflow-hidden rounded-md bg-slate-100 sm:w-40 lg:w-48 dark:bg-muted">
+            <div className="aspect-[4/3] w-20 shrink-0 overflow-hidden rounded-md bg-slate-100 sm:w-36 lg:w-44 dark:bg-muted">
               <a
                 href={href}
                 target="_blank"

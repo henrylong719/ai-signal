@@ -5,6 +5,8 @@ import { ArticlesService, type ForYouArticlePublic } from '@/client'
 import { isLoggedIn } from '@/lib/auth-state'
 import { ARTICLES_PAGE_SIZE } from '@/lib/constants'
 
+const FOR_YOU_FEED_STALE_TIME_MS = 1000 * 30
+
 export type ForYouArticle = ForYouArticlePublic
 
 interface ForYouPage {
@@ -52,6 +54,7 @@ export function useForYouFeed() {
     // it would 401 and bounce them through the login flow even though
     // they were just browsing.
     enabled: isLoggedIn(),
+    staleTime: FOR_YOU_FEED_STALE_TIME_MS,
   })
 
   const articles: ForYouArticle[] =

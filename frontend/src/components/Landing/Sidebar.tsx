@@ -43,18 +43,18 @@ export function MobileSidebar() {
 
         <SheetContent
           side="left"
-          className="w-[88vw] max-w-sm overflow-y-auto bg-white dark:bg-background"
+          className="w-[88vw] max-w-[360px] gap-0 overflow-y-auto bg-white dark:bg-background [&>button]:right-4 [&>button]:top-4 [&>button]:flex [&>button]:h-9 [&>button]:w-9 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-md [&>button]:text-slate-500 [&>button]:opacity-100 [&>button]:hover:bg-slate-100 [&>button]:hover:text-slate-950 [&>button]:focus:ring-slate-950/10 [&>button]:focus:ring-offset-0 dark:[&>button]:text-muted-foreground dark:[&>button]:hover:bg-accent dark:[&>button]:hover:text-foreground dark:[&>button]:focus:ring-ring/25"
         >
-          <SheetHeader className="border-b border-slate-100 px-5 py-5 dark:border-border">
-            <SheetTitle className="flex items-center gap-2 text-slate-950 dark:text-foreground">
+          <SheetHeader className="border-b border-slate-100 px-5 py-4 pr-16 dark:border-border">
+            <SheetTitle className="flex items-center gap-2 text-[1.05rem] leading-6 text-slate-950 dark:text-foreground">
               <SparklesIcon className="h-4 w-4 stroke-[1.8] text-slate-400 dark:text-muted-foreground" />
               Explore AI Signal
             </SheetTitle>
-            <SheetDescription>
+            <SheetDescription className="text-[0.8125rem] leading-5">
               Browse topics, sources, and saved articles.
             </SheetDescription>
           </SheetHeader>
-          <div className="space-y-8 px-5 pb-8 pt-5">
+          <div className="space-y-6 px-5 pb-7 pt-4">
             <SidebarSections />
           </div>
         </SheetContent>
@@ -103,9 +103,9 @@ export function Sidebar() {
     <aside
       ref={sidebarRef}
       style={sidebarStyle}
-      className="hidden self-start border-l border-slate-200/70 pb-8 pt-8 lg:sticky lg:block lg:w-[320px] lg:pl-8 dark:border-border/70"
+      className="hidden self-start border-l border-slate-200/70 lg:sticky lg:block lg:w-[320px] lg:pl-8 dark:border-border/70"
     >
-      <div className="space-y-10">
+      <div className="divide-y divide-slate-200/70 [&>*]:py-7 [&>*:first-child]:pt-5 [&>*:last-child]:pb-5 dark:divide-border">
         <SidebarSections />
       </div>
     </aside>

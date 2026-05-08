@@ -1,20 +1,20 @@
-import type { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table';
 
-import type { UserPublic } from '@/client'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
-import { UserActionsMenu } from './UserActionsMenu'
+import type { UserPublic } from '@/client';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { UserActionsMenu } from './UserActionsMenu';
 
 export type UserTableData = UserPublic & {
-  isCurrentUser: boolean
-}
+  isCurrentUser: boolean;
+};
 
 export const columns: ColumnDef<UserTableData>[] = [
   {
     accessorKey: 'full_name',
     header: 'Full Name',
     cell: ({ row }) => {
-      const fullName = row.original.full_name
+      const fullName = row.original.full_name;
       return (
         <div className="flex items-center gap-2">
           <span
@@ -28,7 +28,7 @@ export const columns: ColumnDef<UserTableData>[] = [
             </Badge>
           )}
         </div>
-      )
+      );
     },
   },
   {
@@ -63,7 +63,7 @@ export const columns: ColumnDef<UserTableData>[] = [
           className={cn(
             'size-2 rounded-full',
             row.original.is_active
-              ? 'bg-slate-950 dark:bg-primary'
+              ? 'bg-emerald-500/85 dark:bg-primary'
               : 'bg-slate-300 dark:bg-muted-foreground/45',
           )}
         />
@@ -82,4 +82,4 @@ export const columns: ColumnDef<UserTableData>[] = [
       </div>
     ),
   },
-]
+];

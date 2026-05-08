@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { CalendarIcon, ChevronRightIcon } from 'lucide-react'
 import { DateTime } from 'luxon'
 import type { DigestArticlePublic, DigestPublicSchema } from '@/client'
+import { PageContainer } from '@/components/Layout/Page'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTodayDigest } from '@/hooks/useTodayDigest'
 import { redirectHref } from '@/lib/article-urls'
@@ -47,7 +48,11 @@ function TodayDigest() {
   const { data, isLoading, isError } = useTodayDigest()
 
   return (
-    <div className="mx-auto w-full max-w-3xl py-12 sm:py-16 md:py-20">
+    <PageContainer
+      variant="narrow"
+      spacing="none"
+      className="max-w-3xl py-12 sm:py-16 md:py-20"
+    >
       <header className="mb-14 text-center sm:mb-16 md:mb-20">
         <div className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-muted-foreground">
           <CalendarIcon className="h-4 w-4 stroke-[1.5]" />
@@ -118,7 +123,7 @@ function TodayDigest() {
           ))}
         </div>
       )}
-    </div>
+    </PageContainer>
   )
 }
 

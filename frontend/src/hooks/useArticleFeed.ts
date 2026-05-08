@@ -4,6 +4,8 @@ import { type ArticlesPublic, ArticlesService, type category } from '@/client'
 import { notifyArticleFeedLoadMore } from '@/lib/auth-prompt'
 import { ARTICLES_PAGE_SIZE } from '@/lib/constants'
 
+const ARTICLE_FEED_STALE_TIME_MS = 1000 * 30
+
 interface UseArticleFeedOptions {
   category?: category
   search?: string
@@ -39,6 +41,7 @@ export function useArticleFeed(options: UseArticleFeedOptions = {}) {
       )
       return loadedArticles < lastPage.count ? loadedArticles : undefined
     },
+    staleTime: ARTICLE_FEED_STALE_TIME_MS,
   }
 
   const {

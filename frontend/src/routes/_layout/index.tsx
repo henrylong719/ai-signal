@@ -1,14 +1,16 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { SlidersHorizontalIcon } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
-import { ArticleList } from '@/components/Articles/ArticleList'
-import AuthModal from '@/components/Auth/AuthModal'
-import { MobileSidebar, Sidebar } from '@/components/Landing/Sidebar'
-import { PersonalizationCard } from '@/components/Personalization/PersonalizationCard'
-import { useArticleFeed } from '@/hooks/useArticleFeed'
-import useAuth, { isLoggedIn } from '@/hooks/useAuth'
-import { useForYouFeed } from '@/hooks/useForYouFeed'
-import { useInterests } from '@/hooks/useInterests'
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { SlidersHorizontalIcon } from 'lucide-react';
+import { DateTime } from 'luxon';
+import { useMemo, useRef, useState } from 'react';
+import { ArticleList } from '@/components/Articles/ArticleList';
+import AuthModal from '@/components/Auth/AuthModal';
+import { MobileSidebar, Sidebar } from '@/components/Landing/Sidebar';
+import { PageContainer } from '@/components/Layout/Page';
+import { PersonalizationCard } from '@/components/Personalization/PersonalizationCard';
+import { useArticleFeed } from '@/hooks/useArticleFeed';
+import useAuth, { isLoggedIn } from '@/hooks/useAuth';
+import { useForYouFeed } from '@/hooks/useForYouFeed';
+import { useInterests } from '@/hooks/useInterests';
 
 export const Route = createFileRoute('/_layout/')({
   component: Dashboard,
@@ -19,30 +21,30 @@ export const Route = createFileRoute('/_layout/')({
       },
     ],
   }),
-})
+});
 
-type Tab = 'for-you' | 'latest'
+type Tab = 'for-you' | 'latest';
 
 const tabs: { value: Tab; label: string }[] = [
   { value: 'for-you', label: 'For you' },
   { value: 'latest', label: 'Latest' },
-]
+];
 
 function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>(() =>
     isLoggedIn() ? 'for-you' : 'latest',
-  )
-  const [authPromptOpen, setAuthPromptOpen] = useState(false)
-  const feedTopRef = useRef<HTMLDivElement>(null)
-  const latest = useArticleFeed()
+  );
+  const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  const feedTopRef = useRef<HTMLDivElement>(null);
+  const latest = useArticleFeed();
   // useForYouFeed always runs, but its query needs auth — when the user
   // isn't logged in we render the sign-in CTA instead. Calling the hook
   // unconditionally keeps the hooks order stable.
-  const forYou = useForYouFeed()
-  const { user } = useAuth()
+  const forYou = useForYouFeed();
+  const { user } = useAuth();
   // The activation card needs to know how many preferences the user has set.
   // useInterests is auth-gated so this is a no-op for anonymous visitors.
-  const { interests } = useInterests()
+  const { interests } = useInterests();
 
   // Threshold: show the card while the user has fewer than 3 total signals
   // across topics, tags, and preferred sources. At 3+ they've meaningfully
@@ -50,54 +52,59 @@ function Dashboard() {
   const totalPreferences =
     (interests?.categories?.length ?? 0) +
     (interests?.tags?.length ?? 0) +
-    (interests?.preferred_sources?.length ?? 0)
-  const showActivationCard = !!user && totalPreferences < 3
+    (interests?.preferred_sources?.length ?? 0);
+  const showActivationCard = !!user && totalPreferences < 3;
 
   // Build a stable id→reason map. ForYouArticle extends ArticlePublic so
   // the underlying article objects are compatible with ArticleList; the
   // reason is passed alongside via this map.
   const forYouReasons = useMemo(() => {
-    const m = new Map<string, string | null>()
+    const m = new Map<string, string | null>();
     for (const article of forYou.articles) {
-      m.set(article.id, article.reason ?? null)
+      m.set(article.id, article.reason ?? null);
     }
-    return m
-  }, [forYou.articles])
+    return m;
+  }, [forYou.articles]);
 
   const handleTabChange = (tab: Tab) => {
     if (tab === activeTab) {
-      return
+      return;
     }
 
-    setActiveTab(tab)
+    setActiveTab(tab);
     if (tab === 'for-you' && !user) {
-      setAuthPromptOpen(true)
+      setAuthPromptOpen(true);
     }
     window.requestAnimationFrame(() => {
       feedTopRef.current?.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
-      })
-    })
-  }
+      });
+    });
+  };
 
   const handleAuthPromptOpenChange = (nextOpen: boolean) => {
-    setAuthPromptOpen(nextOpen)
+    setAuthPromptOpen(nextOpen);
 
     if (!nextOpen && !user) {
-      setActiveTab('latest')
+      setActiveTab('latest');
     }
-  }
+  };
 
   return (
-    <div className="mx-auto grid w-full max-w-[1360px] gap-8 lg:grid-cols-[minmax(0,1fr)_320px] xl:gap-10">
+    <PageContainer
+      variant="wide"
+      spacing="none"
+      className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] xl:gap-10"
+    >
       <div className="min-w-0">
         <div
           ref={feedTopRef}
           className="scroll-mt-16 sm:scroll-mt-18"
           aria-hidden="true"
         />
-        <div className="sticky top-16 z-40 -mx-4 border-b border-slate-200/80 bg-white/95 px-4 pt-6 backdrop-blur sm:top-[72px] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 dark:border-border/80 dark:bg-background/92">
+
+        <div className="sticky top-16 z-40 -mx-4 border-b border-slate-200/80 bg-white/95 px-4 pt-3 backdrop-blur sm:top-[72px] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 dark:border-border/80 dark:bg-background/92">
           <div className="flex items-center">
             <MobileSidebar />
             <div className="flex gap-8 sm:gap-10">
@@ -153,6 +160,6 @@ function Dashboard() {
         description="Your For You feed learns from saved articles, clicks, and the topics you care about."
         trigger={null}
       />
-    </div>
-  )
+    </PageContainer>
+  );
 }

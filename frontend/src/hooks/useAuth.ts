@@ -12,6 +12,9 @@ import { clearLoginState, isLoggedIn } from '@/lib/auth-state'
 import { handleError } from '@/utils'
 import useCustomToast from './useCustomToast'
 
+const CURRENT_USER_STALE_TIME_MS = 1000 * 60 * 5
+const CURRENT_USER_GC_TIME_MS = 1000 * 60 * 30
+
 const useAuth = () => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -28,6 +31,8 @@ const useAuth = () => {
     queryKey: ['currentUser'],
     queryFn: () => UsersService.readUserMe(),
     enabled: isLoggedIn(),
+    staleTime: CURRENT_USER_STALE_TIME_MS,
+    gcTime: CURRENT_USER_GC_TIME_MS,
   })
 
   const signUpMutation = useMutation({

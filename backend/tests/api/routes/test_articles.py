@@ -557,6 +557,63 @@ def test_go_to_no_priors_legacy_homepage_link_uses_reachable_fallback(
     assert response.headers["location"] == article_routes._NO_PRIORS_FALLBACK_URL
 
 
+def test_go_to_no_priors_audio_link_uses_apple_episode_landing(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    apple_episode_url = (
+        "https://podcasts.apple.com/us/podcast/example-episode/"
+        "id1668002688?i=1000763231033&uo=4"
+    )
+    article = _create_article(
+        db,
+        source="No Priors",
+        title="SAP: Bringing the Operating System of a Company into the AI Era",
+        url="https://traffic.megaphone.fm/PDP1374150825.mp3",
+    )
+
+    monkeypatch.setattr(
+        article_routes,
+        "_no_priors_apple_episode_url",
+        lambda title: apple_episode_url,
+    )
+
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/{article.id}/go",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    assert response.headers["location"] == apple_episode_url
+
+
+def test_go_to_no_priors_audio_link_falls_back_to_apple_show_landing(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    article = _create_article(
+        db,
+        source="No Priors",
+        url="https://dcs-cached.megaphone.fm/PDP1374150825.mp3?key=abc",
+    )
+
+    monkeypatch.setattr(
+        article_routes,
+        "_no_priors_apple_episode_url",
+        lambda title: None,
+    )
+
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/{article.id}/go",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    assert response.headers["location"] == article_routes._NO_PRIORS_FALLBACK_URL
+
+
 def test_user_vector_refresh_failure_does_not_break_article_signal_endpoints(
     client: TestClient,
     db: Session,

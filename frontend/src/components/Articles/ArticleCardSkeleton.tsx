@@ -6,7 +6,7 @@ export function ArticleCardSkeleton() {
         <div className="h-3 w-24 rounded bg-slate-100 dark:bg-muted" />
       </div>
 
-      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-row items-start justify-between gap-4 sm:gap-6">
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="h-6 w-3/4 rounded bg-slate-100 dark:bg-muted" />
           <div className="space-y-2">
@@ -14,13 +14,13 @@ export function ArticleCardSkeleton() {
             <div className="h-4 w-full rounded bg-slate-100 dark:bg-muted" />
             <div className="h-4 w-2/3 rounded bg-slate-100 dark:bg-muted" />
           </div>
-          <div className="flex gap-2 mt-2">
+          <div className="mt-2 hidden gap-2 sm:flex">
             <div className="h-5 w-14 rounded-full bg-slate-100 dark:bg-muted" />
             <div className="h-5 w-16 rounded-full bg-slate-100 dark:bg-muted" />
           </div>
         </div>
 
-        <div className="aspect-[4/3] w-full shrink-0 rounded-md bg-slate-100 md:w-48 dark:bg-muted" />
+        <div className="aspect-[4/3] w-20 shrink-0 rounded-md bg-slate-100 sm:w-36 lg:w-44 dark:bg-muted" />
       </div>
     </div>
   )

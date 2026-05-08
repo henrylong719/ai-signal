@@ -9,6 +9,8 @@ import { ArticleCard } from './ArticleCard'
 import { ArticleCardSkeleton } from './ArticleCardSkeleton'
 import { ArticleListState } from './ArticleList'
 
+const SAVED_ARTICLES_STALE_TIME_MS = 1000 * 60
+
 export function SavedArticleList() {
   const { savedArticleIds, toggleSave } = useSavedArticles()
   const loggedIn = isLoggedIn()
@@ -17,6 +19,7 @@ export function SavedArticleList() {
     queryKey: ['savedArticles'],
     queryFn: () => ArticlesService.readSavedArticles({}),
     enabled: loggedIn,
+    staleTime: SAVED_ARTICLES_STALE_TIME_MS,
   })
 
   if (!loggedIn) {

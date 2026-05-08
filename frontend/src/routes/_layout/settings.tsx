@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   AlertCircleIcon,
   LinkIcon,
@@ -6,18 +6,19 @@ import {
   ShieldCheckIcon,
   Trash2Icon,
   UserRoundIcon,
-} from 'lucide-react'
-import type { ReactNode } from 'react'
+} from 'lucide-react';
+import type { ReactNode } from 'react';
 
-import { ArticleListState } from '@/components/Articles/ArticleList'
-import AuthModal from '@/components/Auth/AuthModal'
-import ChangePassword from '@/components/UserSettings/ChangePassword'
-import ConnectedAccounts from '@/components/UserSettings/ConnectedAccounts'
-import DeleteAccount from '@/components/UserSettings/DeleteAccount'
-import UserInformation from '@/components/UserSettings/UserInformation'
-import { Skeleton } from '@/components/ui/skeleton'
-import useAuth from '@/hooks/useAuth'
-import { cn } from '@/lib/utils'
+import { ArticleListState } from '@/components/Articles/ArticleList';
+import AuthModal from '@/components/Auth/AuthModal';
+import { PageContainer, PageHeader } from '@/components/Layout/Page';
+import ChangePassword from '@/components/UserSettings/ChangePassword';
+import ConnectedAccounts from '@/components/UserSettings/ConnectedAccounts';
+import DeleteAccount from '@/components/UserSettings/DeleteAccount';
+import UserInformation from '@/components/UserSettings/UserInformation';
+import { Skeleton } from '@/components/ui/skeleton';
+import useAuth from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_layout/settings')({
   component: UserSettings,
@@ -28,11 +29,11 @@ export const Route = createFileRoute('/_layout/settings')({
       },
     ],
   }),
-})
+});
 
 function SettingsSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-5xl pb-16 pt-8 sm:pb-20 sm:pt-10">
+    <PageContainer variant="narrow" spacing="compact">
       <header className="mb-6 border-b border-slate-200/70 pb-6 dark:border-border">
         <div className="max-w-2xl">
           <Skeleton className="h-4 w-28 rounded" />
@@ -51,32 +52,40 @@ function SettingsSkeleton() {
           />
         ))}
       </div>
-    </div>
-  )
+    </PageContainer>
+  );
 }
 
 function UserSettings() {
-  const { user: currentUser, isLoading, isError } = useAuth()
+  const { user: currentUser, isLoading, isError } = useAuth();
 
   if (isLoading) {
-    return <SettingsSkeleton />
+    return <SettingsSkeleton />;
   }
 
   if (isError) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pt-10">
+      <PageContainer
+        variant="narrow"
+        spacing="compact"
+        className="flex flex-col gap-6"
+      >
         <ArticleListState
           title="Could not load settings"
           description="Please refresh the page or try again in a moment."
           icon={<AlertCircleIcon className="h-5 w-5 stroke-[1.5]" />}
         />
-      </div>
-    )
+      </PageContainer>
+    );
   }
 
   if (!currentUser) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pt-10">
+      <PageContainer
+        variant="narrow"
+        spacing="compact"
+        className="flex flex-col gap-6"
+      >
         <ArticleListState
           title="Sign in to manage settings"
           description="Account settings are available after you sign in."
@@ -96,23 +105,22 @@ function UserSettings() {
             />
           }
         />
-      </div>
-    )
+      </PageContainer>
+    );
   }
 
-  const hasPassword = currentUser.has_password ?? true
+  const hasPassword = currentUser.has_password ?? true;
 
   return (
-    <div className="mx-auto w-full max-w-5xl pb-16 pt-8 sm:pb-20 sm:pt-10">
-      <header className="mb-6 flex flex-col gap-5 border-b border-slate-200/70 pb-6 md:flex-row md:items-end md:justify-between dark:border-border">
-        <div className="max-w-2xl">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-muted-foreground">
-            Account
-          </p>
-          <h1 className="font-display text-3xl font-semibold tracking-normal text-slate-950 sm:text-4xl dark:text-foreground">
-            Account Settings
-          </h1>
-          <p className="mt-3 max-w-xl text-base leading-7 text-slate-500 dark:text-muted-foreground">
+    <PageContainer spacing="compact">
+      <PageHeader
+        className="mb-6 border-slate-200/70 pb-6"
+        eyebrow="Account"
+        eyebrowClassName="tracking-[0.18em] text-slate-400"
+        title="Account Settings"
+        titleClassName="tracking-normal"
+        description={
+          <>
             Manage your identity and security. To shape your personalized feed,
             head to{' '}
             <Link
@@ -122,13 +130,16 @@ function UserSettings() {
               Tune your signal
             </Link>
             .
-          </p>
-        </div>
-        <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-500 shadow-sm md:self-auto dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
-          <span className="h-2 w-2 rounded-full bg-emerald-500/85" />
-          <span className="truncate">{currentUser.email}</span>
-        </div>
-      </header>
+          </>
+        }
+        descriptionClassName="max-w-xl"
+        actions={
+          <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-500 shadow-sm md:self-auto dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
+            <span className="h-2 w-2 rounded-full bg-emerald-500/85" />
+            <span className="truncate">{currentUser.email}</span>
+          </div>
+        }
+      />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.86fr)]">
         <SettingsSection
@@ -168,8 +179,8 @@ function UserSettings() {
           <DeleteAccount />
         </SettingsSection>
       </div>
-    </div>
-  )
+    </PageContainer>
+  );
 }
 
 function SettingsSection({
@@ -180,12 +191,12 @@ function SettingsSection({
   children,
   className,
 }: {
-  title: string
-  description: string
-  icon: ReactNode
-  danger?: boolean
-  children: ReactNode
-  className?: string
+  title: string;
+  description: string;
+  icon: ReactNode;
+  danger?: boolean;
+  children: ReactNode;
+  className?: string;
 }) {
   return (
     <section
@@ -240,5 +251,5 @@ function SettingsSection({
       </div>
       <div className="p-5 sm:p-6">{children}</div>
     </section>
-  )
+  );
 }

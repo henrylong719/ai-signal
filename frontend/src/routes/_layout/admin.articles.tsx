@@ -6,6 +6,7 @@ import { Suspense, useState } from 'react'
 import { type AdminArticlePublic, AdminService } from '@/client'
 import { articleColumns } from '@/components/Admin/articleColumns'
 import { DataTable } from '@/components/Common/DataTable'
+import { PageContainer, PageHeader } from '@/components/Layout/Page'
 import PendingItems from '@/components/Pending/PendingItems'
 import { Button } from '@/components/ui/button'
 import useCustomToast from '@/hooks/useCustomToast'
@@ -85,9 +86,14 @@ function AdminArticlesPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 pb-16 pt-8 sm:pb-20 sm:pt-10">
-      <header className="flex flex-col gap-4 border-b border-slate-200/70 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-border">
-        <div>
+    <PageContainer
+      variant="wide"
+      spacing="compact"
+      className="flex flex-col gap-6"
+    >
+      <PageHeader
+        className="mb-0 border-slate-200/70 pb-6"
+        eyebrow={
           <Link
             to="/admin"
             className="mb-3 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 transition-colors hover:text-slate-600 dark:text-muted-foreground dark:hover:text-foreground"
@@ -95,29 +101,29 @@ function AdminArticlesPage() {
             <ArrowLeft className="size-3" />
             Admin
           </Link>
-          <h1 className="font-display text-3xl font-semibold tracking-normal text-slate-950 sm:text-4xl dark:text-foreground">
-            Articles
-          </h1>
-          <p className="mt-3 max-w-xl text-base leading-7 text-slate-500 dark:text-muted-foreground">
-            Review every article in the database and permanently delete rows
-            that should not stay in circulation.
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          aria-busy={isRefreshing}
-          className="gap-2"
-        >
-          <RefreshCw
-            className={cn('size-3.5', isRefreshing && 'animate-spin')}
-          />
-          {isRefreshing ? 'Refreshing' : 'Refresh'}
-        </Button>
-      </header>
+        }
+        eyebrowClassName="mb-3"
+        title="Articles"
+        titleClassName="tracking-normal"
+        description="Review every article in the database and permanently delete rows that should not stay in circulation."
+        descriptionClassName="max-w-xl"
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            aria-busy={isRefreshing}
+            className="gap-2"
+          >
+            <RefreshCw
+              className={cn('size-3.5', isRefreshing && 'animate-spin')}
+            />
+            {isRefreshing ? 'Refreshing' : 'Refresh'}
+          </Button>
+        }
+      />
       <ArticlesTable />
-    </div>
+    </PageContainer>
   )
 }

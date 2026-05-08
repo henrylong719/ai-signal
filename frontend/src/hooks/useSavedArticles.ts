@@ -4,6 +4,7 @@ import { isLoggedIn } from './useAuth'
 import useCustomToast from './useCustomToast'
 
 const SAVED_IDS_KEY = ['savedArticleIds']
+const SAVED_ARTICLES_STALE_TIME_MS = 1000 * 60
 
 export function useSavedArticles() {
   const queryClient = useQueryClient()
@@ -13,6 +14,7 @@ export function useSavedArticles() {
     queryKey: SAVED_IDS_KEY,
     queryFn: () => ArticlesService.readSavedArticleIds(),
     enabled: isLoggedIn(),
+    staleTime: SAVED_ARTICLES_STALE_TIME_MS,
   })
 
   const savedArticleIds = new Set(savedIds?.article_ids ?? [])

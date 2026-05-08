@@ -33,6 +33,7 @@ from app.services.diversity import (
 from app.services.embeddings import (
     compute_and_save_user_vector,
     cosine_similarities,
+    cosine_similarity,
 )
 from app.services.recommender import (
     CandidateArticle,
@@ -170,6 +171,53 @@ def _candidate_similarities(
     return cosine_similarities(user_vector, article_vecs)
 
 
+def _most_similar_saved_titles(
+    *,
+    db_articles: Sequence,  # type: ignore[type-arg]
+    saved: list[tuple[uuid.UUID, str, list[float]]],
+) -> dict[uuid.UUID, str]:
+    """For each candidate, the title of the saved article it's closest to.
+
+    Powers the "Similar to: <title>" reason label. Computed pairwise
+    against the user's individual saved articles — *not* against the
+    centroid user vector — because the centroid can't tell us which
+    individual save a candidate is most similar to. (The centroid is
+    what the recommender's semantic-similarity score uses; this lookup
+    is a parallel computation purely for explainability.)
+
+    Cost: O(C × S) cosine sims, where C ≤ candidate pool size (~200)
+    and S = number of saved articles with embeddings. With 384-dim
+    vectors and S=50, that's 10k × 384 ≈ 4M float ops per request —
+    well under 50ms. We intentionally don't cache this between
+    requests; it's cheap enough to recompute and keeps the data path
+    simple (no cache invalidation when saves change).
+
+    Returns a {candidate_id: best_saved_title} map. Candidates without
+    an embedding don't appear (no way to compute similarity); the
+    caller falls back to the generic semantic label for those. If the
+    user has no saved articles with embeddings, returns an empty map.
+    """
+    if not saved:
+        return {}
+
+    result: dict[uuid.UUID, str] = {}
+    for article in db_articles:
+        embedding = getattr(article, "embedding", None)
+        if embedding is None:
+            continue
+        candidate_vec = list(embedding)
+        best_title: str | None = None
+        best_sim = -1.0  # cosine ranges in [-1, 1]; any real sim beats this
+        for _saved_id, title, saved_vec in saved:
+            sim = cosine_similarity(candidate_vec, saved_vec)
+            if sim > best_sim:
+                best_sim = sim
+                best_title = title
+        if best_title is not None:
+            result[article.id] = best_title
+    return result
+
+
 def rank_for_you(
     *,
     session: Session,
@@ -215,8 +263,21 @@ def rank_for_you(
         similarities = _candidate_similarities(
             user_vector=user_vector, db_articles=db_articles
         )
+        # For the "Similar to: <title>" reason label. Only fetched when
+        # we have a user vector — otherwise the semantic component is
+        # zero across the board and the personalized label can never
+        # fire. The lookup is pairwise against individual saved
+        # articles (not against the centroid user vector) because the
+        # centroid can't tell us which save a candidate is closest to.
+        saved_with_titles = crud.get_saved_articles_with_embeddings_and_titles(
+            session=session, user_id=user_id
+        )
+        most_similar_titles = _most_similar_saved_titles(
+            db_articles=db_articles, saved=saved_with_titles
+        )
     else:
         similarities = None
+        most_similar_titles = {}
 
     candidates = [_to_candidate(a) for a in db_articles]
     candidates = filter_candidates(candidates, profile)
@@ -249,5 +310,13 @@ def rank_for_you(
 
     page = scored[skip : skip + limit]
     return [
-        ForYouItem(scored=item, reason=reason_for(item, profile)) for item in page
+        ForYouItem(
+            scored=item,
+            reason=reason_for(
+                item,
+                profile,
+                most_similar_saved_title=most_similar_titles.get(item.article.id),
+            ),
+        )
+        for item in page
     ], total

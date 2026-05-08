@@ -20,7 +20,9 @@ from app.services.recommender import (
     recency_score,
     score_candidates,
     source_affinity_score,
+    _truncate,
 )
+
 
 NOW = datetime(2026, 5, 5, 12, 0, tzinfo=timezone.utc)
 
@@ -435,3 +437,155 @@ def test_reason_uses_semantic_label_when_embedding_similarity_dominates() -> Non
     )[0]
 
     assert reason_for(scored, profile) == "Similar to articles you saved"
+
+
+def test_reason_personalizes_semantic_label_when_saved_title_provided() -> None:
+    """When the caller supplies the most similar saved title, the
+    semantic branch produces a concrete "Similar to: <title>" label
+    instead of the generic phrasing. Short titles pass through
+    untruncated."""
+    article = _article(category="other", source="Other", age_days=30)
+    profile = UserProfile()
+
+    scored = score_candidates(
+        [article],
+        profile,
+        semantic_similarities={article.id: 0.95},
+        now=NOW,
+    )[0]
+
+    assert (
+        reason_for(scored, profile, most_similar_saved_title="Short title")
+        == "Similar to: Short title"
+    )
+
+
+def test_reason_truncates_long_saved_titles_word_aware() -> None:
+    """Long saved titles get truncated to fit the badge with a
+    word-aware cut (no mid-word breaks) and an ellipsis suffix."""
+    article = _article(category="other", source="Other", age_days=30)
+    profile = UserProfile()
+    scored = score_candidates(
+        [article], profile, semantic_similarities={article.id: 0.95}, now=NOW
+    )[0]
+
+    long_title = "How we trained a 70B model on 4 H100s using FSDP and ZeRO-3"
+
+    label = reason_for(scored, profile, most_similar_saved_title=long_title)
+
+    assert label is not None
+    assert label.startswith("Similar to: ")
+    suffix = label[len("Similar to: ") :]
+    # Truncated: no longer than budget, ends with ellipsis, original title
+    # is longer than budget so it MUST have been cut.
+    assert len(suffix) <= 50
+    assert suffix.endswith("…")
+    assert len(long_title) > 50
+    # Word-aware: the char before the ellipsis is not a partial word from
+    # the original. We check this by asserting the truncated body (sans
+    # ellipsis) is a prefix that ends at a word boundary in the source.
+    body = suffix[:-1]
+    assert long_title.startswith(body)
+    # Either we cut exactly at the original's length (impossible here,
+    # asserted above) or the next char in the source must be whitespace —
+    # that's what "word-aware" means.
+    assert long_title[len(body)] == " "
+
+
+def test_reason_falls_back_to_generic_semantic_label_when_no_saved_title() -> None:
+    """When the kwarg is omitted or None, the semantic branch produces
+    the v0 generic label. This is the path used for users without
+    saves-with-embeddings, and preserves backwards compatibility for
+    any caller that hasn't been wired through yet."""
+    article = _article(category="other", source="Other", age_days=30)
+    profile = UserProfile()
+
+    scored = score_candidates(
+        [article],
+        profile,
+        semantic_similarities={article.id: 0.95},
+        now=NOW,
+    )[0]
+
+    # Omitted kwarg.
+    assert reason_for(scored, profile) == "Similar to articles you saved"
+    # Explicit None.
+    assert (
+        reason_for(scored, profile, most_similar_saved_title=None)
+        == "Similar to articles you saved"
+    )
+    # Empty string (defensive — falsy, treated as absent).
+    assert (
+        reason_for(scored, profile, most_similar_saved_title="")
+        == "Similar to articles you saved"
+    )
+
+
+def test_reason_personalized_label_only_fires_when_semantic_dominates() -> None:
+    """The most_similar_saved_title kwarg is wired regardless of the
+    dominant signal, but only the semantic branch reads it. If
+    explicit-match dominates, the kwarg is silently ignored — the
+    user still sees the explicit-match label."""
+    article = _article(category="rag", source="Other", age_days=30)
+    profile = UserProfile(interest_categories=frozenset({"rag"}))
+
+    scored = score_candidates([article], profile, now=NOW)[0]
+
+    assert (
+        reason_for(scored, profile, most_similar_saved_title="An unrelated saved title")
+        == "Because you follow RAG"
+    )
+
+
+# ---------------------------------------------------------------------------
+# _truncate helper — exercised directly so word-boundary edge cases stay
+# locked in even if the call sites change.
+# ---------------------------------------------------------------------------
+
+
+def test_truncate_passes_through_when_under_limit() -> None:
+    assert _truncate("short", 50) == "short"
+    # Exactly at the limit — no ellipsis (no need to truncate).
+    assert _truncate("a" * 50, 50) == "a" * 50
+
+
+def test_truncate_cuts_at_word_boundary_with_ellipsis() -> None:
+    """A title longer than the limit gets cut at the last space within
+    budget. The ellipsis counts toward the budget so total length stays
+    ≤ max_chars."""
+    title = "How we trained a 70B model on 4 H100s using FSDP"  # 48 chars
+    # max=20: budget for body is 19, last space at-or-before is between
+    # "we" and "trained" (index 6). Body = "How we", suffix = "How we…".
+    out = _truncate(title, 20)
+    assert out.endswith("…")
+    assert len(out) <= 20
+    body = out[:-1]
+    # Body must be a prefix of the title, ending at a word boundary.
+    assert title.startswith(body)
+    assert title[len(body)] == " "
+
+
+def test_truncate_falls_back_to_hard_cut_when_no_word_boundary() -> None:
+    """No spaces in budget — single long token. Falls back to a hard
+    cut so the contract (length ≤ max_chars) still holds."""
+    out = _truncate("supercalifragilisticexpialidocious", 10)
+    assert len(out) == 10
+    assert out.endswith("…")
+    # 9 chars of body (max_chars - 1) plus the ellipsis.
+    assert out == "supercali…"
+
+
+def test_truncate_handles_degenerate_max_chars() -> None:
+    """Tiny budgets degrade gracefully rather than raising."""
+    assert _truncate("anything", 1) == "…"
+    assert _truncate("anything", 0) == ""
+
+
+def test_truncate_strips_trailing_whitespace_before_ellipsis() -> None:
+    """If the cut lands right after a space, drop the space so we don't
+    render 'word …' with a stray gap."""
+    # max=10: budget=9. " quick" boundary is after "The". Hard-coded to
+    # exercise the rstrip branch — input has a space at position 3.
+    out = _truncate("The quick brown fox", 10)
+    assert out.endswith("…")
+    assert " …" not in out

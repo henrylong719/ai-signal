@@ -248,3 +248,221 @@ def test_rank_for_you_applies_diversity_rerank_to_large_pools(
     assert distinct_sources >= 4, (
         f"only {distinct_sources} distinct sources in For-You head"
     )
+
+
+# ---------------------------------------------------------------------------
+# _most_similar_saved_titles — pairwise candidate↔saved-article lookup
+# powering the "Similar to: <title>" reason label.
+# ---------------------------------------------------------------------------
+
+
+def _article_with_embedding(
+    *, title: str, embedding: list[float], age_days: int = 0, **kwargs: object
+) -> Article:
+    """Article fixture with an explicit embedding for similarity tests."""
+    article = _article(title=title, age_days=age_days, **kwargs)  # type: ignore[arg-type]
+    # Article.embedding is a pgvector field; in unit tests we just set it
+    # directly. The helper reads it via getattr.
+    object.__setattr__(article, "embedding", embedding)
+    return article
+
+
+def test_most_similar_saved_titles_picks_highest_cosine_match() -> None:
+    """For each candidate, returns the saved-article title with the
+    highest cosine similarity. Constructed so each candidate has an
+    obvious nearest save."""
+    saved_a = (uuid4(), "Saved A — about FSDP", [1.0, 0.0, 0.0])
+    saved_b = (uuid4(), "Saved B — about RAG", [0.0, 1.0, 0.0])
+    saved_c = (uuid4(), "Saved C — about agents", [0.0, 0.0, 1.0])
+
+    candidate_near_a = _article_with_embedding(
+        title="cand-a", embedding=[0.95, 0.1, 0.05]
+    )
+    candidate_near_b = _article_with_embedding(
+        title="cand-b", embedding=[0.05, 0.9, 0.1]
+    )
+
+    result = for_you._most_similar_saved_titles(
+        db_articles=[candidate_near_a, candidate_near_b],
+        saved=[saved_a, saved_b, saved_c],
+    )
+
+    assert result[candidate_near_a.id] == "Saved A — about FSDP"
+    assert result[candidate_near_b.id] == "Saved B — about RAG"
+
+
+def test_most_similar_saved_titles_returns_empty_when_no_saves() -> None:
+    """No saved articles with embeddings — empty map. Used by the
+    no-saves cold-start path; the caller falls back to the generic
+    semantic label for those candidates."""
+    candidate = _article_with_embedding(title="c", embedding=[1.0, 0.0])
+
+    assert for_you._most_similar_saved_titles(db_articles=[candidate], saved=[]) == {}
+
+
+def test_most_similar_saved_titles_skips_candidates_without_embeddings() -> None:
+    """Candidates without embeddings can't be compared, so they're
+    absent from the result. The reason_for caller treats absence as
+    "no personalized title available" and uses the generic label."""
+    no_emb = _article(title="no-emb")  # no embedding set at all
+    has_emb = _article_with_embedding(title="has-emb", embedding=[1.0, 0.0])
+
+    saved = [(uuid4(), "Saved", [1.0, 0.0])]
+
+    result = for_you._most_similar_saved_titles(
+        db_articles=[no_emb, has_emb], saved=saved
+    )
+
+    assert no_emb.id not in result
+    assert result[has_emb.id] == "Saved"
+
+
+def test_rank_for_you_personalizes_semantic_reason_with_saved_title(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """End-to-end: when the semantic component dominates the score and
+    the user has a saved article close to the candidate, the For-You
+    item's reason label points at the specific saved article rather
+    than the generic phrasing."""
+    user_id = uuid4()
+
+    # User has no explicit interests/tags — so the only signal is
+    # semantic. Recency is also low (30 days old) so semantic dominates.
+    saved_id = uuid4()
+    saved_title = "How we trained a 70B model on 4 H100s using FSDP"
+    candidate_title = "Distributed training of large language models"
+
+    candidate = _article_with_embedding(
+        title=candidate_title, embedding=[1.0, 0.0, 0.0], age_days=30
+    )
+
+    monkeypatch.setattr(
+        for_you,
+        "build_user_profile",
+        lambda *, session, user_id: UserProfile(
+            saved_article_ids=frozenset({saved_id}),
+        ),
+    )
+    monkeypatch.setattr(
+        app_crud,
+        "get_recent_articles_excluding",
+        lambda **kwargs: [candidate],
+    )
+    # Cached user vector exists and aligns with the candidate (cosine = 1.0).
+    monkeypatch.setattr(
+        app_crud,
+        "get_user_embedding",
+        lambda **kwargs: SimpleNamespace(embedding=[1.0, 0.0, 0.0]),
+    )
+    # And the user has one saved article whose embedding is also aligned —
+    # so the pairwise lookup will return it as the closest match.
+    monkeypatch.setattr(
+        app_crud,
+        "get_saved_articles_with_embeddings_and_titles",
+        lambda **kwargs: [(saved_id, saved_title, [1.0, 0.0, 0.0])],
+    )
+
+    fake_session: Any = object()
+    items, _total = for_you.rank_for_you(
+        session=fake_session, user_id=user_id, skip=0, limit=10
+    )
+
+    assert len(items) == 1
+    # The reason label points at the specific saved article (truncated
+    # if needed) rather than the generic "Similar to articles you saved".
+    reason = items[0].reason
+    assert reason is not None
+    assert reason.startswith("Similar to: ")
+    # The saved title is 48 chars; budget is 50, so it should pass through
+    # untruncated.
+    assert reason == f"Similar to: {saved_title}"
+
+
+def test_rank_for_you_falls_back_to_generic_label_when_user_has_no_saves(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A user with explicit interests + clicks but no saves can still
+    have semantic dominance (the user vector is built from clicks +
+    interest text). In that case there's no saved title to point at,
+    so the semantic branch falls back to the generic label."""
+    user_id = uuid4()
+    candidate = _article_with_embedding(
+        title="Some article", embedding=[1.0, 0.0, 0.0], age_days=30
+    )
+
+    monkeypatch.setattr(
+        for_you,
+        "build_user_profile",
+        lambda *, session, user_id: UserProfile(),
+    )
+    monkeypatch.setattr(
+        app_crud,
+        "get_recent_articles_excluding",
+        lambda **kwargs: [candidate],
+    )
+    monkeypatch.setattr(
+        app_crud,
+        "get_user_embedding",
+        lambda **kwargs: SimpleNamespace(embedding=[1.0, 0.0, 0.0]),
+    )
+    # No saves with embeddings — empty list.
+    monkeypatch.setattr(
+        app_crud,
+        "get_saved_articles_with_embeddings_and_titles",
+        lambda **kwargs: [],
+    )
+
+    fake_session: Any = object()
+    items, _total = for_you.rank_for_you(
+        session=fake_session, user_id=user_id, skip=0, limit=10
+    )
+
+    assert len(items) == 1
+    assert items[0].reason == "Similar to articles you saved"
+
+
+def test_rank_for_you_skips_saved_lookup_when_user_has_no_vector(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Cold-start path: no user vector, no embeddings fetched, no
+    saved-with-titles fetched. Verifies we don't hit the new CRUD
+    when there's no semantic signal to label."""
+    user_id = uuid4()
+    candidate = _article_with_embedding(title="Some article", embedding=[1.0, 0.0, 0.0])
+
+    monkeypatch.setattr(
+        for_you,
+        "build_user_profile",
+        lambda *, session, user_id: UserProfile(),
+    )
+    monkeypatch.setattr(
+        app_crud,
+        "get_recent_articles_excluding",
+        lambda **kwargs: [candidate],
+    )
+    monkeypatch.setattr(app_crud, "get_user_embedding", lambda **kwargs: None)
+    monkeypatch.setattr(
+        for_you,
+        "compute_and_save_user_vector",
+        lambda **kwargs: None,
+    )
+
+    saved_lookup_called = False
+
+    def boom(**kwargs: object) -> object:
+        nonlocal saved_lookup_called
+        saved_lookup_called = True
+        return []
+
+    monkeypatch.setattr(
+        app_crud,
+        "get_saved_articles_with_embeddings_and_titles",
+        boom,
+    )
+
+    fake_session: Any = object()
+    for_you.rank_for_you(session=fake_session, user_id=user_id, skip=0, limit=10)
+
+    assert not saved_lookup_called, (
+        "saved-titles lookup should be skipped when the user has no vector"
+    )

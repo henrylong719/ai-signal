@@ -311,6 +311,40 @@ def get_saved_article_embeddings(
     ]
 
 
+def get_saved_articles_with_embeddings_and_titles(
+    *, session: Session, user_id: uuid.UUID
+) -> list[tuple[uuid.UUID, str, list[float]]]:
+    """Fetch (id, title, embedding) for every saved article that has an embedding.
+
+    Used by the For-You feed to compute pairwise candidate↔saved-article
+    similarity for the "Similar to: <title>" reason label. Only saves
+    with embeddings are useful for that lookup, so we filter at the SQL
+    layer rather than skipping in Python — keeps the pool small for
+    users with many saves but spotty embedding coverage.
+
+    Mirrors ``get_saved_article_embeddings`` in shape but adds id and
+    title so the caller can identify which saved article is the
+    closest match. Kept as a separate function rather than expanding
+    the existing one because the embedding-vector path is on the hot
+    user-vector-rebuild loop and adding two extra columns there for
+    a feature that doesn't need them would be wasteful.
+    """
+    statement = (
+        select(Article.id, Article.title, col(Article.embedding))
+        .join(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
+        .where(
+            SavedArticle.user_id == user_id,
+            col(Article.embedding).is_not(None),
+        )
+    )
+    rows = session.exec(statement).all()
+    return [
+        (article_id, title, list(cast(Sequence[float], embedding)))
+        for article_id, title, embedding in rows
+        if embedding is not None
+    ]
+
+
 def get_recent_articles_excluding(
     *,
     session: Session,

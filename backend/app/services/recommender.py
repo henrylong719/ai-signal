@@ -380,11 +380,24 @@ def score_candidates(
 # ---------------------------------------------------------------------------
 
 
-def reason_for(scored: ScoredArticle, profile: UserProfile) -> str | None:
+def reason_for(
+    scored: ScoredArticle,
+    profile: UserProfile,
+    *,
+    most_similar_saved_title: str | None = None,
+) -> str | None:
     """Human-readable explanation of why an article was ranked high.
 
     Returns None when no positive signal contributed (pure recency-only
     rankings get no badge — the UI can decide whether to show one).
+
+    ``most_similar_saved_title`` lets the caller (currently
+    ``for_you.rank_for_you``) pinpoint the saved article a candidate is
+    most similar to, so the semantic branch can produce a concrete
+    "Similar to: <title>" label instead of the generic phrasing. When
+    omitted (or None — e.g. user has no saves with embeddings), the
+    semantic branch falls back to the generic label, preserving v0
+    behavior.
     """
     dominant = scored.breakdown.dominant_signal()
     if dominant is None:
@@ -392,6 +405,8 @@ def reason_for(scored: ScoredArticle, profile: UserProfile) -> str | None:
 
     article = scored.article
     if dominant == "semantic":
+        if most_similar_saved_title:
+            return f"Similar to: {_truncate(most_similar_saved_title, 50)}"
         return "Similar to articles you saved"
     if dominant == "explicit":
         # Prefer naming the matched category if there is one — it reads better
@@ -459,6 +474,44 @@ def _humanize_category(category: str) -> str:
     """
     overrides = {"rag": "RAG"}
     return overrides.get(category, category.capitalize())
+
+
+def _truncate(text: str, max_chars: int) -> str:
+    """Truncate ``text`` to at most ``max_chars`` characters, word-aware.
+
+    If the text is already short enough, returns it unchanged. Otherwise
+    we cut at the last whitespace at-or-before the limit and append a
+    single-codepoint ellipsis (``…``). The ellipsis counts toward the
+    char budget — a max_chars of 50 produces output ≤ 50 chars total.
+
+    Word-aware truncation matters here because the input is article
+    titles, which can read very oddly when cut mid-word (e.g.
+    "How we trained a 70B model on 4 H100s us…"). Cutting at the last
+    space gives "How we trained a 70B model on 4 H100s…" instead, which
+    reads cleanly and stays within the budget.
+
+    Edge cases:
+      - max_chars ≤ 1 — degenerate, returns just the ellipsis (truncated)
+      - text contains no whitespace before the limit — falls back to a
+        hard cut at max_chars - 1, since there's no word boundary to
+        respect. Rare in practice (titles almost always have spaces).
+    """
+    if len(text) <= max_chars:
+        return text
+    if max_chars <= 1:
+        return "…"[:max_chars]
+
+    # Reserve one character for the ellipsis.
+    budget = max_chars - 1
+    # Find the last whitespace within the budget. rfind on the slice is
+    # cheaper than walking the whole string.
+    cut = text.rfind(" ", 0, budget + 1)
+    if cut <= 0:
+        # No word boundary — hard cut.
+        return text[:budget] + "…"
+    # Trim trailing whitespace before the ellipsis so we don't render
+    # "word …" with a stray space.
+    return text[:cut].rstrip() + "…"
 
 
 def _jaccard(a: set[str], b: frozenset[str]) -> float:

@@ -17,13 +17,13 @@ from app.crud.article import (
     get_saved_article_embeddings,
     get_saved_article_ids,
     get_saved_articles,
+    get_saved_articles_with_embeddings_and_titles,
     get_saved_signals,
     get_semantic_search_articles,
     save_article,
     unsave_article,
     update_article,
     update_article_embeddings,
-    get_saved_articles_with_embeddings_and_titles,
 )
 from app.crud.event import (
     get_clicked_article_embeddings,

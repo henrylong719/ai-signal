@@ -121,7 +121,7 @@ def get_articles_with_saved_counts(
     source: str | None = None,
 ) -> Sequence[ArticleWithSavedCount]:
     statement = (
-        select(Article, func.count(SavedArticle.user_id))
+        select(Article, func.count(col(SavedArticle.user_id)))
         .outerjoin(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
         .group_by(col(Article.id))
     )

@@ -31,7 +31,9 @@ path locally.
 import logging
 from datetime import datetime, timedelta, timezone
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.schedulers.asyncio import (  # type: ignore[import-untyped]
+    AsyncIOScheduler,
+)
 
 from app.core.config import settings
 from app.services.ingest_runner import run_tracked_ingest

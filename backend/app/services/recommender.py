@@ -514,14 +514,6 @@ def _truncate(text: str, max_chars: int) -> str:
     return text[:cut].rstrip() + "…"
 
 
-def _jaccard(a: set[str], b: frozenset[str]) -> float:
-    if not a or not b:
-        return 0.0
-    intersection = len(a & b)
-    union = len(a | b)
-    return intersection / union if union else 0.0
-
-
 def _weighted_jaccard(a: set[str], b: dict[str, float]) -> float:
     """Jaccard overlap attenuated by the average weight of intersecting items.
 

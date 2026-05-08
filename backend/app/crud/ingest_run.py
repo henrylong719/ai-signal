@@ -55,6 +55,7 @@ def start_ingest_run(*, session: Session) -> IngestRun:
     expired = _expire_stale_runs(session=session)
     if expired:
         import logging
+
         logging.getLogger(__name__).warning(
             "Expired %d stale ingest run(s) stuck in 'running'", expired
         )

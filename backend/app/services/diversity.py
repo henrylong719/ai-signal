@@ -195,7 +195,7 @@ def diversity_rerank(
     span = s_max - s_min
     if span <= 0:
         # All scores identical — diversity wins by default.
-        normalized: dict[int, float] = {i: 0.0 for i in range(len(items))}
+        normalized: dict[int, float] = dict.fromkeys(range(len(items)), 0.0)
     else:
         normalized = {i: (it.score - s_min) / span for i, it in enumerate(items)}
 

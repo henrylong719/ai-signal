@@ -7,7 +7,7 @@ from sqlmodel import Session
 from app import crud
 from app.models import Article, User
 from app.models.article import ArticleEvent
-from app.schemas import ArticleCreate, UserCreate
+from app.schemas import ArticleCreate, ArticleUpdate, UserCreate
 from app.schemas.source import Category
 from tests.utils.utils import random_email, random_lower_string
 
@@ -178,3 +178,103 @@ def test_get_recent_articles_excluding_filters_and_orders_candidates(
     result_ids = [article.id for article in result]
     assert excluded.id not in result_ids
     assert result_ids[:2] == [newest.id, older.id]
+
+
+def test_get_articles_by_ids_returns_empty_without_ids(db: Session) -> None:
+    assert crud.get_articles_by_ids(session=db, article_ids=[]) == []
+
+
+def test_update_and_delete_article(db: Session) -> None:
+    article = _create_article(db, title="Original", source="Before")
+
+    updated = crud.update_article(
+        session=db,
+        db_article=article,
+        article_in=ArticleUpdate(title="Updated"),
+    )
+
+    assert updated.title == "Updated"
+    assert updated.source == "Before"
+
+    article_id = updated.id
+    crud.delete_article(session=db, db_article=updated)
+
+    assert crud.get_article(session=db, article_id=article_id) is None
+
+
+def test_get_articles_with_saved_counts_filters_by_source_and_search(
+    db: Session,
+) -> None:
+    user = _create_user(db)
+    matching = _create_article(
+        db,
+        title="Literal 100% RAG_guide",
+        source="Filtered Source",
+        category="rag",
+    )
+    _create_article(
+        db,
+        title="Literal 100% RAG_guide",
+        source="Other Source",
+        category="rag",
+    )
+    crud.save_article(session=db, user_id=user.id, article_id=matching.id)
+
+    result = crud.get_articles_with_saved_counts(
+        session=db,
+        source="Filtered Source",
+        search="100% RAG_guide",
+    )
+
+    assert [(article.id, saved_count) for article, saved_count in result] == [
+        (matching.id, 1)
+    ]
+
+
+def test_embedding_backfill_helpers_update_pending_articles(db: Session) -> None:
+    vector = [0.1] * 384
+    pending = _create_article(db, title="Needs embedding", age_days=-10)
+    already_embedded = _create_article(db, title="Already embedded", age_days=-11)
+    missing_id = uuid4()
+    already_embedded.embedding = vector
+    db.add(already_embedded)
+    db.commit()
+
+    pending_ids = {
+        article.id
+        for article in crud.get_pending_embedding_articles(session=db, limit=20)
+    }
+
+    assert pending.id in pending_ids
+    assert already_embedded.id not in pending_ids
+    assert crud.count_pending_embeddings(session=db) >= 1
+
+    crud.update_article_embeddings(
+        session=db,
+        embeddings={pending.id: vector, missing_id: vector},
+    )
+    db.expire_all()
+
+    updated = crud.get_article(session=db, article_id=pending.id)
+    assert updated is not None
+    assert list(updated.embedding) == pytest.approx(vector)
+
+
+def test_get_articles_in_window_filters_excluded_ids_and_orders_by_recency(
+    db: Session,
+) -> None:
+    since = NOW - timedelta(days=5)
+    newest = _create_article(db, title="Window newest", age_days=-3)
+    excluded = _create_article(db, title="Window excluded", age_days=-2)
+    _create_article(db, title="Window too old", age_days=10)
+
+    result = crud.get_articles_in_window(
+        session=db,
+        since=since,
+        excluded_ids={excluded.id},
+        limit=200,
+    )
+
+    result_ids = [article.id for article in result]
+    assert newest.id in result_ids
+    assert excluded.id not in result_ids

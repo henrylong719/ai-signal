@@ -63,7 +63,7 @@ def _to_public(
         categories=list(categories or []),
         tags=list(tags or []),
         preferred_sources=list(preferred_sources or []),
-        updated_at=updated_at,  # type: ignore[arg-type]
+        updated_at=updated_at,
     )
 
 

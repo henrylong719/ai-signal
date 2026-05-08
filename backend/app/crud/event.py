@@ -9,9 +9,10 @@ the same article must not race each other into double-inserts.
 import uuid
 from collections.abc import Sequence
 from datetime import datetime
+from typing import cast
 
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app.models.article import ARTICLE_EVENT_TYPES, ArticleEvent, ArticleEventType
 from app.models.base import get_datetime_utc
@@ -50,11 +51,11 @@ def record_event(
     stmt = stmt.on_conflict_do_update(
         index_elements=["user_id", "article_id", "event_type"],
         set_={
-            "count": ArticleEvent.count + 1,  # type: ignore[arg-type]
+            "count": ArticleEvent.count + 1,
             "last_at": now,
         },
     )
-    session.exec(stmt)  # type: ignore[call-overload]
+    session.exec(stmt)
     session.commit()
 
 
@@ -121,7 +122,7 @@ def get_clicked_signals(
 
     statement = (
         select(Article.source, Article.tags, ArticleEvent.last_at)
-        .join(ArticleEvent, Article.id == ArticleEvent.article_id)  # type: ignore[arg-type]
+        .join(ArticleEvent, col(Article.id) == col(ArticleEvent.article_id))
         .where(
             ArticleEvent.user_id == user_id,
             ArticleEvent.event_type == "clicked",
@@ -156,12 +157,16 @@ def get_clicked_article_embeddings(
     from app.models import Article  # local import to avoid circular
 
     statement = (
-        select(Article.embedding)
-        .join(ArticleEvent, Article.id == ArticleEvent.article_id)  # type: ignore[arg-type]
+        select(col(Article.embedding))
+        .join(ArticleEvent, col(Article.id) == col(ArticleEvent.article_id))
         .where(
             ArticleEvent.user_id == user_id,
             ArticleEvent.event_type == "clicked",
-            Article.embedding.is_not(None),  # type: ignore[union-attr]
+            col(Article.embedding).is_not(None),
         )
     )
-    return [list(row) for row in session.exec(statement).all() if row is not None]
+    return [
+        list(cast(Sequence[float], row))
+        for row in session.exec(statement).all()
+        if row is not None
+    ]

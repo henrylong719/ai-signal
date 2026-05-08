@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from sqlmodel import Session
 
 from app import crud
+from app.models import Article
 from app.services.diversity import (
     DEFAULT_LAMBDA_FOR_YOU,
     RerankItem,
@@ -104,7 +105,7 @@ def build_user_profile(*, session: Session, user_id: uuid.UUID) -> UserProfile:
     )
 
 
-def _to_candidate(article) -> CandidateArticle:  # type: ignore[no-untyped-def]
+def _to_candidate(article: Article) -> CandidateArticle:
     """Project an SQLModel Article down to the recommender's input shape."""
     return CandidateArticle(
         id=article.id,
@@ -151,7 +152,7 @@ def _resolve_user_vector(*, session: Session, user_id: uuid.UUID) -> list[float]
 def _candidate_similarities(
     *,
     user_vector: list[float],
-    db_articles: Sequence,  # type: ignore[type-arg]
+    db_articles: Sequence[Article],
 ) -> dict[uuid.UUID, float]:
     """Cosine similarity for every candidate that has an embedding.
 
@@ -173,7 +174,7 @@ def _candidate_similarities(
 
 def _most_similar_saved_titles(
     *,
-    db_articles: Sequence,  # type: ignore[type-arg]
+    db_articles: Sequence[Article],
     saved: list[tuple[uuid.UUID, str, list[float]]],
 ) -> dict[uuid.UUID, str]:
     """For each candidate, the title of the saved article it's closest to.
@@ -250,7 +251,7 @@ def rank_for_you(
     # The recommender's filter_candidates step is a defense-in-depth pass
     # in case the IDs have drifted between query and score.
     excluded = set(profile.saved_article_ids) | set(profile.dismissed_article_ids)
-    db_articles: Sequence = crud.get_recent_articles_excluding(
+    db_articles: Sequence[Article] = crud.get_recent_articles_excluding(
         session=session,
         excluded_ids=excluded,
         limit=_CANDIDATE_POOL_SIZE,

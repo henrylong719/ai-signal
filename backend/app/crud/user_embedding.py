@@ -44,7 +44,7 @@ def upsert_user_embedding(
             "updated_at": now,
         },
     )
-    session.exec(stmt)  # type: ignore[call-overload]
+    session.exec(stmt)
     session.commit()
 
 

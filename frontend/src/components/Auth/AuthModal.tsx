@@ -1,6 +1,6 @@
 import { XIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import AuthFlow from '@/components/Auth/AuthFlow'
 import type { AuthMode } from '@/components/Auth/authTypes'
@@ -16,33 +16,59 @@ import {
 import useAuth from '@/hooks/useAuth'
 
 interface AuthModalProps {
+  description?: string
   initialMode?: AuthMode
+  onOpenChange?: (open: boolean) => void
+  open?: boolean
+  title?: string
   trigger?: ReactNode
 }
 
-function AuthModal({ initialMode = 'sign-in', trigger }: AuthModalProps) {
+function AuthModal({
+  description,
+  initialMode = 'sign-in',
+  onOpenChange,
+  open,
+  title,
+  trigger,
+}: AuthModalProps) {
   const { user } = useAuth()
-  const [isOpen, setIsOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const isOpen = open ?? uncontrolledOpen
+  const triggerContent =
+    trigger === undefined ? (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="inline-flex h-9 rounded-full border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-slate-950/15 dark:border-border dark:bg-muted/45 dark:text-foreground/86 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35"
+      >
+        Sign In
+      </Button>
+    ) : (
+      trigger
+    )
+
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (open === undefined) {
+        setUncontrolledOpen(nextOpen)
+      }
+      onOpenChange?.(nextOpen)
+    },
+    [onOpenChange, open],
+  )
 
   useEffect(() => {
     if (user) {
-      setIsOpen(false)
+      handleOpenChange(false)
     }
-  }, [user])
+  }, [handleOpenChange, user])
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="inline-flex h-9 rounded-full border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-slate-950/15 dark:border-border dark:bg-muted/45 dark:text-foreground/86 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35"
-          >
-            Sign In
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      {triggerContent && (
+        <DialogTrigger asChild>{triggerContent}</DialogTrigger>
+      )}
       <DialogContent
         showCloseButton={false}
         overlayClassName="z-[70] bg-black/40 dark:bg-black/55"
@@ -53,7 +79,9 @@ function AuthModal({ initialMode = 'sign-in', trigger }: AuthModalProps) {
           Sign in or create an AI Signal account.
         </DialogDescription>
         <AuthFlow
+          description={description}
           initialMode={initialMode}
+          title={title}
           closeControl={
             <DialogClose className="absolute right-5 top-5 z-10 rounded-sm p-1.5 text-slate-500 transition hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 dark:text-muted-foreground dark:hover:text-foreground dark:focus-visible:ring-ring/35">
               <XIcon className="size-5 stroke-[1.6]" />

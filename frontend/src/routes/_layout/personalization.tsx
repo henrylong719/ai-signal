@@ -141,6 +141,8 @@ function Personalization() {
           icon={<LogInIcon className="h-5 w-5 stroke-[1.5]" />}
           action={
             <AuthModal
+              title="Sign in to tune your signal"
+              description="Choose the topics and sources that shape your personalized AI Signal feed."
               trigger={
                 <button
                   type="button"

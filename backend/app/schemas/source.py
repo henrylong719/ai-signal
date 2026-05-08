@@ -74,7 +74,7 @@ class SourcesPublic(SQLModel):
 SOURCES: tuple[Source, ...] = (
     Source(
         "Anthropic",
-        "https://rsshub.app/anthropic/engineering",
+        "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_engineering.xml",
         "models",
         "official",
         topic="AI Research Lab",

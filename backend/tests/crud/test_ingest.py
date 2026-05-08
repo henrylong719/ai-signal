@@ -8,7 +8,7 @@ from sqlmodel import Session
 
 from app import crud
 from app.crud import ingest
-from app.schemas.source import Source
+from app.schemas.source import SOURCES, Source
 
 
 def test_ingest_stores_article_image_url(
@@ -134,3 +134,9 @@ def test_fetch_one_sends_rss_reader_headers() -> None:
 
     assert client.request_headers == ingest.RSS_REQUEST_HEADERS
     assert len(entries) == 1
+
+
+def test_anthropic_source_uses_production_feed_url() -> None:
+    source = next(source for source in SOURCES if source.name == "Anthropic")
+
+    assert "rsshub.app" not in source.rss_url

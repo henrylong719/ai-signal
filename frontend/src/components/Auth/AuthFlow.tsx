@@ -26,13 +26,17 @@ export type { AuthMode } from './authTypes'
 interface AuthFlowProps {
   className?: string
   closeControl?: ReactNode
+  description?: string
   initialMode?: AuthMode
+  title?: string
 }
 
 export function AuthFlow({
   className,
   closeControl,
+  description = 'Sign in to save articles, tune your feed, and keep your preferences in sync.',
   initialMode = 'sign-in',
+  title = 'Welcome to AI Signal',
 }: AuthFlowProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [authStep, setAuthStep] = useState<'providers' | 'email'>('providers')
@@ -97,7 +101,7 @@ export function AuthFlow({
   return (
     <section
       className={cn(
-        'relative flex w-full flex-col items-center bg-white px-6 py-9 text-slate-950 sm:px-10 sm:py-10 dark:bg-card dark:text-card-foreground',
+        'relative flex w-full flex-col items-center bg-white px-6 pb-9 pt-12 text-slate-950 sm:px-10 sm:pb-10 sm:pt-14 dark:bg-card dark:text-card-foreground',
         className,
       )}
     >
@@ -105,10 +109,7 @@ export function AuthFlow({
 
       {authStep === 'providers' ? (
         <>
-          <AuthIntro
-            title="Welcome to AI Signal"
-            description="Sign in to save articles, tune your feed, and keep your preferences in sync."
-          />
+          <AuthIntro title={title} description={description} />
           <div className="mt-8 w-full">
             <SocialLoginButtons
               onEmailClick={() => setAuthStep('email')}

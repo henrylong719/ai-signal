@@ -1,8 +1,9 @@
 import { AlertCircleIcon, NewspaperIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import type { ArticlePublic } from '@/client'
 import { useDismissArticle } from '@/hooks/useArticleEvents'
-import { isLoggedIn } from '@/hooks/useAuth'
+import useAuth, { isLoggedIn } from '@/hooks/useAuth'
 import useCustomToast from '@/hooks/useCustomToast'
 import { useSavedArticles } from '@/hooks/useSavedArticles'
 import { ArticleCard } from './ArticleCard'
@@ -75,15 +76,34 @@ export function ArticleList({
 }: ArticleListProps) {
   const { savedArticleIds, toggleSave } = useSavedArticles()
   const { dismissedIds, dismiss } = useDismissArticle()
+  const { user } = useAuth()
   const { showErrorToast } = useCustomToast()
+  const [pendingSaveArticleId, setPendingSaveArticleId] = useState<
+    string | null
+  >(null)
+
+  useEffect(() => {
+    if (!user || !pendingSaveArticleId) {
+      return
+    }
+
+    if (!savedArticleIds.has(pendingSaveArticleId)) {
+      toggleSave(pendingSaveArticleId)
+    }
+    setPendingSaveArticleId(null)
+  }, [pendingSaveArticleId, savedArticleIds, toggleSave, user])
 
   const handleBookmark = (articleId: string) => (e: React.MouseEvent) => {
     e.preventDefault()
     if (!isLoggedIn()) {
-      showErrorToast('Please login to save articles!')
+      setPendingSaveArticleId(articleId)
       return
     }
     toggleSave(articleId)
+  }
+
+  const handleBookmarkAuthRequired = (articleId: string) => () => {
+    setPendingSaveArticleId(articleId)
   }
 
   // Dismiss handler is only wired when showDismiss is true. Optimistic
@@ -141,6 +161,7 @@ export function ArticleList({
           article={article}
           key={article.id}
           onBookmark={handleBookmark(article.id)}
+          onBookmarkAuthRequired={handleBookmarkAuthRequired(article.id)}
           isBookmarked={savedArticleIds.has(article.id)}
           onDismiss={showDismiss ? handleDismiss(article.id) : undefined}
           reason={reasons?.get(article.id) ?? undefined}

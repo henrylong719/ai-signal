@@ -83,6 +83,8 @@ function UserSettings() {
           icon={<LogInIcon className="h-5 w-5 stroke-[1.5]" />}
           action={
             <AuthModal
+              title="Sign in to manage settings"
+              description="Access your profile, sign-in methods, and account security settings."
               trigger={
                 <button
                   type="button"

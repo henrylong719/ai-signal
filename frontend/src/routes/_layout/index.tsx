@@ -1,15 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { LogInIcon } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
-import {
-  ArticleList,
-  ArticleListState,
-} from '@/components/Articles/ArticleList'
+import { ArticleList } from '@/components/Articles/ArticleList'
 import AuthModal from '@/components/Auth/AuthModal'
 import { MobileSidebar, Sidebar } from '@/components/Landing/Sidebar'
 import { PersonalizationCard } from '@/components/Personalization/PersonalizationCard'
 import { useArticleFeed } from '@/hooks/useArticleFeed'
-import useAuth from '@/hooks/useAuth'
+import useAuth, { isLoggedIn } from '@/hooks/useAuth'
 import { useForYouFeed } from '@/hooks/useForYouFeed'
 import { useInterests } from '@/hooks/useInterests'
 
@@ -32,7 +28,10 @@ const tabs: { value: Tab; label: string }[] = [
 ]
 
 function Dashboard() {
-  const [activeTab, setActiveTab] = useState<Tab>('for-you')
+  const [activeTab, setActiveTab] = useState<Tab>(() =>
+    isLoggedIn() ? 'for-you' : 'latest',
+  )
+  const [authPromptOpen, setAuthPromptOpen] = useState(false)
   const feedTopRef = useRef<HTMLDivElement>(null)
   const latest = useArticleFeed()
   // useForYouFeed always runs, but its query needs auth — when the user
@@ -70,12 +69,23 @@ function Dashboard() {
     }
 
     setActiveTab(tab)
+    if (tab === 'for-you' && !user) {
+      setAuthPromptOpen(true)
+    }
     window.requestAnimationFrame(() => {
       feedTopRef.current?.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
       })
     })
+  }
+
+  const handleAuthPromptOpenChange = (nextOpen: boolean) => {
+    setAuthPromptOpen(nextOpen)
+
+    if (!nextOpen && !user) {
+      setActiveTab('latest')
+    }
   }
 
   return (
@@ -111,40 +121,28 @@ function Dashboard() {
           </div>
         </div>
 
-        {activeTab === 'for-you' &&
-          (user ? (
-            <>
-              {showActivationCard && <PersonalizationCard />}
-              <ArticleList
-                {...forYou}
-                showDismiss
-                reasons={forYouReasons}
-                emptyTitle="No personalized signals yet"
-                emptyDescription="Save a few articles or pick interests in Settings to start tailoring your feed."
-              />
-            </>
-          ) : (
-            <ArticleListState
-              title="Sign in to personalize your feed"
-              description="Your For You feed is built from articles you save, click, and the topics you tell us you care about."
-              icon={<LogInIcon className="h-5 w-5 stroke-[1.5]" />}
-              action={
-                <AuthModal
-                  trigger={
-                    <button
-                      type="button"
-                      className="inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-                    >
-                      Sign in
-                    </button>
-                  }
-                />
-              }
+        {activeTab === 'for-you' && user && (
+          <>
+            {showActivationCard && <PersonalizationCard />}
+            <ArticleList
+              {...forYou}
+              showDismiss
+              reasons={forYouReasons}
+              emptyTitle="No personalized signals yet"
+              emptyDescription="Save a few articles or pick interests in Settings to start tailoring your feed."
             />
-          ))}
+          </>
+        )}
         {activeTab === 'latest' && <ArticleList {...latest} />}
       </div>
       <Sidebar />
+      <AuthModal
+        open={authPromptOpen}
+        onOpenChange={handleAuthPromptOpenChange}
+        title="Sign in to personalize your feed"
+        description="Your For You feed learns from saved articles, clicks, and the topics you care about."
+        trigger={null}
+      />
     </div>
   )
 }

@@ -26,6 +26,8 @@ export function SavedArticleList() {
         icon={<LogInIcon className="h-5 w-5 stroke-[1.5]" />}
         action={
           <AuthModal
+            title="Sign in to build your library"
+            description="Save articles to your account so you can return to them later."
             trigger={
               <button
                 type="button"

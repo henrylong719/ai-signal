@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { BookmarkIcon, ThumbsDown } from 'lucide-react'
 import { DateTime } from 'luxon'
 import type { ArticlePublic } from '@/client'
+import AuthModal from '@/components/Auth/AuthModal'
 import {
   Tooltip,
   TooltipContent,
@@ -17,6 +18,7 @@ interface ArticleCardProps {
   featured?: boolean
   className?: string
   onBookmark?: (e: React.MouseEvent) => void
+  onBookmarkAuthRequired?: () => void
   isBookmarked?: boolean
   /**
    * If provided, renders a dismiss button next to the bookmark.
@@ -37,6 +39,7 @@ export function ArticleCard({
   featured = false,
   className,
   onBookmark,
+  onBookmarkAuthRequired,
   isBookmarked = false,
   onDismiss,
   reason,
@@ -46,7 +49,8 @@ export function ArticleCard({
   // makes this work — the browser sends the access cookie on the
   // navigation. See lib/article-urls.ts for details.
   const href = redirectHref(article.id)
-  const showActions = isLoggedIn()
+  const loggedIn = isLoggedIn()
+  const showActions = !!onBookmark || !!onDismiss
 
   return (
     <article
@@ -85,32 +89,59 @@ export function ArticleCard({
           </div>
           {showActions && (
             <div className="-mt-1 -mr-1 flex shrink-0 items-center gap-1 text-slate-400 dark:text-muted-foreground">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={onBookmark}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent/80 dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-                    aria-label={
-                      isBookmarked ? 'Remove saved article' : 'Save article'
-                    }
-                    aria-pressed={isBookmarked}
-                  >
-                    <BookmarkIcon
-                      className={cn(
-                        'h-4.5 w-4.5 stroke-[1.6]',
-                        isBookmarked &&
-                          'fill-slate-900 text-slate-900 dark:fill-foreground dark:text-foreground',
-                      )}
-                    />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  {isBookmarked ? 'Remove saved article' : 'Save article'}
-                </TooltipContent>
-              </Tooltip>
+              {onBookmark &&
+                (loggedIn ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={onBookmark}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent/80 dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                        aria-label={
+                          isBookmarked ? 'Remove saved article' : 'Save article'
+                        }
+                        aria-pressed={isBookmarked}
+                      >
+                        <BookmarkIcon
+                          className={cn(
+                            'h-4.5 w-4.5 stroke-[1.6]',
+                            isBookmarked &&
+                              'fill-slate-900 text-slate-900 dark:fill-foreground dark:text-foreground',
+                          )}
+                        />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      {isBookmarked ? 'Remove saved article' : 'Save article'}
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex">
+                        <AuthModal
+                          title="Sign in to save this article"
+                          description="Keep this story in your library and use it to tune your AI Signal feed."
+                          trigger={
+                            <button
+                              type="button"
+                              onClick={onBookmarkAuthRequired}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent/80 dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                              aria-label="Sign in to save article"
+                            >
+                              <BookmarkIcon className="h-4.5 w-4.5 stroke-[1.6]" />
+                            </button>
+                          }
+                        />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      Sign in to save article
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
 
-              {onDismiss && (
+              {loggedIn && onDismiss && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button

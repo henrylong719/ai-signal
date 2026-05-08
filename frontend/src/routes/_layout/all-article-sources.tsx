@@ -314,6 +314,8 @@ function AllArticleSources() {
                                 </button>
                               ) : (
                                 <AuthModal
+                                  title={`Sign in to follow ${source.name}`}
+                                  description="Follow trusted sources to shape your personalized AI Signal feed."
                                   trigger={
                                     <button
                                       type="button"

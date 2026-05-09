@@ -118,7 +118,7 @@ export function SourcesField({ value, onChange }: SourcesFieldProps) {
                   aria-pressed={true}
                   aria-label={`${sourceName} selected. Press to remove.`}
                   className={cn(
-                    'inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border border-slate-950 bg-slat-950 px-3 py-1.5 text-sm font-medium leading-snug text-white shadow-sm shadow-slate-950/10 transition-all hover:bg-slate-800',
+                    'inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border border-slate-950 bg-slate-950 px-3 py-1.5 text-sm font-medium leading-snug text-white shadow-sm shadow-slate-950/10 transition-all hover:bg-slate-800',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:border-primary dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background',
                   )}
                 >
@@ -140,7 +140,7 @@ export function SourcesField({ value, onChange }: SourcesFieldProps) {
           aria-expanded={isLibraryOpen}
           aria-controls={sourceLibraryId}
           onClick={() => setIsLibraryOpen((open) => !open)}
-          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm shadow-slate-950/[0.02] transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-foreground/86 dark:shadow-none dark:hover:bg-accent dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm shadow-slate-950/2 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-foreground/86 dark:shadow-none dark:hover:bg-accent dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
         >
           {sourceLibraryLabel}
           <ChevronDownIcon
@@ -179,7 +179,7 @@ export function SourcesField({ value, onChange }: SourcesFieldProps) {
                           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background',
                           selected
                             ? 'border-slate-950 bg-slate-950 text-white shadow-sm shadow-slate-950/10 hover:bg-slate-800 dark:border-primary dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88'
-                            : 'border-slate-200 bg-white text-slate-600 shadow-sm shadow-slate-950/[0.02] hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground',
+                            : 'border-slate-200 bg-white text-slate-600 shadow-sm shadow-slate-950/2 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground',
                         )}
                       >
                         <CheckIcon
@@ -188,7 +188,7 @@ export function SourcesField({ value, onChange }: SourcesFieldProps) {
                             selected ? 'opacity-100' : 'opacity-0',
                           )}
                         />
-                        <span className="break-words">{source.name}</span>
+                        <span className="wrap-break-word">{source.name}</span>
                       </button>
                     );
                   })}

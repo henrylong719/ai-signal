@@ -57,7 +57,7 @@ function TodayDigest() {
     <PageContainer
       variant="narrow"
       spacing="none"
-      className="max-w-3xl py-12 sm:py-16 md:py-20"
+      className="max-w-4xl py-12 sm:py-16 md:py-20"
     >
       <DigestHeader digest={data} />
       <DigestBody data={data} isLoading={isLoading} isError={isError} />

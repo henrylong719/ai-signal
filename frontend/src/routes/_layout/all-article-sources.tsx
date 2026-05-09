@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, useLocation } from '@tanstack/react-router'
-import { AlertCircleIcon, RadioTowerIcon } from 'lucide-react'
+import { AlertCircleIcon } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { source_type } from '@/client'
 import { ArticleListState } from '@/components/Articles/ArticleList'
@@ -20,7 +20,7 @@ export const Route = createFileRoute('/_layout/all-article-sources')({
   component: AllArticleSources,
 })
 
-const getSourceCountLabel = (count: number) =>
+const _getSourceCountLabel = (count: number) =>
   `${count} ${count === 1 ? 'source' : 'sources'}`
 
 const isSourceType = (value: unknown): value is source_types =>
@@ -81,7 +81,7 @@ function AllArticleSources() {
     }))
     .filter((group) => group.items.length > 0)
 
-  const sourceCount = sources.length
+  const _sourceCount = sources.length
   const preferredSources = interests?.preferred_sources ?? []
   const followDisabled = interestsLoading || interestsError || isSaving
 
@@ -117,14 +117,14 @@ function AllArticleSources() {
         eyebrow="Directory"
         title="Sources"
         description="Explore the labs, research feeds, analysis, policy groups, media outlets, newsletters, podcasts, and community sites behind AI Signal."
-        actions={
-          <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm md:self-auto dark:border-border dark:bg-card/35 dark:text-muted-foreground dark:shadow-none">
-            <RadioTowerIcon className="h-4 w-4 stroke-[1.8] text-slate-400 dark:text-muted-foreground" />
-            <span>
-              {isLoading ? 'Loading sources' : getSourceCountLabel(sourceCount)}
-            </span>
-          </div>
-        }
+        // actions={
+        //   <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm md:self-auto dark:border-border dark:bg-card/35 dark:text-muted-foreground dark:shadow-none">
+        //     <RadioTowerIcon className="h-4 w-4 stroke-[1.8] text-slate-400 dark:text-muted-foreground" />
+        //     <span>
+        //       {isLoading ? 'Loading sources' : getSourceCountLabel(sourceCount)}
+        //     </span>
+        //   </div>
+        // }
       />
 
       <SourceFilterBar selected={sourceFilter} onSelect={setSourceFilter} />

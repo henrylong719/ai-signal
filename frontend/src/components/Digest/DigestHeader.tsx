@@ -1,41 +1,41 @@
-import { CalendarIcon } from 'lucide-react';
-import { DateTime } from 'luxon';
-import type { DigestPublicSchema } from '@/client';
+import { CalendarIcon } from 'lucide-react'
+import { DateTime } from 'luxon'
+import type { DigestPublicSchema } from '@/client'
 
 const formatDigestDate = (date: string | undefined) => {
   if (!date) {
-    return DateTime.now().toLocaleString(DateTime.DATE_FULL);
+    return DateTime.now().toLocaleString(DateTime.DATE_FULL)
   }
 
-  const parsed = DateTime.fromISO(date);
+  const parsed = DateTime.fromISO(date)
   return parsed.isValid
     ? parsed.toLocaleString(DateTime.DATE_FULL)
-    : DateTime.now().toLocaleString(DateTime.DATE_FULL);
-};
+    : DateTime.now().toLocaleString(DateTime.DATE_FULL)
+}
 
 const DEFAULT_INTRO =
-  'The most important AI engineering updates, organized for a focused morning read.';
+  'The most important AI engineering updates, organized for a focused morning read.'
 
 const buildDigestIntro = (digest: DigestPublicSchema | undefined): string => {
   if (!digest) {
-    return DEFAULT_INTRO;
+    return DEFAULT_INTRO
   }
 
   const articleCount = digest.sections.reduce(
     (count, section) => count + section.articles.length,
     0,
-  );
+  )
   // Empty digest renders the empty-state component, not this header copy —
   // but be defensive in case the header ever shows above the empty state.
   if (articleCount === 0) {
-    return DEFAULT_INTRO;
+    return DEFAULT_INTRO
   }
 
-  const cadence = articleCount === 1 ? '1 signal' : `${articleCount} signals`;
-  const mode = digest.is_personalized ? 'personalized' : 'curated';
+  const cadence = articleCount === 1 ? '1 signal' : `${articleCount} signals`
+  const mode = digest.is_personalized ? 'personalized' : 'curated'
 
-  return `A ${mode} briefing of ${cadence} from today's AI research, engineering, models, and industry coverage.`;
-};
+  return `A ${mode} briefing of ${cadence} from today's AI research, engineering, models, and industry coverage.`
+}
 
 function DigestHeader({ digest }: { digest: DigestPublicSchema | undefined }) {
   return (
@@ -51,7 +51,7 @@ function DigestHeader({ digest }: { digest: DigestPublicSchema | undefined }) {
         {buildDigestIntro(digest)}
       </p>
     </header>
-  );
+  )
 }
 
-export default DigestHeader;
+export default DigestHeader

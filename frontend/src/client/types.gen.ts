@@ -439,6 +439,14 @@ export type ArticlesReadForYouData = {
 
 export type ArticlesReadForYouResponse = (ForYouArticlesPublic);
 
+export type ArticlesReadFollowingData = {
+    accessToken?: (string | null);
+    limit?: number;
+    skip?: number;
+};
+
+export type ArticlesReadFollowingResponse = (ArticlesPublic);
+
 export type ArticlesReadSourcesData = {
     sourceType?: ('official' | 'independent' | 'community' | 'research' | 'media' | 'newsletter' | 'analysis' | 'policy' | 'education' | 'papers' | 'podcast' | null);
 };

@@ -20,12 +20,20 @@ def count_articles(
     category: Category | None = None,
     search: str | None = None,
     source: str | None = None,
+    sources: Sequence[str] | None = None,
 ) -> int:
     statement = select(func.count()).select_from(Article)
     if category is not None:
         statement = statement.where(Article.category == category)
     if source:
         statement = statement.where(Article.source == source)
+    if sources is not None:
+        # Empty list ⇒ no rows can match; short-circuit so we don't ship
+        # an `IN ()` to Postgres (which is a syntax error in some
+        # dialects and a no-op others).
+        if not sources:
+            return 0
+        statement = statement.where(col(Article.source).in_(sources))
     if search:
         escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         pattern = f"%{escaped}%"
@@ -61,12 +69,17 @@ def get_articles(
     category: Category | None = None,
     search: str | None = None,
     source: str | None = None,
+    sources: Sequence[str] | None = None,
 ) -> Sequence[Article]:
     statement = select(Article)
     if category is not None:
         statement = statement.where(Article.category == category)
     if source:
         statement = statement.where(Article.source == source)
+    if sources is not None:
+        if not sources:
+            return []
+        statement = statement.where(col(Article.source).in_(sources))
     if search:
         escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         pattern = f"%{escaped}%"

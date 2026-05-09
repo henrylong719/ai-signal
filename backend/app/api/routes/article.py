@@ -131,6 +131,41 @@ def read_for_you(
     )
 
 
+@router.get("/following", response_model=ArticlesPublic)
+def read_following(
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+) -> Any:
+    """Articles from sources the current user follows.
+
+    Authenticated-only. Reads the user's preferred_sources from
+    UserInterest and returns matching articles in published_at desc
+    order — no scoring, no diversity rerank, just chronological from
+    the followed-source set. This is intentionally simpler than For-You:
+    users come here when they want exactly what their trusted sources
+    published, not a personalized blend.
+
+    A user with no preferred_sources gets an empty page; the route
+    still 200's so the client renders the "Follow sources to build
+    your trusted AI reading list" empty state instead of a generic
+    error. The crud helpers short-circuit on an empty `sources` list,
+    so this is a constant-time response.
+    """
+    interests = crud.get_interests(session=session, user_id=current_user.id)
+    preferred_sources = list(interests.preferred_sources) if interests else []
+    count = crud.count_articles(session=session, sources=preferred_sources)
+    articles = crud.get_articles(
+        session=session,
+        sources=preferred_sources,
+        skip=skip,
+        limit=limit,
+    )
+    articles_public = [ArticlePublic.model_validate(article) for article in articles]
+    return ArticlesPublic(data=articles_public, count=count)
+
+
 @router.get("/sources/", response_model=SourcesPublic)
 def read_sources(
     source_type: SourceType | None = Query(default=None),

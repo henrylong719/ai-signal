@@ -1,15 +1,16 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { SlidersHorizontalIcon } from 'lucide-react'
+import { LibraryIcon, SlidersHorizontalIcon } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 import { ArticleList } from '@/components/Articles/ArticleList'
 import type { RecommenderDebugPayload } from '@/components/Articles/RecommenderDebugPanel'
-import AuthModal from '@/components/Auth/AuthModal'
 import { MobileSidebar, Sidebar } from '@/components/Landing/Sidebar'
 import { PageContainer } from '@/components/Layout/Page'
+import { GuestPersonalizationCard } from '@/components/Personalization/GuestPersonalizationCard'
 import { PersonalizationCard } from '@/components/Personalization/PersonalizationCard'
 import { useArticleFeed } from '@/hooks/useArticleFeed'
-import useAuth, { isLoggedIn } from '@/hooks/useAuth'
+import useAuth from '@/hooks/useAuth'
+import { useFollowingFeed } from '@/hooks/useFollowingFeed'
 import { useForYouFeed } from '@/hooks/useForYouFeed'
 import { useInterests } from '@/hooks/useInterests'
 
@@ -39,22 +40,42 @@ export const Route = createFileRoute('/_layout/')({
   }),
 })
 
-type Tab = 'for-you' | 'latest'
+type Tab = 'for-you' | 'following' | 'latest'
 
-const tabs: { value: Tab; label: string }[] = [
-  { value: 'for-you', label: 'For you' },
+interface TabDef {
+  value: Tab
+  label: string
+  authOnly?: boolean
+}
+
+const ALL_TABS: TabDef[] = [
+  { value: 'for-you', label: 'For you', authOnly: true },
+  { value: 'following', label: 'Following', authOnly: true },
   { value: 'latest', label: 'Latest' },
 ]
 
 function Dashboard() {
   const { debug: debugParam } = Route.useSearch()
-  const [activeTab, setActiveTab] = useState<Tab>(() =>
-    isLoggedIn() ? 'for-you' : 'latest',
+  const { user } = useAuth()
+  const isAuthed = !!user
+  const visibleTabs = useMemo(
+    () => ALL_TABS.filter((tab) => !tab.authOnly || isAuthed),
+    [isAuthed],
   )
-  const [authPromptOpen, setAuthPromptOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<Tab>(() =>
+    isAuthed ? 'for-you' : 'latest',
+  )
+  // Guests should never see auth-only tabs — if a previously-authed
+  // session left activeTab on 'for-you' or 'following' (e.g. after
+  // logout in another tab), normalize back to 'latest' instead of
+  // rendering an auth-only feed.
+  const isAuthOnly = (tab: Tab): boolean =>
+    tab === 'for-you' || tab === 'following'
+  const resolvedTab: Tab =
+    !isAuthed && isAuthOnly(activeTab) ? 'latest' : activeTab
   const feedTopRef = useRef<HTMLDivElement>(null)
   const latest = useArticleFeed()
-  const { user } = useAuth()
+  const following = useFollowingFeed()
 
   // Debug mode is the AND of "URL asked for it" and "user is privileged".
   // The backend silently ignores ?debug=1 from non-superusers, but
@@ -113,28 +134,17 @@ function Dashboard() {
   }, [forYou.articles, debugRequested])
 
   const handleTabChange = (tab: Tab) => {
-    if (tab === activeTab) {
+    if (tab === resolvedTab) {
       return
     }
 
     setActiveTab(tab)
-    if (tab === 'for-you' && !user) {
-      setAuthPromptOpen(true)
-    }
     window.requestAnimationFrame(() => {
       feedTopRef.current?.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
       })
     })
-  }
-
-  const handleAuthPromptOpenChange = (nextOpen: boolean) => {
-    setAuthPromptOpen(nextOpen)
-
-    if (!nextOpen && !user) {
-      setActiveTab('latest')
-    }
   }
 
   return (
@@ -154,19 +164,19 @@ function Dashboard() {
           <div className="flex items-center">
             <MobileSidebar />
             <div className="flex gap-8 sm:gap-10">
-              {tabs.map((tab) => (
+              {visibleTabs.map((tab) => (
                 <button
                   key={tab.value}
                   type="button"
                   onClick={() => handleTabChange(tab.value)}
                   className={`relative rounded-sm pb-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-4 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background ${
-                    activeTab === tab.value
+                    resolvedTab === tab.value
                       ? 'text-slate-950 dark:text-foreground'
                       : 'text-slate-500 hover:text-slate-800 dark:text-muted-foreground dark:hover:text-foreground/86'
                   }`}
                 >
                   {tab.label}
-                  {activeTab === tab.value && (
+                  {resolvedTab === tab.value && (
                     <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-slate-950 dark:bg-primary" />
                   )}
                 </button>
@@ -175,7 +185,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {activeTab === 'for-you' && user && (
+        {resolvedTab === 'for-you' && isAuthed && (
           <>
             {showActivationCard && <PersonalizationCard />}
             {debugRequested && forYou.weights && (
@@ -214,16 +224,48 @@ function Dashboard() {
             />
           </>
         )}
-        {activeTab === 'latest' && <ArticleList {...latest} />}
+        {resolvedTab === 'following' && isAuthed && (
+          <ArticleList
+            {...following}
+            emptyTitle={
+              (interests?.preferred_sources?.length ?? 0) === 0
+                ? 'Follow sources to build your trusted AI reading list'
+                : 'No new articles from your followed sources yet'
+            }
+            emptyDescription={
+              (interests?.preferred_sources?.length ?? 0) === 0
+                ? 'Choose the labs, newsletters, research feeds, and communities you care about most.'
+                : 'New posts from your followed sources will appear here when they are ingested.'
+            }
+            emptyAction={
+              (interests?.preferred_sources?.length ?? 0) === 0 ? (
+                <Link
+                  to="/all-article-sources"
+                  className="inline-flex h-9 items-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                >
+                  <LibraryIcon className="h-4 w-4 stroke-[1.7]" />
+                  Browse sources
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('latest')}
+                  className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-muted/45 dark:text-foreground/86 dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                >
+                  Explore latest articles
+                </button>
+              )
+            }
+          />
+        )}
+        {resolvedTab === 'latest' && (
+          <>
+            {!isAuthed && <GuestPersonalizationCard />}
+            <ArticleList {...latest} />
+          </>
+        )}
       </div>
       <Sidebar />
-      <AuthModal
-        open={authPromptOpen}
-        onOpenChange={handleAuthPromptOpenChange}
-        title="Sign in to personalize your feed"
-        description="Your For You feed learns from saved articles, clicks, and the topics you care about."
-        trigger={null}
-      />
     </PageContainer>
   )
 }

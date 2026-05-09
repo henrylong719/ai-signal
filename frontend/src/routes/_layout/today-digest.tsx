@@ -1,11 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router';
-import type { DigestPublicSchema } from '@/client';
-import DigestHeader from '@/components/Digest/DigestHeader';
-import DigestSections from '@/components/Digest/DigestSections';
-import DigestSkeleton from '@/components/Digest/DigestSkeleton';
-import DigestState from '@/components/Digest/DigestState';
-import { PageContainer } from '@/components/Layout/Page';
-import { useTodayDigest } from '@/hooks/useTodayDigest';
+import { createFileRoute } from '@tanstack/react-router'
+import type { DigestPublicSchema } from '@/client'
+import DigestHeader from '@/components/Digest/DigestHeader'
+import DigestSections from '@/components/Digest/DigestSections'
+import DigestSkeleton from '@/components/Digest/DigestSkeleton'
+import DigestState from '@/components/Digest/DigestState'
+import { PageContainer } from '@/components/Layout/Page'
+import { useTodayDigest } from '@/hooks/useTodayDigest'
 
 export const Route = createFileRoute('/_layout/today-digest')({
   component: TodayDigest,
@@ -16,17 +16,17 @@ export const Route = createFileRoute('/_layout/today-digest')({
       },
     ],
   }),
-});
+})
 
 type DigestBodyProps = {
-  data: DigestPublicSchema | undefined;
-  isLoading: boolean;
-  isError: boolean;
-};
+  data: DigestPublicSchema | undefined
+  isLoading: boolean
+  isError: boolean
+}
 
 function DigestBody({ data, isLoading, isError }: DigestBodyProps) {
   if (isLoading) {
-    return <DigestSkeleton />;
+    return <DigestSkeleton />
   }
 
   if (isError) {
@@ -35,7 +35,7 @@ function DigestBody({ data, isLoading, isError }: DigestBodyProps) {
         title="Could not load today's digest"
         description="Refresh the page in a moment. The digest data did not come back cleanly."
       />
-    );
+    )
   }
 
   if (!data || data.sections.length === 0) {
@@ -44,14 +44,14 @@ function DigestBody({ data, isLoading, isError }: DigestBodyProps) {
         title="Today's digest will appear here"
         description="Once enough fresh articles are available, the briefing will be grouped by signal area."
       />
-    );
+    )
   }
 
-  return <DigestSections sections={data.sections} />;
+  return <DigestSections sections={data.sections} />
 }
 
 function TodayDigest() {
-  const { data, isLoading, isError } = useTodayDigest();
+  const { data, isLoading, isError } = useTodayDigest()
 
   return (
     <PageContainer
@@ -62,5 +62,5 @@ function TodayDigest() {
       <DigestHeader digest={data} />
       <DigestBody data={data} isLoading={isLoading} isError={isError} />
     </PageContainer>
-  );
+  )
 }

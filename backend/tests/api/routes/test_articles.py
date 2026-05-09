@@ -206,6 +206,143 @@ def test_read_for_you_requires_auth(client: TestClient) -> None:
     assert response.status_code == 401
 
 
+def test_read_following_requires_auth(client: TestClient) -> None:
+    response = client.get(f"{settings.API_V1_STR}/articles/following")
+    assert response.status_code == 401
+
+
+def test_read_following_returns_empty_when_no_preferred_sources(
+    client: TestClient,
+    db: Session,
+) -> None:
+    user, headers = _create_authenticated_user(client, db)
+    # Article exists, but the user hasn't picked any preferred sources —
+    # the follow feed should still come back empty (not a 404, not the
+    # full Latest feed).
+    _create_article(db, source="Some Lab")
+    crud.set_interests(
+        session=db,
+        user_id=user.id,
+        categories=[],
+        tags=[],
+        preferred_sources=[],
+    )
+
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/following",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["count"] == 0
+    assert body["data"] == []
+
+
+def test_read_following_filters_to_preferred_sources(
+    client: TestClient,
+    db: Session,
+) -> None:
+    user, headers = _create_authenticated_user(client, db)
+    followed_source = f"Followed {uuid.uuid4()}"
+    other_source = f"Other {uuid.uuid4()}"
+    matching = _create_article(db, source=followed_source, title="Match")
+    _create_article(db, source=other_source, title="Skip")
+    crud.set_interests(
+        session=db,
+        user_id=user.id,
+        categories=[],
+        tags=[],
+        preferred_sources=[followed_source],
+    )
+
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/following",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["count"] == 1
+    assert [item["id"] for item in body["data"]] == [str(matching.id)]
+    assert all(item["source"] == followed_source for item in body["data"])
+
+
+def test_read_following_is_ordered_by_published_desc_and_paginates(
+    client: TestClient,
+    db: Session,
+) -> None:
+    user, headers = _create_authenticated_user(client, db)
+    source = f"Followed {uuid.uuid4()}"
+    # Create three articles with explicit published_at so order is
+    # deterministic regardless of insertion timing.
+    older = crud.create_article(
+        session=db,
+        article_in=ArticleCreate(
+            url=f"https://example.com/{uuid.uuid4()}",
+            title="Older",
+            source=source,
+            excerpt=random_lower_string(),
+            category="models",
+            tags=["models"],
+            published_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        ),
+    )
+    middle = crud.create_article(
+        session=db,
+        article_in=ArticleCreate(
+            url=f"https://example.com/{uuid.uuid4()}",
+            title="Middle",
+            source=source,
+            excerpt=random_lower_string(),
+            category="models",
+            tags=["models"],
+            published_at=datetime(2024, 6, 1, tzinfo=timezone.utc),
+        ),
+    )
+    newer = crud.create_article(
+        session=db,
+        article_in=ArticleCreate(
+            url=f"https://example.com/{uuid.uuid4()}",
+            title="Newer",
+            source=source,
+            excerpt=random_lower_string(),
+            category="models",
+            tags=["models"],
+            published_at=datetime(2024, 12, 1, tzinfo=timezone.utc),
+        ),
+    )
+    crud.set_interests(
+        session=db,
+        user_id=user.id,
+        categories=[],
+        tags=[],
+        preferred_sources=[source],
+    )
+
+    page_one = client.get(
+        f"{settings.API_V1_STR}/articles/following",
+        headers=headers,
+        params={"skip": 0, "limit": 2},
+    )
+    assert page_one.status_code == 200
+    body_one = page_one.json()
+    assert body_one["count"] == 3
+    assert [item["id"] for item in body_one["data"]] == [
+        str(newer.id),
+        str(middle.id),
+    ]
+
+    page_two = client.get(
+        f"{settings.API_V1_STR}/articles/following",
+        headers=headers,
+        params={"skip": 2, "limit": 2},
+    )
+    assert page_two.status_code == 200
+    body_two = page_two.json()
+    assert [item["id"] for item in body_two["data"]] == [str(older.id)]
+
+
 def test_saved_article_static_routes_are_not_captured_by_article_id(
     client: TestClient,
 ) -> None:

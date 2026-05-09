@@ -1,5 +1,5 @@
-import type { DigestSectionPublic } from '@/client';
-import DigestArticle from '@/components/Digest/DigestArticle';
+import type { DigestSectionPublic } from '@/client'
+import DigestArticle from '@/components/Digest/DigestArticle'
 
 function DigestSections({ sections }: { sections: DigestSectionPublic[] }) {
   return (
@@ -21,7 +21,7 @@ function DigestSections({ sections }: { sections: DigestSectionPublic[] }) {
         </section>
       ))}
     </div>
-  );
+  )
 }
 
-export default DigestSections;
+export default DigestSections

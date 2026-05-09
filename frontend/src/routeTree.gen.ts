@@ -16,11 +16,18 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutTodayDigestRouteImport } from './routes/_layout/today-digest'
+import { Route as LayoutTermsRouteImport } from './routes/_layout/terms'
+import { Route as LayoutSourcesPolicyRouteImport } from './routes/_layout/sources-policy'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutSavedArticlesRouteImport } from './routes/_layout/saved-articles'
+import { Route as LayoutPrivacyRouteImport } from './routes/_layout/privacy'
 import { Route as LayoutPersonalizationRouteImport } from './routes/_layout/personalization'
+import { Route as LayoutCookiesRouteImport } from './routes/_layout/cookies'
+import { Route as LayoutContactRouteImport } from './routes/_layout/contact'
 import { Route as LayoutAllArticleSourcesRouteImport } from './routes/_layout/all-article-sources'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutAccessibilityRouteImport } from './routes/_layout/accessibility'
+import { Route as LayoutAboutRouteImport } from './routes/_layout/about'
 import { Route as LayoutAdminIndexRouteImport } from './routes/_layout/admin.index'
 import { Route as LayoutSearchFeedQRouteImport } from './routes/_layout/search-feed.$q'
 import { Route as LayoutCategoryFeedCatRouteImport } from './routes/_layout/category-feed.$cat'
@@ -62,6 +69,16 @@ const LayoutTodayDigestRoute = LayoutTodayDigestRouteImport.update({
   path: '/today-digest',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutTermsRoute = LayoutTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutSourcesPolicyRoute = LayoutSourcesPolicyRouteImport.update({
+  id: '/sources-policy',
+  path: '/sources-policy',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -72,9 +89,24 @@ const LayoutSavedArticlesRoute = LayoutSavedArticlesRouteImport.update({
   path: '/saved-articles',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutPrivacyRoute = LayoutPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutPersonalizationRoute = LayoutPersonalizationRouteImport.update({
   id: '/personalization',
   path: '/personalization',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutCookiesRoute = LayoutCookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutContactRoute = LayoutContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutAllArticleSourcesRoute = LayoutAllArticleSourcesRouteImport.update({
@@ -85,6 +117,16 @@ const LayoutAllArticleSourcesRoute = LayoutAllArticleSourcesRouteImport.update({
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutAccessibilityRoute = LayoutAccessibilityRouteImport.update({
+  id: '/accessibility',
+  path: '/accessibility',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutAboutRoute = LayoutAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutAdminIndexRoute = LayoutAdminIndexRouteImport.update({
@@ -124,11 +166,18 @@ export interface FileRoutesByFullPath {
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/about': typeof LayoutAboutRoute
+  '/accessibility': typeof LayoutAccessibilityRoute
   '/admin': typeof LayoutAdminRouteWithChildren
   '/all-article-sources': typeof LayoutAllArticleSourcesRoute
+  '/contact': typeof LayoutContactRoute
+  '/cookies': typeof LayoutCookiesRoute
   '/personalization': typeof LayoutPersonalizationRoute
+  '/privacy': typeof LayoutPrivacyRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
+  '/sources-policy': typeof LayoutSourcesPolicyRoute
+  '/terms': typeof LayoutTermsRoute
   '/today-digest': typeof LayoutTodayDigestRoute
   '/admin/articles': typeof LayoutAdminArticlesRoute
   '/admin/ingest-runs': typeof LayoutAdminIngestRunsRoute
@@ -142,10 +191,17 @@ export interface FileRoutesByTo {
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/about': typeof LayoutAboutRoute
+  '/accessibility': typeof LayoutAccessibilityRoute
   '/all-article-sources': typeof LayoutAllArticleSourcesRoute
+  '/contact': typeof LayoutContactRoute
+  '/cookies': typeof LayoutCookiesRoute
   '/personalization': typeof LayoutPersonalizationRoute
+  '/privacy': typeof LayoutPrivacyRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
+  '/sources-policy': typeof LayoutSourcesPolicyRoute
+  '/terms': typeof LayoutTermsRoute
   '/today-digest': typeof LayoutTodayDigestRoute
   '/': typeof LayoutIndexRoute
   '/admin/articles': typeof LayoutAdminArticlesRoute
@@ -162,11 +218,18 @@ export interface FileRoutesById {
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/_layout/about': typeof LayoutAboutRoute
+  '/_layout/accessibility': typeof LayoutAccessibilityRoute
   '/_layout/admin': typeof LayoutAdminRouteWithChildren
   '/_layout/all-article-sources': typeof LayoutAllArticleSourcesRoute
+  '/_layout/contact': typeof LayoutContactRoute
+  '/_layout/cookies': typeof LayoutCookiesRoute
   '/_layout/personalization': typeof LayoutPersonalizationRoute
+  '/_layout/privacy': typeof LayoutPrivacyRoute
   '/_layout/saved-articles': typeof LayoutSavedArticlesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
+  '/_layout/sources-policy': typeof LayoutSourcesPolicyRoute
+  '/_layout/terms': typeof LayoutTermsRoute
   '/_layout/today-digest': typeof LayoutTodayDigestRoute
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/admin/articles': typeof LayoutAdminArticlesRoute
@@ -184,11 +247,18 @@ export interface FileRouteTypes {
     | '/recover-password'
     | '/reset-password'
     | '/signup'
+    | '/about'
+    | '/accessibility'
     | '/admin'
     | '/all-article-sources'
+    | '/contact'
+    | '/cookies'
     | '/personalization'
+    | '/privacy'
     | '/saved-articles'
     | '/settings'
+    | '/sources-policy'
+    | '/terms'
     | '/today-digest'
     | '/admin/articles'
     | '/admin/ingest-runs'
@@ -202,10 +272,17 @@ export interface FileRouteTypes {
     | '/recover-password'
     | '/reset-password'
     | '/signup'
+    | '/about'
+    | '/accessibility'
     | '/all-article-sources'
+    | '/contact'
+    | '/cookies'
     | '/personalization'
+    | '/privacy'
     | '/saved-articles'
     | '/settings'
+    | '/sources-policy'
+    | '/terms'
     | '/today-digest'
     | '/'
     | '/admin/articles'
@@ -221,11 +298,18 @@ export interface FileRouteTypes {
     | '/recover-password'
     | '/reset-password'
     | '/signup'
+    | '/_layout/about'
+    | '/_layout/accessibility'
     | '/_layout/admin'
     | '/_layout/all-article-sources'
+    | '/_layout/contact'
+    | '/_layout/cookies'
     | '/_layout/personalization'
+    | '/_layout/privacy'
     | '/_layout/saved-articles'
     | '/_layout/settings'
+    | '/_layout/sources-policy'
+    | '/_layout/terms'
     | '/_layout/today-digest'
     | '/_layout/'
     | '/_layout/admin/articles'
@@ -295,6 +379,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutTodayDigestRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/terms': {
+      id: '/_layout/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof LayoutTermsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/sources-policy': {
+      id: '/_layout/sources-policy'
+      path: '/sources-policy'
+      fullPath: '/sources-policy'
+      preLoaderRoute: typeof LayoutSourcesPolicyRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/settings': {
       id: '/_layout/settings'
       path: '/settings'
@@ -309,11 +407,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSavedArticlesRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/privacy': {
+      id: '/_layout/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof LayoutPrivacyRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/personalization': {
       id: '/_layout/personalization'
       path: '/personalization'
       fullPath: '/personalization'
       preLoaderRoute: typeof LayoutPersonalizationRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/cookies': {
+      id: '/_layout/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof LayoutCookiesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/contact': {
+      id: '/_layout/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof LayoutContactRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/all-article-sources': {
@@ -328,6 +447,20 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof LayoutAdminRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/accessibility': {
+      id: '/_layout/accessibility'
+      path: '/accessibility'
+      fullPath: '/accessibility'
+      preLoaderRoute: typeof LayoutAccessibilityRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/about': {
+      id: '/_layout/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof LayoutAboutRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/admin/': {
@@ -392,11 +525,18 @@ const LayoutAdminRouteWithChildren = LayoutAdminRoute._addFileChildren(
 )
 
 interface LayoutRouteChildren {
+  LayoutAboutRoute: typeof LayoutAboutRoute
+  LayoutAccessibilityRoute: typeof LayoutAccessibilityRoute
   LayoutAdminRoute: typeof LayoutAdminRouteWithChildren
   LayoutAllArticleSourcesRoute: typeof LayoutAllArticleSourcesRoute
+  LayoutContactRoute: typeof LayoutContactRoute
+  LayoutCookiesRoute: typeof LayoutCookiesRoute
   LayoutPersonalizationRoute: typeof LayoutPersonalizationRoute
+  LayoutPrivacyRoute: typeof LayoutPrivacyRoute
   LayoutSavedArticlesRoute: typeof LayoutSavedArticlesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
+  LayoutSourcesPolicyRoute: typeof LayoutSourcesPolicyRoute
+  LayoutTermsRoute: typeof LayoutTermsRoute
   LayoutTodayDigestRoute: typeof LayoutTodayDigestRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
   LayoutArticleSourcesSRoute: typeof LayoutArticleSourcesSRoute
@@ -405,11 +545,18 @@ interface LayoutRouteChildren {
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
+  LayoutAboutRoute: LayoutAboutRoute,
+  LayoutAccessibilityRoute: LayoutAccessibilityRoute,
   LayoutAdminRoute: LayoutAdminRouteWithChildren,
   LayoutAllArticleSourcesRoute: LayoutAllArticleSourcesRoute,
+  LayoutContactRoute: LayoutContactRoute,
+  LayoutCookiesRoute: LayoutCookiesRoute,
   LayoutPersonalizationRoute: LayoutPersonalizationRoute,
+  LayoutPrivacyRoute: LayoutPrivacyRoute,
   LayoutSavedArticlesRoute: LayoutSavedArticlesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
+  LayoutSourcesPolicyRoute: LayoutSourcesPolicyRoute,
+  LayoutTermsRoute: LayoutTermsRoute,
   LayoutTodayDigestRoute: LayoutTodayDigestRoute,
   LayoutIndexRoute: LayoutIndexRoute,
   LayoutArticleSourcesSRoute: LayoutArticleSourcesSRoute,

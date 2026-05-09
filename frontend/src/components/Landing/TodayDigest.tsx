@@ -1,11 +1,11 @@
-import { Link } from '@tanstack/react-router';
-import { CalendarIcon, ChevronRightIcon } from 'lucide-react';
-import type { DigestArticlePublic, DigestSectionPublic } from '@/client';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useTodayDigest } from '@/hooks/useTodayDigest';
-import { redirectHref } from '@/lib/article-urls';
+import { Link } from '@tanstack/react-router'
+import { CalendarIcon, ChevronRightIcon } from 'lucide-react'
+import type { DigestArticlePublic, DigestSectionPublic } from '@/client'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useTodayDigest } from '@/hooks/useTodayDigest'
+import { redirectHref } from '@/lib/article-urls'
 
-const PREVIEW_LIMIT = 3;
+const PREVIEW_LIMIT = 3
 
 // The backend's digest already builds a "Top stories" section with
 // distinct-source preference (see services/digest._top_stories). The
@@ -14,9 +14,9 @@ const PREVIEW_LIMIT = 3;
 const getPreviewArticles = (
   sections: DigestSectionPublic[] | undefined,
 ): DigestArticlePublic[] => {
-  const top = sections?.find((section) => section.key === 'top');
-  return top?.articles.slice(0, PREVIEW_LIMIT) ?? [];
-};
+  const top = sections?.find((section) => section.key === 'top')
+  return top?.articles.slice(0, PREVIEW_LIMIT) ?? []
+}
 
 const TodayDigestSkeleton = () => (
   <>
@@ -35,20 +35,20 @@ const TodayDigestSkeleton = () => (
       </div>
     ))}
   </>
-);
+)
 
 const TodayDigestMessage = ({ children }: { children: React.ReactNode }) => (
   <p className="rounded-lg border border-slate-100 bg-white p-3 text-sm text-slate-500 dark:border-border dark:bg-card/45 dark:text-muted-foreground">
     {children}
   </p>
-);
+)
 
 const TodayDigestPreviewItem = ({
   article,
   hideOnSmall,
 }: {
-  article: DigestArticlePublic;
-  hideOnSmall: boolean;
+  article: DigestArticlePublic
+  hideOnSmall: boolean
 }) => (
   <div
     className={`group flex items-start gap-3 lg:gap-4 ${
@@ -73,11 +73,11 @@ const TodayDigestPreviewItem = ({
       </div>
     </div>
   </div>
-);
+)
 
 const TodayDigest = () => {
-  const { data, isLoading, isError } = useTodayDigest();
-  const articles = getPreviewArticles(data?.sections);
+  const { data, isLoading, isError } = useTodayDigest()
+  const articles = getPreviewArticles(data?.sections)
 
   return (
     <div>
@@ -119,7 +119,7 @@ const TodayDigest = () => {
         <ChevronRightIcon className="w-3 h-3 ml-0.5 stroke-2" />
       </Link>
     </div>
-  );
-};
+  )
+}
 
-export default TodayDigest;
+export default TodayDigest

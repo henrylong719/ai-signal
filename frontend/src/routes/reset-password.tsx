@@ -10,7 +10,11 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { LoginService } from '@/client'
-import { primaryButtonClass } from '@/components/Auth/AuthShared'
+import {
+  AUTH_INPUT_CLASS,
+  AUTH_LABEL_CLASS,
+  primaryButtonClass,
+} from '@/components/Auth/AuthShared'
 import { AuthLayout } from '@/components/Common/AuthLayout'
 import {
   Form,
@@ -24,6 +28,7 @@ import { LoadingButton } from '@/components/ui/loading-button'
 import { PasswordInput } from '@/components/ui/password-input'
 import { isLoggedIn } from '@/hooks/useAuth'
 import useCustomToast from '@/hooks/useCustomToast'
+import { cn } from '@/lib/utils'
 import { handleError } from '@/utils'
 
 const searchSchema = z.object({
@@ -61,7 +66,7 @@ export const Route = createFileRoute('/reset-password')({
   head: () => ({
     meta: [
       {
-        title: 'Reset Password - AI Signal',
+        title: 'Set a new password - AI Signal',
       },
     ],
   }),
@@ -99,26 +104,35 @@ function ResetPassword() {
 
   return (
     <AuthLayout>
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-6"
-        >
-          <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">Reset Password</h1>
-          </div>
+      <div className="flex flex-col gap-7">
+        <header className="flex flex-col gap-2">
+          <h1 className="font-serif text-[1.75rem] leading-[1.15] tracking-tight text-slate-950 dark:text-foreground">
+            Set a new password
+          </h1>
+          <p className="text-[14px] leading-relaxed text-slate-500 dark:text-muted-foreground">
+            Choose a new password to regain access to your AI Signal account.
+          </p>
+        </header>
 
-          <div className="grid gap-4">
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-5"
+          >
             <FormField
               control={form.control}
               name="new_password"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>New Password</FormLabel>
+                <FormItem className="gap-2">
+                  <FormLabel className={AUTH_LABEL_CLASS}>
+                    New password
+                  </FormLabel>
                   <FormControl>
                     <PasswordInput
+                      autoComplete="new-password"
                       data-testid="new-password-input"
-                      placeholder="New Password"
+                      placeholder="At least 8 characters"
+                      className={cn(AUTH_INPUT_CLASS, 'pr-12 sm:pr-16')}
                       {...field}
                     />
                   </FormControl>
@@ -131,12 +145,16 @@ function ResetPassword() {
               control={form.control}
               name="confirm_password"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
+                <FormItem className="gap-2">
+                  <FormLabel className={AUTH_LABEL_CLASS}>
+                    Confirm new password
+                  </FormLabel>
                   <FormControl>
                     <PasswordInput
+                      autoComplete="new-password"
                       data-testid="confirm-password-input"
-                      placeholder="Confirm Password"
+                      placeholder="Re-enter your password"
+                      className={cn(AUTH_INPUT_CLASS, 'pr-12 sm:pr-16')}
                       {...field}
                     />
                   </FormControl>
@@ -147,21 +165,24 @@ function ResetPassword() {
 
             <LoadingButton
               type="submit"
-              className={primaryButtonClass}
+              className={cn(primaryButtonClass, 'mt-1')}
               loading={mutation.isPending}
             >
-              Reset Password
+              Update password
             </LoadingButton>
-          </div>
+          </form>
+        </Form>
 
-          <div className="text-center text-sm">
-            Remember your password?{' '}
-            <RouterLink to="/login" className="underline underline-offset-4">
-              Log in
-            </RouterLink>
-          </div>
-        </form>
-      </Form>
+        <p className="text-center text-sm text-slate-500 dark:text-muted-foreground">
+          Remember your password?{' '}
+          <RouterLink
+            to="/login"
+            className="font-semibold text-slate-950 underline-offset-4 hover:underline dark:text-foreground"
+          >
+            Log in
+          </RouterLink>
+        </p>
+      </div>
     </AuthLayout>
   )
 }

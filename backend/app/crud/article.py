@@ -215,6 +215,34 @@ def get_saved_articles(
     return session.exec(statement).all()
 
 
+def get_saved_articles_with_articles(
+    *, session: Session, user_id: uuid.UUID, skip: int = 0, limit: int = 50
+) -> Sequence[Article]:
+    """Page of saved articles for a user, joined to articles in one query.
+
+    Returns ``Article`` rows ordered by ``saved_at desc`` (most recent
+    save first). Replaces the older two-query pattern (read saved IDs,
+    then bulk-fetch articles by ID) — the JOIN lets Postgres serve the
+    filter + sort + limit from the ``saved_articles`` index without a
+    separate articles round trip.
+
+    A saved-row whose article was deleted between the JOIN and the
+    page render simply doesn't appear in the result, which matches the
+    previous behavior (we used to skip those in Python). The ``ON
+    DELETE CASCADE`` on the FK means stale saved rows shouldn't exist
+    in practice, but the JOIN is the right defense regardless.
+    """
+    statement = (
+        select(Article)
+        .join(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
+        .where(SavedArticle.user_id == user_id)
+        .order_by(col(SavedArticle.saved_at).desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    return session.exec(statement).all()
+
+
 def count_saved_articles(*, session: Session, user_id: uuid.UUID) -> int:
     statement = (
         select(func.count())
@@ -468,7 +496,9 @@ def get_articles_in_window_with_popularity(
         .outerjoin(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
         .where(col(Article.published_at) >= since)
         .group_by(col(Article.id))
-        .order_by(col(Article.published_at).desc().nullslast(), col(Article.fetched_at).desc())
+        .order_by(
+            col(Article.published_at).desc().nullslast(), col(Article.fetched_at).desc()
+        )
         .limit(limit)
     )
     return session.exec(statement).all()

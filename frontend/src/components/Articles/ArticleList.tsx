@@ -55,7 +55,11 @@ export function ArticleListState({
   action,
 }: ArticleListStateProps) {
   return (
-    <div className="mx-auto my-10 max-w-2xl rounded-lg border border-slate-200/80 bg-white px-6 py-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.03),0_18px_45px_rgba(15,23,42,0.035)] dark:border-border dark:bg-card/55 dark:shadow-none">
+    <div
+      className="mx-auto my-10 max-w-2xl rounded-lg border border-slate-200/80 bg-white px-6 py-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.03),0_18px_45px_rgba(15,23,42,0.035)] dark:border-border dark:bg-card/55 dark:shadow-none"
+      role="status"
+      aria-live="polite"
+    >
       <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-400 ring-1 ring-slate-200/80 dark:bg-muted dark:text-muted-foreground dark:ring-border">
         {icon ?? <NewspaperIcon className="h-5 w-5 stroke-[1.5]" />}
       </div>
@@ -92,6 +96,7 @@ export function ArticleList({
   const [pendingSaveArticleId, setPendingSaveArticleId] = useState<
     string | null
   >(null)
+  const [actionStatus, setActionStatus] = useState('')
 
   useEffect(() => {
     if (!user || !pendingSaveArticleId) {
@@ -110,6 +115,11 @@ export function ArticleList({
       setPendingSaveArticleId(articleId)
       return
     }
+    const article = articles.find((item) => item.id === articleId)
+    const nextStatus = savedArticleIds.has(articleId)
+      ? `Removed ${article?.title ?? 'article'} from saved articles.`
+      : `Saved ${article?.title ?? 'article'}.`
+    setActionStatus(nextStatus)
     toggleSave(articleId)
   }
 
@@ -126,12 +136,17 @@ export function ArticleList({
       showErrorToast('Please login to personalize your feed!')
       return
     }
+    const article = articles.find((item) => item.id === articleId)
+    setActionStatus(`Dismissed ${article?.title ?? 'article'}.`)
     dismiss(articleId)
   }
 
   if (isPending) {
     return (
       <div className="py-8">
+        <span className="sr-only" role="status" aria-live="polite">
+          Loading articles.
+        </span>
         <ArticleCardSkeleton />
         <ArticleCardSkeleton />
         <ArticleCardSkeleton />
@@ -171,6 +186,9 @@ export function ArticleList({
 
   return (
     <div className="pb-2">
+      <span className="sr-only" role="status" aria-live="polite">
+        {actionStatus}
+      </span>
       {visibleArticles.map((article) => (
         <ArticleCard
           article={article}
@@ -186,6 +204,9 @@ export function ArticleList({
       <div
         ref={loadMoreRef}
         className="py-8 text-center text-sm font-medium text-slate-500 dark:text-muted-foreground"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
       >
         {feedStatus}
       </div>

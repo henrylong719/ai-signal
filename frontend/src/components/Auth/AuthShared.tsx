@@ -16,7 +16,7 @@ interface ProviderButtonProps {
 }
 
 export const primaryButtonClass =
-  'h-10 w-full rounded-[5px] border border-slate-300 bg-white text-sm font-semibold text-slate-800 shadow-none hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-muted/35 dark:text-foreground/88 dark:hover:bg-accent/80 dark:hover:text-foreground'
+  'h-10 w-full rounded-full border border-slate-950 bg-slate-950 text-sm font-semibold text-white shadow-sm shadow-slate-950/10 hover:bg-slate-800 dark:border-foreground dark:bg-foreground dark:text-background dark:hover:bg-foreground/92'
 
 export function ProviderButton({
   children,

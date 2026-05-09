@@ -83,9 +83,9 @@ function AccessibilityPage() {
           >
             {CONTACT_EMAIL}
           </a>{' '}
-          with the page or feature affected and (when possible) the assistive
-          technology you are using. We treat accessibility reports as priority
-          work.
+          with the page URL, a short description of the issue, your browser or
+          device, and any assistive technology you used. We treat accessibility
+          reports as priority work.
         </p>
       </PolicySection>
     </LegalPageLayout>

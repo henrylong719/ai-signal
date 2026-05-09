@@ -12,7 +12,9 @@ export const Route = createFileRoute('/_layout/category-feed/$cat')({
 
 function CategoryFeed() {
   const { cat } = Route.useParams()
-  const feed = useArticleFeed({ category: cat as category })
+  const { dataUpdatedAt: _latestUpdatedAt, ...feed } = useArticleFeed({
+    category: cat as category,
+  })
 
   return (
     <PageContainer variant="default">

@@ -1,14 +1,14 @@
-import { CheckIcon, ChevronDownIcon, XIcon } from 'lucide-react'
-import { useId, useState } from 'react'
+import { CheckIcon, ChevronDownIcon, XIcon } from 'lucide-react';
+import { useId, useState } from 'react';
 
-import type { SourcePublic } from '@/client'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useSources } from '@/hooks/useSources'
-import { cn } from '@/lib/utils'
+import type { SourcePublic } from '@/client';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useSources } from '@/hooks/useSources';
+import { cn } from '@/lib/utils';
 
 interface SourcesFieldProps {
-  value: string[]
-  onChange: (next: string[]) => void
+  value: string[];
+  onChange: (next: string[]) => void;
 }
 
 // Group label overrides for source_type values that look terse on screen.
@@ -26,7 +26,7 @@ const SOURCE_TYPE_LABELS: Record<SourcePublic['source_type'], string> = {
   newsletter: 'Newsletters',
   podcast: 'Podcasts',
   media: 'Media',
-}
+};
 
 // Display order for source_type groups. Anything not listed sorts to the
 // end (alphabetical fallback).
@@ -42,7 +42,7 @@ const SOURCE_TYPE_ORDER: SourcePublic['source_type'][] = [
   'media',
   'independent',
   'community',
-]
+];
 
 /**
  * Multi-select picker for explicitly preferred article sources.
@@ -57,12 +57,12 @@ const SOURCE_TYPE_ORDER: SourcePublic['source_type'][] = [
  * introduce a slug layer on the frontend.
  */
 export function SourcesField({ value, onChange }: SourcesFieldProps) {
-  const { sources, isLoading, isError } = useSources()
-  const sourceLibraryId = useId()
-  const [isLibraryOpen, setIsLibraryOpen] = useState(false)
+  const { sources, isLoading, isError } = useSources();
+  const sourceLibraryId = useId();
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
   if (isLoading) {
-    return <SourcesFieldSkeleton />
+    return <SourcesFieldSkeleton />;
   }
 
   if (isError) {
@@ -70,25 +70,25 @@ export function SourcesField({ value, onChange }: SourcesFieldProps) {
       <p className="text-sm text-slate-500 dark:text-muted-foreground">
         Could not load sources right now. Refresh the page to try again.
       </p>
-    )
+    );
   }
 
   const toggle = (name: string) => {
     onChange(
       value.includes(name) ? value.filter((s) => s !== name) : [...value, name],
-    )
-  }
+    );
+  };
 
   // Group sources by source_type, then sort alphabetically by name within
   // each group. Groups themselves render in SOURCE_TYPE_ORDER.
-  const grouped = new Map<SourcePublic['source_type'], SourcePublic[]>()
+  const grouped = new Map<SourcePublic['source_type'], SourcePublic[]>();
   for (const source of sources) {
-    const list = grouped.get(source.source_type) ?? []
-    list.push(source)
-    grouped.set(source.source_type, list)
+    const list = grouped.get(source.source_type) ?? [];
+    list.push(source);
+    grouped.set(source.source_type, list);
   }
   for (const list of grouped.values()) {
-    list.sort((a, b) => a.name.localeCompare(b.name))
+    list.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   const orderedGroups = [
@@ -96,13 +96,13 @@ export function SourcesField({ value, onChange }: SourcesFieldProps) {
     ...Array.from(grouped.keys())
       .filter((t) => !SOURCE_TYPE_ORDER.includes(t))
       .sort(),
-  ]
+  ];
 
   const sourceLibraryLabel = isLibraryOpen
     ? 'Hide source library'
     : value.length > 0
       ? 'Edit source picks'
-      : 'Browse source library'
+      : 'Browse source library';
 
   return (
     <div className="space-y-4">
@@ -118,11 +118,11 @@ export function SourcesField({ value, onChange }: SourcesFieldProps) {
                   aria-pressed={true}
                   aria-label={`${sourceName} selected. Press to remove.`}
                   className={cn(
-                    'inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border border-slate-950 bg-slate-950 px-3 py-1.5 text-sm font-medium leading-snug text-white shadow-sm shadow-slate-950/10 transition-all hover:bg-slate-800',
+                    'inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border border-slate-950 bg-slat-950 px-3 py-1.5 text-sm font-medium leading-snug text-white shadow-sm shadow-slate-950/10 transition-all hover:bg-slate-800',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:border-primary dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background',
                   )}
                 >
-                  <span className="break-words">{sourceName}</span>
+                  <span className="wrap-break-word">{sourceName}</span>
                   <XIcon className="h-3.5 w-3.5 shrink-0" />
                 </button>
               ))}
@@ -158,8 +158,8 @@ export function SourcesField({ value, onChange }: SourcesFieldProps) {
           className="space-y-7 border-t border-slate-200/70 pt-5 dark:border-border"
         >
           {orderedGroups.map((groupType) => {
-            const groupSources = grouped.get(groupType) ?? []
-            if (groupSources.length === 0) return null
+            const groupSources = grouped.get(groupType) ?? [];
+            if (groupSources.length === 0) return null;
             return (
               <div key={groupType}>
                 <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-muted-foreground">
@@ -167,7 +167,7 @@ export function SourcesField({ value, onChange }: SourcesFieldProps) {
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {groupSources.map((source) => {
-                    const selected = value.includes(source.name)
+                    const selected = value.includes(source.name);
                     return (
                       <button
                         type="button"
@@ -190,16 +190,16 @@ export function SourcesField({ value, onChange }: SourcesFieldProps) {
                         />
                         <span className="break-words">{source.name}</span>
                       </button>
-                    )
+                    );
                   })}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function SourcesFieldSkeleton() {
@@ -208,5 +208,5 @@ function SourcesFieldSkeleton() {
       <Skeleton className="h-5 w-full max-w-md" />
       <Skeleton className="h-10 w-44 rounded-full" />
     </div>
-  )
+  );
 }

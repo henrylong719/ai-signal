@@ -1,4 +1,4 @@
-"""Drop template items table
+"""Drop legacy template table
 
 Revision ID: e0f1a2b3c4d5
 Revises: 9b0c1d2e3f4a

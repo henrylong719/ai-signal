@@ -111,9 +111,9 @@ function SourcesPolicyPage() {
 
       <PolicySection title="Publisher requests, corrections, and removals">
         <p>
-          If you publish content that we surface and you would like to request a
-          correction, an attribution change, or a takedown, we want to make that
-          easy.
+          Publishers, authorized representatives, and rights holders can ask us
+          to correct attribution, update source metadata, or remove links or
+          excerpts from AI Signal.
         </p>
         <PolicyList
           items={[
@@ -127,12 +127,17 @@ function SourcesPolicyPage() {
               >
                 {CONTACT_EMAIL}
               </a>{' '}
-              from a domain associated with the publication.
+              from a domain associated with the publication when possible.
             </span>,
-            'Tell us the source name, the article URL or topic, and what you would like changed or removed.',
-            'We aim to respond on a reasonable timeline and will act in good faith on legitimate requests.',
+            'Include your name, role or relationship to the publisher, the source name, the article URL, and what you would like changed or removed.',
+            'If the request is about rights, impersonation, or attribution, include enough context for us to verify it.',
           ]}
         />
+        <p>
+          We aim to respond to verified publisher correction, attribution, or
+          removal requests within 5 business days. We review requests in good
+          faith and may remove or adjust content sooner when the issue is clear.
+        </p>
       </PolicySection>
     </LegalPageLayout>
   )

@@ -117,7 +117,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden border-slate-200/80 bg-white p-0 shadow-[0_22px_60px_rgba(15,23,42,0.18)] sm:max-w-[30rem] dark:border-border dark:bg-popover dark:shadow-[0_22px_60px_rgba(0,0,0,0.36)]">
+      <DialogContent className="gap-0 overflow-hidden border-slate-200/80 bg-white p-0 shadow-[0_22px_60px_rgba(15,23,42,0.18)] sm:max-w-120 dark:border-border dark:bg-popover dark:shadow-[0_22px_60px_rgba(0,0,0,0.36)]">
         <DialogHeader className="border-b border-slate-100 px-5 py-5 text-left sm:px-6 dark:border-border">
           <DialogTitle className="font-display text-xl font-semibold tracking-normal text-slate-950 dark:text-foreground">
             Share your feedback
@@ -167,7 +167,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                     }}
                   >
                     <FormControl>
-                      <SelectTrigger className="h-10 w-full rounded-md border-slate-200 bg-white text-slate-800 shadow-sm shadow-slate-950/[0.02] focus:ring-slate-900/10 dark:border-border dark:bg-muted/35 dark:text-foreground dark:shadow-none dark:focus:ring-ring/15">
+                      <SelectTrigger className="h-10 w-full rounded-md border-slate-200 bg-white text-slate-800 shadow-sm shadow-slate-950/2 focus:ring-slate-900/10 dark:border-border dark:bg-muted/35 dark:text-foreground dark:shadow-none dark:focus:ring-ring/15">
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
@@ -206,7 +206,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                     <textarea
                       rows={5}
                       placeholder="What should change?"
-                      className="min-h-32 w-full resize-none rounded-md border border-slate-200 bg-white px-3.5 py-3 text-sm leading-6 text-slate-900 shadow-sm shadow-slate-950/[0.02] outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border dark:bg-muted/35 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:focus:border-ring/55 dark:focus:ring-ring/15"
+                      className="min-h-32 w-full resize-none rounded-md border border-slate-200 bg-white px-3.5 py-3 text-sm leading-6 text-slate-900 shadow-sm shadow-slate-950/2 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border dark:bg-muted/35 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:focus:border-ring/55 dark:focus:ring-ring/15"
                       disabled={isSubmitting}
                       maxLength={2000}
                       {...field}
@@ -233,7 +233,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               <LoadingButton
                 type="submit"
                 loading={isSubmitting}
-                className="h-10 bg-slate-950 px-4 font-medium text-white shadow-sm shadow-slate-950/10 hover:bg-slate-800 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88"
+                className="h-10 rounded-full bg-slate-950 px-4 font-medium text-white shadow-sm shadow-slate-950/10 hover:bg-slate-800 dark:bg-foreground dark:text-background dark:hover:bg-foreground/92"
               >
                 <SendIcon className="h-4 w-4" />
                 Send

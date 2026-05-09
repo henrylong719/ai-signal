@@ -41,8 +41,8 @@ function DigestBody({ data, isLoading, isError }: DigestBodyProps) {
   if (!data || data.sections.length === 0) {
     return (
       <DigestState
-        title="Today's digest will appear here"
-        description="Once enough fresh articles are available, the briefing will be grouped by signal area."
+        title="Today's digest is still being assembled"
+        description="Check back later — we group the day's most important AI updates by signal area."
       />
     )
   }

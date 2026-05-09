@@ -123,11 +123,7 @@ function Personalization() {
 
   if (authError) {
     return (
-      <PageContainer
-        // variant="narrow"
-        spacing="compact"
-        className="flex flex-col gap-6"
-      >
+      <PageContainer spacing="compact" className="flex flex-col gap-6">
         <ArticleListState
           title="Could not load personalization"
           description="Please refresh the page or try again in a moment."
@@ -155,7 +151,7 @@ function Personalization() {
               trigger={
                 <button
                   type="button"
-                  className="inline-flex h-9 items-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring dark:focus-visible:ring-offset-background"
+                  className="inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-foreground dark:text-background dark:hover:bg-foreground/92 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                 >
                   Sign in
                 </button>
@@ -191,7 +187,6 @@ function Personalization() {
 
   return (
     <PageContainer
-      // variant="narrow"
       spacing="none"
       className={cn(
         'pt-8 sm:pt-12',
@@ -203,9 +198,7 @@ function Personalization() {
         eyebrow="Taste profile"
         eyebrowClassName="mb-4 tracking-[0.18em] text-slate-400"
         title="Teach AI Signal what matters"
-        // titleClassName=" text-4xl tracking-normal sm:text-5xl"
         description="Start with the subjects you never want to miss. Add trusted sources and personal tags only when they sharpen the feed."
-        // descriptionClassName="mt-4 text-lg leading-8 text-slate-600"
       >
         <div className="mt-6 border-l border-slate-300 pl-4 dark:border-border">
           <p className="text-sm leading-6 text-slate-500 dark:text-muted-foreground">
@@ -249,7 +242,12 @@ function Personalization() {
       </div>
 
       <div className="mt-2 flex flex-col gap-4 border-t border-slate-200/70 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-border">
-        <p className="text-sm leading-6 text-slate-500 dark:text-muted-foreground">
+        <p
+          className="text-sm leading-6 text-slate-500 dark:text-muted-foreground"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           {isSaving
             ? 'Saving your taste profile...'
             : isDirty
@@ -257,7 +255,7 @@ function Personalization() {
               : 'Saved. Your feed is listening for these signals.'}
         </p>
         {!showStickySave && (
-          <span className="inline-flex h-10 w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 shadow-sm shadow-slate-950/[0.02] dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
+          <span className="inline-flex h-10 w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 shadow-sm shadow-slate-950/2 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
             <CheckIcon className="h-4 w-4" />
             Saved
           </span>
@@ -286,7 +284,7 @@ function Personalization() {
               loading={isSaving}
               disabled={!isDirty || isSaving}
               size="sm"
-              className="h-10 w-full bg-slate-950 px-5 font-medium text-white shadow-sm shadow-slate-950/10 hover:bg-slate-800 sm:w-auto dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88"
+              className="h-10 w-full rounded-full bg-slate-950 px-5 font-medium text-white shadow-sm shadow-slate-950/10 hover:bg-slate-800 sm:w-auto dark:bg-foreground dark:text-background dark:hover:bg-foreground/92"
             >
               <CheckIcon className="h-4 w-4" />
               Save taste profile

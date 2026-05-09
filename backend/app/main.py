@@ -1,13 +1,29 @@
 from contextlib import asynccontextmanager
 
 import sentry_sdk
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.routing import APIRoute
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import Response
 
 from app.api.main import api_router
 from app.core.config import settings
+from app.core.rate_limit import limiter
 from app.services.scheduler import shutdown_scheduler, start_scheduler
+
+
+def _rate_limit_handler(request: Request, exc: Exception) -> Response:
+    """Adapter: Starlette's exception-handler signature requires the
+    second parameter to be ``Exception``, but slowapi's handler narrows
+    it to ``RateLimitExceeded``. Wrapping keeps both type checkers happy
+    without changing behavior — non-RateLimitExceeded would never reach
+    this handler since it's registered for that exception class.
+    """
+    assert isinstance(exc, RateLimitExceeded)
+    return _rate_limit_exceeded_handler(request, exc)
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -39,6 +55,15 @@ app = FastAPI(
     generate_unique_id_function=custom_generate_unique_id,
     lifespan=lifespan,
 )
+
+# Rate limiting wiring. The limiter itself is configured in
+# app/core/rate_limit.py; here we expose it on app.state (slowapi reads
+# it from there inside the @limiter.limit decorator), register the 429
+# handler so callers get a structured response with a Retry-After header,
+# and add the middleware that actually inspects each request.
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # CORS for credentialed (cookie-bearing) requests has two non-negotiable
 # requirements:

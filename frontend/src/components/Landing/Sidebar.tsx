@@ -9,21 +9,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-// import useAuth from '@/hooks/useAuth';
 import ArticleSource from './ArticleSource'
-// import RecentBookmarks from './RecentBookmarks'
 import RecommendedTopics from './RecommendedTopics'
 import TodayDigest from './TodayDigest'
 
 function SidebarSections() {
-  // const { user } = useAuth()
-
   return (
     <>
       <TodayDigest />
       <RecommendedTopics />
       <ArticleSource />
-      {/* {user && <RecentBookmarks />} */}
     </>
   )
 }
@@ -35,8 +30,8 @@ export function MobileSidebar() {
         <SheetTrigger asChild>
           <button
             type="button"
-            aria-label="Open explore menu"
-            className="relative bottom-2 mr-4 inline-flex h-9 w-9 -translate-y-0.5 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-muted/45 dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+            aria-label="Open navigation"
+            className="relative bottom-2 mr-4 inline-flex h-10 w-10 -translate-y-0.5 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-muted/45 dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
           >
             <MenuIcon className="h-5 w-5 stroke-[1.7]" />
           </button>

@@ -24,7 +24,7 @@ export const Route = createFileRoute('/login')({
 
 function Login() {
   return (
-    <main className="flex min-h-svh flex-col bg-white text-zinc-900 dark:bg-slate-950 dark:text-slate-100">
+    <main className="flex min-h-svh flex-col bg-background text-foreground">
       <div className="mx-auto w-full max-w-230 flex-1">
         <AuthFlow initialMode="sign-in" className="min-h-[calc(100svh-4rem)]" />
       </div>

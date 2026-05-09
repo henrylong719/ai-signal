@@ -38,7 +38,7 @@ export function SupportFooterLinks({
               <li>
                 <Link
                   to={link.to}
-                  className="inline-flex rounded px-1 py-0.5 transition-colors hover:text-slate-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                  className="inline-flex rounded-full px-2 py-1.5 transition-colors hover:text-slate-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                 >
                   {link.label}
                 </Link>

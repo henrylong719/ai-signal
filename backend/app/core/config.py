@@ -67,6 +67,15 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
 
+    # Rate limiting — see app/core/rate_limit.py.
+    #
+    # Disabled in tests via env var so the suite's hot loops don't trip
+    # 429s. In-memory storage by default; for multi-worker production
+    # set RATE_LIMIT_STORAGE_URI to a shared backend (e.g. redis://...)
+    # so workers can't each hand out the full per-bucket allowance.
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_STORAGE_URI: str | None = None
+
     # Ingestion scheduler — see app/services/scheduler.py.
     #
     # Disabled by default in local because dev-mode auto-reloads would

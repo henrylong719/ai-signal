@@ -107,8 +107,8 @@ function TermsPage() {
 
       <PolicySection title="AI-assisted features">
         <p>
-          AI Signal may, now or in the future, use machine learning to help
-          summarize, tag, or explain articles. Any AI-generated text is provided
+          AI Signal may use machine learning to help tag articles or, in the
+          future, summarize or explain them. Any AI-generated text is provided
           for convenience only, may contain errors, and should not replace
           reading the original article from the publisher.
         </p>
@@ -156,8 +156,10 @@ function TermsPage() {
         <p>
           We may update these terms when the product changes meaningfully. The
           "Last updated" date at the top of the page tells you when the most
-          recent version took effect. Your continued use of AI Signal after a
-          change means you accept the updated terms.
+          recent version took effect. For material changes, we may provide
+          notice through reasonable means, such as in-product messaging or
+          account email where appropriate. Your continued use of AI Signal after
+          a change means you accept the updated terms.
         </p>
       </PolicySection>
 

@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /admin/
+Disallow: /settings
+Disallow: /settings/
+Disallow: /personalization
+Disallow: /saved-articles
+Disallow: /login
+Disallow: /signup
+Disallow: /recover-password
+Disallow: /reset-password
+
+Sitemap: https://aisignal.app/sitemap.xml

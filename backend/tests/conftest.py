@@ -46,7 +46,17 @@ def _assert_test_database_name(db_name: str) -> None:
     )
 
 
+def _disable_rate_limit_for_tests() -> None:
+    # Slowapi reads the enabled flag at module-load time (see
+    # app.core.rate_limit), so we have to flip the env var before the
+    # config module is imported. Tests run hot loops against the same
+    # endpoint and would trip 429s otherwise. Each test that wants to
+    # exercise the limiter explicitly toggles `limiter.enabled` itself.
+    os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
+
+
 _configure_test_database_name()
+_disable_rate_limit_for_tests()
 
 from app.core.config import settings
 

@@ -4,12 +4,13 @@ from typing import Any
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, SQLModel
 
 from app import crud
 from app.api.deps import CurrentUser, OptionalCurrentUser, SessionDep
+from app.core.rate_limit import limiter
 from app.schemas import (
     ArticlePublic,
     ArticlesPublic,
@@ -47,7 +48,9 @@ def _refresh_user_vector(session: Session, user_id: uuid.UUID) -> None:
 
 
 @router.get("/", response_model=ArticlesPublic)
+@limiter.limit("60/minute")
 def read_articles(
+    request: Request,  # noqa: ARG001  # consumed by @limiter.limit
     session: SessionDep,
     category: Category | None = Query(default=None),
     search: str | None = Query(default=None),
@@ -55,8 +58,12 @@ def read_articles(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> Any:
-    """
-    Retrieve articles.
+    """Retrieve articles.
+
+    Rate-limited to 60 requests/minute per bucket (per-user when
+    authenticated, per-IP otherwise — see ``app.core.rate_limit``).
+    Semantic / keyword search shares this bucket; if search ever moves
+    to its own endpoint, give it a stricter quota (~30/min).
     """
     articles, count = search_articles(
         session=session,
@@ -71,7 +78,9 @@ def read_articles(
 
 
 @router.get("/for-you", response_model=ForYouArticlesPublic)
+@limiter.limit("100/minute")
 def read_for_you(
+    request: Request,  # noqa: ARG001  # consumed by @limiter.limit
     session: SessionDep,
     current_user: CurrentUser,
     skip: int = Query(default=0, ge=0),
@@ -132,7 +141,9 @@ def read_for_you(
 
 
 @router.get("/following", response_model=ArticlesPublic)
+@limiter.limit("100/minute")
 def read_following(
+    request: Request,  # noqa: ARG001  # consumed by @limiter.limit
     session: SessionDep,
     current_user: CurrentUser,
     skip: int = Query(default=0, ge=0),
@@ -200,30 +211,29 @@ class SavedArticleIdsPublic(SQLModel):
 
 
 @router.get("/saved/", response_model=SavedArticlesPublic)
+@limiter.limit("100/minute")
 def read_saved_articles(
+    request: Request,  # noqa: ARG001  # consumed by @limiter.limit
     session: SessionDep,
     current_user: CurrentUser,
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> Any:
-    """Get current user's saved articles."""
+    """Get current user's saved articles.
+
+    Reads articles via a single JOIN against ``saved_articles`` so the
+    page comes back in one query rather than the two-query (saved IDs,
+    then articles by ID) pattern. Ordering is by ``saved_at desc`` so
+    the most recently saved article is first.
+    """
     count = crud.count_saved_articles(session=session, user_id=current_user.id)
-    saved = crud.get_saved_articles(
+    articles = crud.get_saved_articles_with_articles(
         session=session, user_id=current_user.id, skip=skip, limit=limit
     )
-    articles_by_id = {
-        article.id: article
-        for article in crud.get_articles_by_ids(
-            session=session,
-            article_ids=[s.article_id for s in saved],
-        )
-    }
-    articles = [
-        ArticlePublic.model_validate(articles_by_id[s.article_id])
-        for s in saved
-        if s.article_id in articles_by_id
-    ]
-    return SavedArticlesPublic(data=articles, count=count)
+    return SavedArticlesPublic(
+        data=[ArticlePublic.model_validate(article) for article in articles],
+        count=count,
+    )
 
 
 @router.get("/saved/ids", response_model=SavedArticleIdsPublic)
@@ -340,6 +350,15 @@ def _no_priors_apple_episode_url(title: str) -> str | None:
         response.raise_for_status()
         results = response.json().get("results", [])
     except (httpx.HTTPError, ValueError, TypeError):
+        # Apple lookup failed — caller falls back to the show-landing URL,
+        # so this isn't a user-visible error. Logged at info so chronic
+        # failures show up in operational metrics without alarming on
+        # transient timeouts.
+        logger.info(
+            "Apple Podcasts lookup failed for No Priors title %r; "
+            "falling back to show landing",
+            title,
+        )
         return None
 
     for result in results:

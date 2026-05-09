@@ -32,11 +32,11 @@ export function GuestPersonalizationCard() {
             </div>
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-slate-950 dark:text-foreground">
-                Personalize your AI signal
+                Personalize your feed
               </h3>
               <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-muted-foreground">
-                Create an account to follow sources, save articles, and get a
-                feed tuned to your interests.
+                Sign in to save articles, follow trusted sources, and tune your
+                feed.
               </p>
             </div>
           </div>
@@ -44,7 +44,7 @@ export function GuestPersonalizationCard() {
             <button
               type="button"
               onClick={() => openAuth('sign-up')}
-              className="inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+              className="inline-flex h-9 items-center rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-foreground dark:text-background dark:hover:bg-foreground/92 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
             >
               Create account
             </button>

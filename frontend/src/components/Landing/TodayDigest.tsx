@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { CalendarIcon, ChevronRightIcon } from 'lucide-react'
+import { DateTime } from 'luxon'
 import type { DigestArticlePublic, DigestSectionPublic } from '@/client'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTodayDigest } from '@/hooks/useTodayDigest'
@@ -81,13 +82,20 @@ const TodayDigest = () => {
 
   return (
     <div>
-      <div className="mb-3 flex items-center gap-2.5 lg:mb-4">
-        <div className="text-slate-400 dark:text-muted-foreground">
-          <CalendarIcon className="h-4 w-4 stroke-[1.6]" />
+      <div className="mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 lg:mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="text-slate-400 dark:text-muted-foreground">
+            <CalendarIcon className="h-4 w-4 stroke-[1.6]" />
+          </div>
+          <span className="text-sm font-semibold text-slate-500 dark:text-muted-foreground">
+            Today's Digest
+          </span>
         </div>
-        <span className="text-sm font-semibold text-slate-500 dark:text-muted-foreground">
-          Today's Digest
-        </span>
+        {data?.generated_at && articles.length > 0 ? (
+          <span className="text-[11px] font-medium text-slate-400 dark:text-muted-foreground/75">
+            Updated {DateTime.fromISO(data.generated_at).toRelative()}
+          </span>
+        ) : null}
       </div>
       <div className="mt-2 space-y-3 lg:space-y-5">
         {isLoading ? (
@@ -98,7 +106,8 @@ const TodayDigest = () => {
           </TodayDigestMessage>
         ) : articles.length === 0 ? (
           <TodayDigestMessage>
-            Today's digest will appear here.
+            Today's digest is still being assembled. Check back later — we group
+            the day's most important AI updates by signal area.
           </TodayDigestMessage>
         ) : (
           articles.map((article, index) => (

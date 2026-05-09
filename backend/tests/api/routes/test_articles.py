@@ -412,8 +412,9 @@ def test_read_for_you_refetches_page_articles_in_one_bulk_query(
     monkeypatch.setattr(article_routes.crud, "get_article", fail_get_article)
 
     response = article_routes.read_for_you(
+        request=SimpleNamespace(),  # type: ignore[arg-type]
         session=db,
-        current_user=SimpleNamespace(id=uuid.uuid4()),
+        current_user=SimpleNamespace(id=uuid.uuid4(), is_superuser=False),
         skip=0,
         limit=2,
     )
@@ -517,80 +518,73 @@ def test_saved_article_routes_cover_create_list_ids_and_delete(
     assert missing.json()["detail"] == "Saved article not found"
 
 
-def test_read_saved_articles_preserves_saved_order_when_bulk_fetching(
+def test_read_saved_articles_uses_single_join_query_in_saved_at_desc_order(
     db: Session,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    first_saved = _create_article(db, title="Saved first")
+    """The route must hit the JOIN once and not fall back to the legacy
+    two-query (saved IDs → bulk fetch by ID) pattern. Order from the
+    JOIN is preserved straight through to the response.
+    """
+    first_saved = _create_article(db, title="Saved first (most recent)")
     second_saved = _create_article(db, title="Saved second")
-    saved_rows = [
-        SimpleNamespace(article_id=second_saved.id),
-        SimpleNamespace(article_id=first_saved.id),
-    ]
-    captured_article_ids: list[uuid.UUID] = []
+    captured_user_ids: list[uuid.UUID] = []
 
-    monkeypatch.setattr(article_routes.crud, "count_saved_articles", lambda **_: 2)
-    monkeypatch.setattr(
-        article_routes.crud, "get_saved_articles", lambda **_: saved_rows
-    )
-
-    def fake_get_articles_by_ids(**kwargs):
-        captured_article_ids.extend(kwargs["article_ids"])
+    def fake_join(**kwargs):
+        captured_user_ids.append(kwargs["user_id"])
+        # JOIN returns articles already in saved_at desc order
         return [first_saved, second_saved]
 
-    def fail_get_article(**_kwargs):
-        raise AssertionError("read_saved_articles should bulk-fetch articles")
-
-    monkeypatch.setattr(
-        article_routes.crud, "get_articles_by_ids", fake_get_articles_by_ids
-    )
-    monkeypatch.setattr(article_routes.crud, "get_article", fail_get_article)
-
-    response = article_routes.read_saved_articles(
-        session=db,
-        current_user=SimpleNamespace(id=uuid.uuid4()),
-        skip=0,
-        limit=2,
-    )
-
-    assert captured_article_ids == [second_saved.id, first_saved.id]
-    assert [article.id for article in response.data] == [
-        second_saved.id,
-        first_saved.id,
-    ]
-    assert response.count == 2
-
-
-def test_read_saved_articles_skips_saved_rows_for_deleted_articles(
-    db: Session,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    existing = _create_article(db, title="Still exists")
-    missing_id = uuid.uuid4()
-    saved_rows = [
-        SimpleNamespace(article_id=missing_id),
-        SimpleNamespace(article_id=existing.id),
-    ]
+    def fail_two_query(**_kwargs):
+        raise AssertionError(
+            "read_saved_articles should use the single JOIN query, "
+            "not the legacy two-query (get_saved_articles + "
+            "get_articles_by_ids) pattern"
+        )
 
     monkeypatch.setattr(article_routes.crud, "count_saved_articles", lambda **_: 2)
     monkeypatch.setattr(
-        article_routes.crud, "get_saved_articles", lambda **_: saved_rows
+        article_routes.crud, "get_saved_articles_with_articles", fake_join
     )
-    monkeypatch.setattr(
-        article_routes.crud,
-        "get_articles_by_ids",
-        lambda **_: [existing],
-    )
+    monkeypatch.setattr(article_routes.crud, "get_saved_articles", fail_two_query)
+    monkeypatch.setattr(article_routes.crud, "get_articles_by_ids", fail_two_query)
 
+    fake_user_id = uuid.uuid4()
     response = article_routes.read_saved_articles(
+        request=SimpleNamespace(),  # type: ignore[arg-type]
         session=db,
-        current_user=SimpleNamespace(id=uuid.uuid4()),
+        current_user=SimpleNamespace(id=fake_user_id),
         skip=0,
         limit=2,
     )
 
-    assert [article.id for article in response.data] == [existing.id]
+    assert captured_user_ids == [fake_user_id]
+    assert [article.id for article in response.data] == [
+        first_saved.id,
+        second_saved.id,
+    ]
     assert response.count == 2
+
+
+def test_read_saved_articles_orders_by_saved_at_desc_end_to_end(
+    client: TestClient,
+    db: Session,
+) -> None:
+    """Integration test: real DB, real JOIN, real ordering."""
+    user, headers = _create_authenticated_user(client, db)
+    older = _create_article(db, title="Saved earlier")
+    newer = _create_article(db, title="Saved later")
+
+    crud.save_article(session=db, user_id=user.id, article_id=older.id)
+    crud.save_article(session=db, user_id=user.id, article_id=newer.id)
+
+    response = client.get(f"{settings.API_V1_STR}/articles/saved/", headers=headers)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["count"] == 2
+    # Most recent save first
+    assert [item["id"] for item in body["data"]] == [str(newer.id), str(older.id)]
 
 
 def test_save_article_returns_404_for_missing_article(
@@ -805,6 +799,78 @@ def test_go_to_article_rejects_missing_or_invalid_destination(
     assert missing.json()["detail"] == "Article not found"
     assert invalid_response.status_code == 400
     assert invalid_response.json()["detail"] == "Article URL is invalid"
+
+
+def test_rate_limit_returns_429_when_exceeded() -> None:
+    """End-to-end: a route with a 1/minute quota returns 200 on the first
+    call and 429 on the second. Uses a throwaway FastAPI app so we exercise
+    the full SlowAPI middleware path (limiter state → exception handler →
+    Retry-After response) without depending on the production 60/min quota
+    on /articles/, which would need 61 calls per test run.
+    """
+    from fastapi import FastAPI, Request as RealRequest
+    from slowapi import _rate_limit_exceeded_handler
+    from slowapi.errors import RateLimitExceeded
+    from slowapi.middleware import SlowAPIMiddleware
+
+    from app.core.rate_limit import limiter
+
+    test_app = FastAPI()
+    test_app.state.limiter = limiter
+    test_app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    test_app.add_middleware(SlowAPIMiddleware)
+
+    @test_app.get("/probe")
+    @limiter.limit("1/minute")
+    def probe(request: RealRequest) -> dict[str, bool]:
+        return {"ok": True}
+
+    original_enabled = limiter.enabled
+    limiter.enabled = True
+    limiter.reset()
+    try:
+        with TestClient(test_app) as test_client:
+            first = test_client.get("/probe")
+            second = test_client.get("/probe")
+    finally:
+        limiter.enabled = original_enabled
+        limiter.reset()
+
+    assert first.status_code == 200
+    assert second.status_code == 429
+    assert second.json()["error"] == "Rate limit exceeded: 1 per 1 minute"
+
+
+def test_rate_limit_key_uses_user_id_for_authenticated_request() -> None:
+    """Authenticated requests bucket by ``user:<id>`` (via JWT decode), not IP."""
+    from datetime import timedelta
+
+    from app.core import security
+    from app.core.cookies import ACCESS_COOKIE_NAME
+    from app.core.rate_limit import rate_limit_key
+
+    user_id = uuid.uuid4()
+    token = security.create_access_token(user_id, timedelta(minutes=1))
+
+    cookie_request = SimpleNamespace(
+        cookies={ACCESS_COOKIE_NAME: token},
+        headers={},
+        client=SimpleNamespace(host="127.0.0.1"),
+    )
+    bearer_request = SimpleNamespace(
+        cookies={},
+        headers={"authorization": f"Bearer {token}"},
+        client=SimpleNamespace(host="127.0.0.1"),
+    )
+    anon_request = SimpleNamespace(
+        cookies={},
+        headers={},
+        client=SimpleNamespace(host="10.0.0.5"),
+    )
+
+    assert rate_limit_key(cookie_request) == f"user:{user_id}"  # type: ignore[arg-type]
+    assert rate_limit_key(bearer_request) == f"user:{user_id}"  # type: ignore[arg-type]
+    assert rate_limit_key(anon_request) == "ip:10.0.0.5"  # type: ignore[arg-type]
 
 
 def test_read_article(client: TestClient, db: Session) -> None:

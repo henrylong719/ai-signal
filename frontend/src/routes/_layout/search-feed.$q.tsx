@@ -10,7 +10,9 @@ export const Route = createFileRoute('/_layout/search-feed/$q')({
 function SearchFeed() {
   const { q } = Route.useParams()
 
-  const feed = useArticleFeed({ search: q })
+  const { dataUpdatedAt: _latestUpdatedAt, ...feed } = useArticleFeed({
+    search: q,
+  })
 
   return (
     <PageContainer variant="default">

@@ -33,7 +33,9 @@ function ArticlesSources() {
           }) as never
       : undefined
 
-  const feed = useArticleFeed({ source: s })
+  const { dataUpdatedAt: _latestUpdatedAt, ...feed } = useArticleFeed({
+    source: s,
+  })
 
   const {
     sources,

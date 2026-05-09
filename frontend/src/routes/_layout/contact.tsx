@@ -87,7 +87,7 @@ function ContactPage() {
           />
           <ReasonRow
             title="Accessibility issues"
-            description="Report keyboard, screen-reader, or contrast problems. We treat these as priority work."
+            description="Include the page URL, what went wrong, your browser or device, and any assistive technology used."
             subject="Accessibility issue"
           />
           <ReasonRow

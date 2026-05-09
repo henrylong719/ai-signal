@@ -18,10 +18,17 @@ import {
 
 export const Route = createFileRoute('/_layout/all-article-sources')({
   component: AllArticleSources,
+  head: () => ({
+    meta: [
+      { title: 'All article sources — AI Signal' },
+      {
+        name: 'description',
+        content:
+          'Browse every source behind AI Signal — labs, research feeds, analysis, policy groups, media outlets, newsletters, podcasts, and community sites.',
+      },
+    ],
+  }),
 })
-
-const _getSourceCountLabel = (count: number) =>
-  `${count} ${count === 1 ? 'source' : 'sources'}`
 
 const isSourceType = (value: unknown): value is source_types =>
   typeof value === 'string' && SOURCE_TYPES.includes(value as source_types)
@@ -81,7 +88,6 @@ function AllArticleSources() {
     }))
     .filter((group) => group.items.length > 0)
 
-  const _sourceCount = sources.length
   const preferredSources = interests?.preferred_sources ?? []
   const followDisabled = interestsLoading || interestsError || isSaving
 
@@ -117,14 +123,6 @@ function AllArticleSources() {
         eyebrow="Directory"
         title="Sources"
         description="Explore the labs, research feeds, analysis, policy groups, media outlets, newsletters, podcasts, and community sites behind AI Signal."
-        // actions={
-        //   <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm md:self-auto dark:border-border dark:bg-card/35 dark:text-muted-foreground dark:shadow-none">
-        //     <RadioTowerIcon className="h-4 w-4 stroke-[1.8] text-slate-400 dark:text-muted-foreground" />
-        //     <span>
-        //       {isLoading ? 'Loading sources' : getSourceCountLabel(sourceCount)}
-        //     </span>
-        //   </div>
-        // }
       />
 
       <SourceFilterBar selected={sourceFilter} onSelect={setSourceFilter} />

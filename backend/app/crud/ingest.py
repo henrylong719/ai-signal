@@ -78,8 +78,18 @@ async def _fetch_one(
         resp.raise_for_status()
         feed = feedparser.parse(resp.text)
         return source, list(feed.entries)
-    except Exception:
-        return source, []  # one failed source must never break the run
+    except Exception:  # noqa: BLE001
+        # One failed source must never break the whole ingest run, but we
+        # still want to know *which* source failed and why — silent fetch
+        # failures hide chronically dead feeds. Log at warning since this
+        # is operational signal, not a correctness bug.
+        logger.warning(
+            "RSS fetch failed for source %s (%s); skipping this run",
+            source.name,
+            source.rss_url,
+            exc_info=True,
+        )
+        return source, []
 
 
 def _published_at(entry: dict[str, Any]) -> datetime | None:

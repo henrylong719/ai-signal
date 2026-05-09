@@ -83,7 +83,7 @@ const UserInformation = () => {
                   <Input
                     type="text"
                     autoComplete="name"
-                    className="h-10 rounded-md border-slate-200 bg-white px-3.5 text-sm shadow-sm shadow-slate-950/[0.02] transition-colors placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-slate-900/10 dark:border-border dark:bg-muted/35 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:focus-visible:border-ring/55 dark:focus-visible:ring-ring/15"
+                    className="h-10 rounded-md border-slate-200 bg-white px-3.5 text-sm shadow-sm shadow-slate-950/2 transition-colors placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-slate-900/10 dark:border-border dark:bg-muted/35 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:focus-visible:border-ring/55 dark:focus-visible:ring-ring/15"
                     {...field}
                   />
                 </FormControl>
@@ -104,7 +104,7 @@ const UserInformation = () => {
                   <Input
                     type="email"
                     autoComplete="email"
-                    className="h-10 rounded-md border-slate-200 bg-white px-3.5 text-sm shadow-sm shadow-slate-950/[0.02] transition-colors placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-slate-900/10 dark:border-border dark:bg-muted/35 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:focus-visible:border-ring/55 dark:focus-visible:ring-ring/15"
+                    className="h-10 rounded-md border-slate-200 bg-white px-3.5 text-sm shadow-sm shadow-slate-950/2 transition-colors placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-slate-900/10 dark:border-border dark:bg-muted/35 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:focus-visible:border-ring/55 dark:focus-visible:ring-ring/15"
                     {...field}
                   />
                 </FormControl>
@@ -119,7 +119,7 @@ const UserInformation = () => {
               size="sm"
               loading={mutation.isPending}
               disabled={!form.formState.isDirty}
-              className="h-9 w-full bg-slate-950 px-4 font-medium text-white shadow-sm hover:bg-slate-800 sm:w-auto dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88"
+              className="h-9 w-full rounded-full bg-slate-950 px-4 font-medium text-white shadow-sm hover:bg-slate-800 sm:w-auto dark:bg-foreground dark:text-background dark:hover:bg-foreground/92"
             >
               <CheckIcon className="h-4 w-4" />
               Save profile

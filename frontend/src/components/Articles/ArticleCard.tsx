@@ -78,7 +78,7 @@ export function ArticleCard({
           </div>
         )}
         <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2 text-xs font-medium text-slate-500 dark:text-muted-foreground">
+          <div className="flex min-w-0 flex-1 items-center gap-2 text-xs font-medium text-slate-500 dark:text-muted-foreground">
             <Link
               key={article.source}
               to="/article-sources/$s"
@@ -100,7 +100,7 @@ export function ArticleCard({
             </span>
           </div>
           {showActions && (
-            <div className="-mt-1 -mr-1 flex shrink-0 items-center gap-1 text-slate-400 dark:text-muted-foreground">
+            <div className="-mt-2 -mr-1 flex shrink-0 items-center gap-1 text-slate-400 dark:text-muted-foreground">
               {onBookmark &&
                 (loggedIn ? (
                   <Tooltip>
@@ -108,7 +108,7 @@ export function ArticleCard({
                       <button
                         type="button"
                         onClick={onBookmark}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent/80 dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent/80 dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                         aria-label={
                           isBookmarked ? 'Remove saved article' : 'Save article'
                         }
@@ -132,13 +132,13 @@ export function ArticleCard({
                     <TooltipTrigger asChild>
                       <span className="inline-flex">
                         <AuthModal
-                          title="Sign in to save this article"
-                          description="Keep this story in your library and use it to tune your AI Signal feed."
+                          title="Sign in to save articles"
+                          description="Sign in to save articles, follow trusted sources, and tune your feed."
                           trigger={
                             <button
                               type="button"
                               onClick={onBookmarkAuthRequired}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent/80 dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent/80 dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                               aria-label="Sign in to save article"
                             >
                               <BookmarkIcon className="h-4.5 w-4.5 stroke-[1.6]" />
@@ -148,7 +148,8 @@ export function ArticleCard({
                       </span>
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      Sign in to save article
+                      Sign in to save articles, follow sources, and tune your
+                      feed
                     </TooltipContent>
                   </Tooltip>
                 ))}
@@ -159,22 +160,20 @@ export function ArticleCard({
                     <button
                       type="button"
                       onClick={onDismiss}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent/80 dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-                      aria-label="Show less like this"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-white hover:text-slate-950 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:hover:bg-accent/80 dark:hover:text-foreground dark:hover:shadow-none dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                      aria-label="Dismiss article"
                     >
                       <ThumbsDown className="h-4.5 w-4.5 stroke-[1.6]" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">
-                    Show less like this
-                  </TooltipContent>
+                  <TooltipContent side="top">Dismiss article</TooltipContent>
                 </Tooltip>
               )}
             </div>
           )}
         </div>
 
-        <div className="flex flex-row items-start justify-between gap-4 sm:gap-6">
+        <div className="flex flex-row items-start justify-between gap-3 sm:gap-6">
           <div className="min-w-0 flex-1">
             <a
               href={href}
@@ -222,7 +221,7 @@ export function ArticleCard({
           </div>
 
           {article.image_url && (
-            <div className="aspect-[4/3] w-20 shrink-0 overflow-hidden rounded-md bg-slate-100 sm:w-36 lg:w-44 dark:bg-muted">
+            <div className="aspect-4/3 w-24 shrink-0 overflow-hidden rounded-md bg-slate-100 sm:w-36 lg:w-44 dark:bg-muted">
               <a
                 href={href}
                 target="_blank"

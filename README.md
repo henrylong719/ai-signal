@@ -1,8 +1,10 @@
 # AI Signal
 
-AI Signal is a full-stack AI news and research dashboard for builders. It ingests articles from curated AI labs, engineering blogs, newsletters, media outlets, release feeds, and research sources, then organizes them into a focused feed with search, source/category filters, saved articles, and personalized recommendations.
+AI Signal is a full-stack AI knowledge and research dashboard for developers, students, researchers, and builders who want to stay up to date with the fast-moving AI ecosystem.
 
-The app is designed for discovery. Article cards keep the original source front and center, and outbound reads redirect to the source article instead of replacing it.
+It ingests updates from curated AI labs, research sources, engineering blogs, newsletters, media outlets, release feeds, and trusted independent writers, then organizes them into a focused reading experience with search, source/category filters, saved articles, followed sources, and personalized recommendations.
+
+AI Signal’s goal is to help users find the signal in the noise: important AI updates, practical engineering knowledge, and emerging trends across areas like AI agents, LLMs, RAG, MCP, voice agents, model tooling, evaluations, and AI engineering practices.
 
 ## Features
 
@@ -74,6 +76,13 @@ The app is designed for discovery. Article cards keep the original source front 
 
 The backend reads configuration from the root `.env` file. The frontend reads `frontend/.env`.
 
+Create local environment files from the checked-in examples:
+
+```bash
+cp .env.example .env
+cp frontend/.env.example frontend/.env
+```
+
 Important local values:
 
 ```env
@@ -98,6 +107,27 @@ VITE_API_URL=http://localhost:8000
 ```
 
 Change secret values before deploying anywhere outside local development.
+
+The contact/legal pages use the public contact email configured in `frontend/src/lib/legal.ts`. Update it before launch if the project should use a branded address.
+
+Optional rate-limiting configuration (defaults are production-safe):
+
+```env
+# Turn the per-route limiter off (e.g. for tests). Defaults to True.
+RATE_LIMIT_ENABLED=true
+# Shared backend so multi-worker deployments don't multiply each
+# bucket by the worker count. None ⇒ in-memory (fine for single-worker).
+RATE_LIMIT_STORAGE_URI=redis://redis:6379
+```
+
+Per-route limits (per authenticated user when signed in, per IP otherwise):
+
+| Endpoint                         | Limit        |
+| -------------------------------- | ------------ |
+| `GET /api/v1/articles/`          | 60 / minute  |
+| `GET /api/v1/articles/for-you`   | 100 / minute |
+| `GET /api/v1/articles/following` | 100 / minute |
+| `GET /api/v1/articles/saved/`    | 100 / minute |
 
 ## Quick Start
 
@@ -186,6 +216,8 @@ Backend commands from `backend/`:
 uv sync
 bash ./scripts/lint.sh
 bash ./scripts/test.sh
+uv run alembic revision --autogenerate -m "Describe schema change"
+uv run alembic upgrade head
 ```
 
 Regenerate the frontend API client after backend OpenAPI changes:
@@ -194,7 +226,7 @@ Regenerate the frontend API client after backend OpenAPI changes:
 bash ./scripts/generate-client.sh
 ```
 
-That script exports the FastAPI OpenAPI schema, regenerates `frontend/src/client`, and runs the frontend lint command.
+Run this after adding or changing backend endpoints, request/response schemas, or auth behavior the frontend consumes. The script exports the FastAPI OpenAPI schema, regenerates `frontend/src/client`, and runs the frontend lint command. If you already have `frontend/openapi.json`, the lower-level command is `cd frontend && bun run generate-client`.
 
 ## Articles and Sources
 
@@ -205,6 +237,8 @@ The superuser-only ingestion endpoint imports from all configured sources:
 ```http
 POST /api/v1/ingest
 ```
+
+The scheduler lives in `backend/app/services/scheduler.py`. It is disabled by default when `ENVIRONMENT=local`, enabled by default for staging/production, and can be controlled with `INGEST_SCHEDULER_ENABLED`, `INGEST_INTERVAL_MINUTES`, and `INGEST_INITIAL_DELAY_SECONDS`.
 
 Article API highlights:
 
@@ -240,3 +274,5 @@ PUT /api/v1/users/me/interests
 - Backend details: [backend/README.md](backend/README.md)
 - Frontend details: [frontend/README.md](frontend/README.md)
 - Local development notes: [development.md](development.md)
+- Deployment notes: [deployment.md](deployment.md)
+- Launch checklist: [docs/launch-checklist.md](docs/launch-checklist.md)

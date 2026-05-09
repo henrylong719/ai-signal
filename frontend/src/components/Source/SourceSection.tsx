@@ -85,7 +85,7 @@ function SourceCard({
   onTogglePreferredSource,
 }: SourceCardProps) {
   return (
-    <article className="group relative min-h-[11.25rem] rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/60 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_34px_rgba(15,23,42,0.06)] dark:border-border dark:bg-card/35 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-card/65 dark:hover:shadow-none">
+    <article className="group relative min-h-45 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/60 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_34px_rgba(15,23,42,0.06)] dark:border-border dark:bg-card/35 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-card/65 dark:hover:shadow-none">
       <Link
         to="/article-sources/$s"
         params={{ s: source.name }}
@@ -118,11 +118,16 @@ function SourceCard({
                 onClick={() => onTogglePreferredSource(source.name)}
                 disabled={followDisabled}
                 aria-pressed={isPreferredSource}
-                className={cn(
-                  'inline-flex h-8 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background',
+                aria-label={
                   isPreferredSource
-                    ? 'border-slate-950 bg-slate-950 text-white shadow-sm dark:border-primary dark:bg-primary dark:text-primary-foreground'
-                    : 'border-slate-200 bg-white/90 text-slate-500 shadow-sm shadow-slate-950/[0.02] hover:border-slate-300 hover:bg-white hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground',
+                    ? `Unfollow source ${source.name}`
+                    : `Follow source ${source.name}`
+                }
+                className={cn(
+                  'inline-flex h-10 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background',
+                  isPreferredSource
+                    ? 'border-slate-950 bg-slate-950 text-white shadow-sm dark:border-foreground dark:bg-foreground dark:text-background'
+                    : 'border-slate-200 bg-white/90 text-slate-500 shadow-sm shadow-slate-950/2 hover:border-slate-300 hover:bg-white hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground',
                 )}
               >
                 {isPreferredSource ? (
@@ -139,11 +144,12 @@ function SourceCard({
             ) : (
               <AuthModal
                 title={`Sign in to follow ${source.name}`}
-                description="Follow trusted sources to shape your personalized AI Signal feed."
+                description="Sign in to save articles, follow trusted sources, and tune your feed."
                 trigger={
                   <button
                     type="button"
-                    className="inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white/90 px-3 text-xs font-medium text-slate-500 shadow-sm shadow-slate-950/[0.02] transition-all hover:border-slate-300 hover:bg-white hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                    aria-label={`Follow source ${source.name}`}
+                    className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white/90 px-3 text-xs font-medium text-slate-500 shadow-sm shadow-slate-950/2 transition-all hover:border-slate-300 hover:bg-white hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                   >
                     <PlusIcon className="h-3.5 w-3.5" />
                     Follow

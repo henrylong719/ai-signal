@@ -72,16 +72,18 @@ class Article(ArticleBase, table=True):
     )
 
 
+_saved_articles_user_id_column = Column(
+    UUID(as_uuid=True),
+    ForeignKey("user.id", ondelete="CASCADE"),
+    primary_key=True,
+)
+_saved_articles_saved_at_column = Column(DateTime(timezone=True), nullable=False)
+
+
 class SavedArticle(SQLModel, table=True):
     __tablename__ = "saved_articles"
 
-    user_id: uuid.UUID = Field(
-        sa_column=Column(
-            UUID(as_uuid=True),
-            ForeignKey("user.id", ondelete="CASCADE"),
-            primary_key=True,
-        )
-    )
+    user_id: uuid.UUID = Field(sa_column=_saved_articles_user_id_column)
     article_id: uuid.UUID = Field(
         sa_column=Column(
             UUID(as_uuid=True),
@@ -91,7 +93,19 @@ class SavedArticle(SQLModel, table=True):
     )
     saved_at: datetime = Field(
         default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore
+        sa_column=_saved_articles_saved_at_column,
+    )
+
+    # Compound (user_id, saved_at desc) index added in migration
+    # 4c5d6e7f8a9b. The /articles/saved/ endpoint and the saved-articles
+    # JOIN both read by user_id ordered by saved_at desc — without this
+    # index Postgres has to sort on the fly per request.
+    __table_args__ = (
+        Index(
+            "ix_saved_articles_user_saved_at",
+            _saved_articles_user_id_column,
+            _saved_articles_saved_at_column.desc(),
+        ),
     )
 
 

@@ -119,14 +119,39 @@ function PrivacyPage() {
         </p>
       </PolicySection>
 
+      <PolicySection title="Third-party services">
+        <p>
+          We may use trusted service providers to host, secure, and operate AI
+          Signal. These providers process information only as needed to provide
+          their services to us.
+        </p>
+        <PolicyList
+          items={[
+            'Hosting and infrastructure providers that run the frontend, API, databases, and supporting services.',
+            'PostgreSQL database infrastructure used to store accounts, article metadata, saved articles, preferences, and reading signals.',
+            'Email delivery providers, when configured, for account and transactional emails.',
+            'Google, GitHub, or Facebook only if you choose a social sign-in option that is enabled.',
+            'Sentry error monitoring only when configured outside local development.',
+            'Original article publishers when you click an outbound link to read their content.',
+          ]}
+        />
+        <p>
+          AI Signal does not currently run third-party analytics or advertising
+          trackers. If that changes, we will update this policy and the Cookie
+          Policy before describing the new practice as active.
+        </p>
+      </PolicySection>
+
       <PolicySection title="Data retention">
         <p>
           We keep account data, saved articles, and reading signals for as long
-          as your account is active. When you remove a saved article or
-          deactivate your account, we delete or disconnect the related data on a
-          reasonable schedule, subject to backups and legal requirements.
-          Aggregated, non-identifying data may be retained for longer to help us
-          understand how the product is used.
+          as your account is active. When you remove a saved article, we remove
+          that saved item from your library. If you delete your account from
+          settings, account-linked saved articles, preferences, sessions, and
+          related records are deleted where they are linked to your account,
+          subject to backups and legal requirements. Aggregated, non-identifying
+          data may be retained for longer to help us understand how the product
+          is used.
         </p>
       </PolicySection>
 
@@ -136,12 +161,8 @@ function PrivacyPage() {
             'Update topic, tag, and source preferences from the personalization screen.',
             'Save and unsave articles at any time.',
             'Change your display name, email, or password from your account settings.',
-            <span key="delete">
-              Delete your AI Signal account from the account settings screen.
-              Where this is unavailable for any reason, you can contact us to
-              request deletion of your account information, subject to technical
-              and legal limitations.
-            </span>,
+            'Delete your AI Signal account from the account settings screen, unless your account is restricted from self-deletion for administrative reasons.',
+            'Contact us for help with account-related requests, subject to technical and legal limitations.',
             'Control cookies and storage from your browser settings.',
           ]}
         />
@@ -167,10 +188,10 @@ function PrivacyPage() {
 
       <PolicySection title="Changes to this policy">
         <p>
-          We will update this page when our practices change. The "Last updated"
-          date at the top of the page reflects the most recent meaningful
-          revision. For significant changes, we will try to give clearer notice
-          in-product.
+          We may update this policy as AI Signal changes. When we do, we will
+          update the "Last updated" date at the top of the page. For material
+          changes, we may provide notice through reasonable means, such as
+          in-product messaging or account email where appropriate.
         </p>
       </PolicySection>
 

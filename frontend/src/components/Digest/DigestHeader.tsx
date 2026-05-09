@@ -50,6 +50,11 @@ function DigestHeader({ digest }: { digest: DigestPublicSchema | undefined }) {
       <p className="mx-auto mt-5 max-w-2xl font-serif text-lg leading-8 text-slate-500 sm:text-xl sm:leading-9 dark:text-muted-foreground">
         {buildDigestIntro(digest)}
       </p>
+      {digest?.generated_at ? (
+        <p className="mx-auto mt-4 max-w-2xl text-center text-xs font-medium text-slate-400 dark:text-muted-foreground/80">
+          Updated {DateTime.fromISO(digest.generated_at).toRelative()}
+        </p>
+      ) : null}
     </header>
   )
 }

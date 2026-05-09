@@ -7,7 +7,7 @@ import { type AdminArticlePublic, AdminService } from '@/client'
 import { articleColumns } from '@/components/Admin/articleColumns'
 import { DataTable } from '@/components/Common/DataTable'
 import { PageContainer, PageHeader } from '@/components/Layout/Page'
-import PendingItems from '@/components/Pending/PendingItems'
+import PendingArticles from '@/components/Pending/PendingArticles'
 import { Button } from '@/components/ui/button'
 import useCustomToast from '@/hooks/useCustomToast'
 import { cn } from '@/lib/utils'
@@ -57,7 +57,7 @@ function ArticlesTableContent() {
 
 function ArticlesTable() {
   return (
-    <Suspense fallback={<PendingItems />}>
+    <Suspense fallback={<PendingArticles />}>
       <ArticlesTableContent />
     </Suspense>
   )

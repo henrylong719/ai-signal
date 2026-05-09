@@ -46,6 +46,7 @@ export function useArticleFeed(options: UseArticleFeedOptions = {}) {
 
   const {
     data,
+    dataUpdatedAt,
     fetchNextPage,
     hasNextPage,
     isError,
@@ -87,5 +88,12 @@ export function useArticleFeed(options: UseArticleFeedOptions = {}) {
     [fetchNextPage, hasNextPage, isFetchingNextPage],
   )
 
-  return { articles, feedStatus, loadMoreRef, isPending, isError }
+  return {
+    articles,
+    feedStatus,
+    loadMoreRef,
+    isPending,
+    isError,
+    dataUpdatedAt,
+  }
 }

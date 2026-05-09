@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from 'react';
 
 function TasteSection({
   eyebrow,
@@ -7,11 +7,11 @@ function TasteSection({
   count,
   children,
 }: {
-  eyebrow: string
-  title: string
-  description: string
-  count: string
-  children: ReactNode
+  eyebrow: string;
+  title: string;
+  description: string;
+  count: string;
+  children: ReactNode;
 }) {
   return (
     <section className="py-8 sm:py-10">
@@ -27,13 +27,13 @@ function TasteSection({
             {description}
           </p>
         </div>
-        <span className="inline-flex min-h-8 w-fit items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-500 shadow-sm shadow-slate-950/[0.02] dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
+        <span className="inline-flex min-h-8 w-fit items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-500 shadow-sm shadow-slate-950/2 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none">
           {count}
         </span>
       </div>
       {children}
     </section>
-  )
+  );
 }
 
-export default TasteSection
+export default TasteSection;

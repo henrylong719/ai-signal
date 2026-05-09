@@ -20,7 +20,7 @@ const ErrorComponent = () => {
         Something went wrong. Please try again.
       </p>
       <Link to="/">
-        <Button className="bg-slate-950 text-white shadow-sm hover:bg-slate-800 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/88">
+        <Button className="rounded-full bg-slate-950 text-white shadow-sm hover:bg-slate-800 dark:bg-foreground dark:text-background dark:hover:bg-foreground/92">
           Go Home
         </Button>
       </Link>

@@ -5,7 +5,7 @@ import pytest
 
 from app.models import Article
 from app.schemas.source import Category
-from app.services import digest
+from app.services import digest, ranking
 from app.services.digest import _build_sections, build_digest
 from app.services.recommender import UserProfile
 
@@ -118,7 +118,7 @@ def test_build_digest_personalizes_and_excludes_saved_and_dismissed_articles(
         return [lower_article, top_article]
 
     monkeypatch.setattr(digest, "build_user_profile", lambda **_kwargs: profile)
-    monkeypatch.setattr(digest, "_resolve_user_vector", lambda **_kwargs: None)
+    monkeypatch.setattr(ranking, "resolve_user_vector", lambda **_kwargs: None)
     monkeypatch.setattr(
         digest.crud, "get_articles_in_window", fake_get_articles_in_window
     )

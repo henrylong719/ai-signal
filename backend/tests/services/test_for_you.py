@@ -7,7 +7,7 @@ import pytest
 
 from app import crud as app_crud
 from app.models import Article
-from app.services import for_you
+from app.services import for_you, ranking
 from app.services.recommender import UserProfile
 
 NOW = datetime(2026, 5, 5, 12, 0, tzinfo=timezone.utc)
@@ -151,7 +151,7 @@ def test_rank_for_you_excludes_negative_signals_and_paginates_after_scoring(
     )
     monkeypatch.setattr(app_crud, "get_user_embedding", lambda **kwargs: None)
     monkeypatch.setattr(
-        for_you,
+        ranking,
         "compute_and_save_user_vector",
         lambda **kwargs: None,
     )
@@ -226,7 +226,7 @@ def test_rank_for_you_applies_diversity_rerank_to_large_pools(
     )
     monkeypatch.setattr(app_crud, "get_user_embedding", lambda **kwargs: None)
     monkeypatch.setattr(
-        for_you,
+        ranking,
         "compute_and_save_user_vector",
         lambda **kwargs: None,
     )
@@ -442,7 +442,7 @@ def test_rank_for_you_skips_saved_lookup_when_user_has_no_vector(
     )
     monkeypatch.setattr(app_crud, "get_user_embedding", lambda **kwargs: None)
     monkeypatch.setattr(
-        for_you,
+        ranking,
         "compute_and_save_user_vector",
         lambda **kwargs: None,
     )
@@ -529,7 +529,7 @@ def test_rank_for_you_injects_exploration_items_with_dedicated_reason(
     )
     monkeypatch.setattr(app_crud, "get_user_embedding", lambda **kwargs: None)
     monkeypatch.setattr(
-        for_you,
+        ranking,
         "compute_and_save_user_vector",
         lambda **kwargs: None,
     )
@@ -580,7 +580,7 @@ def test_rank_for_you_skips_exploration_for_cold_start_users(
     )
     monkeypatch.setattr(app_crud, "get_user_embedding", lambda **kwargs: None)
     monkeypatch.setattr(
-        for_you,
+        ranking,
         "compute_and_save_user_vector",
         lambda **kwargs: None,
     )
@@ -648,7 +648,7 @@ def test_rank_for_you_sets_exploration_flag_consistent_with_reason(
     )
     monkeypatch.setattr(app_crud, "get_user_embedding", lambda **kwargs: None)
     monkeypatch.setattr(
-        for_you,
+        ranking,
         "compute_and_save_user_vector",
         lambda **kwargs: None,
     )

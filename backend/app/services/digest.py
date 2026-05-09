@@ -17,6 +17,7 @@ Two design choices worth noting:
 """
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -25,17 +26,9 @@ from sqlmodel import Session
 from app import crud
 from app.models import Article
 from app.schemas.source import Category
-from app.services.for_you import (
-    _candidate_similarities,
-    _resolve_user_vector,
-    _to_candidate,
-    build_user_profile,
-)
-from app.services.recommender import (
-    filter_candidates,
-    reason_for,
-    score_candidates,
-)
+from app.services.for_you import build_user_profile
+from app.services.ranking import rank_articles
+from app.services.recommender import UserProfile, reason_for
 
 # Candidate pool size for digest scoring. Smaller than For You's 200
 # because the time window already constrains the input set.
@@ -49,6 +42,21 @@ _PER_SECTION_LIMIT = 5
 # to 48h. Past that we render an empty state.
 _PRIMARY_WINDOW = timedelta(hours=24)
 _FALLBACK_WINDOW = timedelta(hours=48)
+
+# Stable section order. Tweak to taste. "top" is built separately.
+_CATEGORY_ORDER: tuple[Category, ...] = (
+    "research",
+    "engineering",
+    "models",
+    "infrastructure",
+    "agents",
+    "rag",
+    "applications",
+    "business",
+    "policy",
+    "safety",
+    "other",
+)
 
 
 @dataclass(frozen=True)
@@ -71,6 +79,83 @@ def _window_start(now: datetime, window: timedelta) -> datetime:
     return now - window
 
 
+def _fetch_pool_with_fallback(
+    *,
+    session: Session,
+    now: datetime,
+    excluded: set[uuid.UUID],
+) -> tuple[Sequence[Article], datetime]:
+    """Fetch the candidate pool, widening the window once if today is quiet.
+
+    Returns ``(articles, window_start)``. ``window_start`` reflects which
+    window actually produced the pool, so the caller can surface it in
+    the response without re-deriving it.
+    """
+    window_start = _window_start(now, _PRIMARY_WINDOW)
+    db_articles = crud.get_articles_in_window(
+        session=session,
+        since=window_start,
+        excluded_ids=excluded,
+        limit=_DIGEST_POOL_SIZE,
+    )
+    if db_articles:
+        return db_articles, window_start
+
+    # Day was quiet — widen the window once before giving up.
+    window_start = _window_start(now, _FALLBACK_WINDOW)
+    db_articles = crud.get_articles_in_window(
+        session=session,
+        since=window_start,
+        excluded_ids=excluded,
+        limit=_DIGEST_POOL_SIZE,
+    )
+    return db_articles, window_start
+
+
+def _rank_personalized(
+    *,
+    session: Session,
+    user_id: uuid.UUID,
+    profile: UserProfile,
+    db_articles: Sequence[Article],
+) -> tuple[list[Article], dict[uuid.UUID, str | None]]:
+    """Score the pool for a signed-in user and return articles in scored order.
+
+    Delegates the actual scoring to ``ranking.rank_articles`` and then
+    attaches the digest's reason labels (the simpler "Because you
+    follow X" form — the For-You feed adds the "Similar to: <title>"
+    refinement, which the digest doesn't surface).
+    """
+    result = rank_articles(
+        session=session,
+        user_id=user_id,
+        profile=profile,
+        db_articles=db_articles,
+    )
+    scored = result.scored
+
+    reasons: dict[uuid.UUID, str | None] = {
+        s.article.id: reason_for(s, profile) for s in scored
+    }
+    # Map back to DB articles in scored order. filter_candidates may
+    # drop entries, so we iterate the scored list rather than db_articles.
+    by_id = {a.id: a for a in db_articles}
+    ordered_articles = [by_id[s.article.id] for s in scored if s.article.id in by_id]
+    return ordered_articles, reasons
+
+
+def _rank_anonymous(
+    db_articles: Sequence[Article],
+) -> tuple[list[Article], dict[uuid.UUID, str | None]]:
+    """Order the pool for an anonymous request.
+
+    No personalization, no semantic layer — just preserve the
+    published_at order CRUD already returned. Reasons are empty because
+    there's nothing to explain.
+    """
+    return list(db_articles), {}
+
+
 def build_digest(
     *,
     session: Session,
@@ -84,60 +169,35 @@ def build_digest(
     shape — just no semantic layer and no behavioral filters.
     """
     now = now or datetime.now(timezone.utc)
-    window_start = _window_start(now, _PRIMARY_WINDOW)
 
-    # Personalization inputs. If anonymous, we synthesize an empty
-    # profile and skip the semantic layer — the recommender's other
-    # terms (recency, source weight) still produce a sensible order.
+    # Personalization inputs. Anonymous requests skip profile + semantic
+    # layer entirely; the recommender's other terms (recency, source
+    # weight) still produce a sensible order via _rank_anonymous.
     profile = (
         build_user_profile(session=session, user_id=user_id)
         if user_id is not None
         else None
     )
-    excluded = (
+    excluded: set[uuid.UUID] = (
         set(profile.saved_article_ids) | set(profile.dismissed_article_ids)
         if profile is not None
         else set()
     )
 
-    db_articles = crud.get_articles_in_window(
-        session=session,
-        since=window_start,
-        excluded_ids=excluded,
-        limit=_DIGEST_POOL_SIZE,
+    db_articles, window_start = _fetch_pool_with_fallback(
+        session=session, now=now, excluded=excluded
     )
-    if not db_articles:
-        # Day was quiet — widen the window once before giving up.
-        window_start = _window_start(now, _FALLBACK_WINDOW)
-        db_articles = crud.get_articles_in_window(
-            session=session,
-            since=window_start,
-            excluded_ids=excluded,
-            limit=_DIGEST_POOL_SIZE,
-        )
 
-    # Score the pool. Personalized path uses the full For-You scorer;
-    # anonymous path skips semantic and uses a stub profile.
     if profile is not None:
         assert user_id is not None
-        user_vec = _resolve_user_vector(session=session, user_id=user_id)
-        sims = (
-            _candidate_similarities(user_vector=user_vec, db_articles=db_articles)
-            if user_vec is not None
-            else None
+        ordered_articles, reasons = _rank_personalized(
+            session=session,
+            user_id=user_id,
+            profile=profile,
+            db_articles=db_articles,
         )
-        candidates = filter_candidates([_to_candidate(a) for a in db_articles], profile)
-        scored = score_candidates(candidates, profile, semantic_similarities=sims)
-        reasons = {s.article.id: reason_for(s, profile) for s in scored}
-        # Map back to DB articles in scored order.
-        by_id = {a.id: a for a in db_articles}
-        ordered_articles = [
-            by_id[s.article.id] for s in scored if s.article.id in by_id
-        ]
     else:
-        # Anonymous: just rely on published_at order from CRUD.
-        ordered_articles = list(db_articles)
-        reasons = {}
+        ordered_articles, reasons = _rank_anonymous(db_articles)
 
     sections = _build_sections(ordered_articles, reasons)
 
@@ -179,21 +239,7 @@ def _build_sections(
             continue
         by_category.setdefault(article.category, []).append(article)
 
-    # Stable section order. Tweak to taste.
-    category_order: list[Category] = [
-        "research",
-        "engineering",
-        "models",
-        "infrastructure",
-        "agents",
-        "rag",
-        "applications",
-        "business",
-        "policy",
-        "safety",
-        "other",
-    ]
-    for cat in category_order:
+    for cat in _CATEGORY_ORDER:
         bucket = by_category.get(cat, [])[:_PER_SECTION_LIMIT]
         if not bucket:
             continue

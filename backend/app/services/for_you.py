@@ -1,21 +1,23 @@
 """For-You feed orchestration.
 
 Pulls together the recommender's inputs from CRUD (articles, events,
-interests, embeddings), assembles a ``UserProfile`` and a user interest
-vector, and scores a candidate pool. Lives in the services layer so the
-API route stays thin and so the orchestration is unit-testable
-independent of FastAPI.
+interests, embeddings), assembles a ``UserProfile``, calls the shared
+ranking pipeline, and adds For-You-specific layers: diversity rerank,
+exploration injection, and "Similar to: <title>" reason refinement.
+
+The shared scoring core (resolve user vector → similarities → filter →
+score) lives in ``services.ranking`` and is also used by the digest.
+For-You-specific concerns stay here.
 
 The semantic-similarity layer reads the cached user embedding from
 ``user_embeddings`` (written by every endpoint that changes user
 signal — see ``services/embeddings.py:compute_and_save_user_vector``).
-If the cache is empty, we recompute live and write through. If the user
-has no signal at all (no interests, no saves, no clicks), we skip the
-semantic step entirely — the scorer falls back to the explicit, source,
-and recency layers exactly as it did before embeddings existed.
+If the cache is empty, ranking recomputes live and writes through. If
+the user has no signal at all (no interests, no saves, no clicks), the
+semantic step is skipped — the scorer falls back to the explicit,
+source, and recency layers exactly as it did before embeddings existed.
 """
 
-import logging
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -25,32 +27,23 @@ from sqlmodel import Session
 
 from app import crud
 from app.models import Article
+from app.schemas.article import ForYouArticleDebugPublic, ScoreBreakdownPublic
 from app.services.diversity import (
     DEFAULT_LAMBDA_FOR_YOU,
     RerankItem,
     diversity_rerank,
 )
-from app.services.embeddings import (
-    compute_and_save_user_vector,
-    cosine_similarities,
-    cosine_similarity,
-)
+from app.services.embeddings import cosine_similarity
 from app.services.exploration import (
     EXPLORATION_REASON,
     inject_exploration,
 )
+from app.services.ranking import rank_articles
 from app.services.recommender import (
-    CandidateArticle,
     ScoredArticle,
     UserProfile,
-    filter_candidates,
     reason_for,
-    score_candidates,
 )
-
-from app.schemas.article import ForYouArticleDebugPublic, ScoreBreakdownPublic
-
-logger = logging.getLogger(__name__)
 
 # Size of the candidate pool we score in Python. See
 # ``crud.article.get_recent_articles_excluding`` for the trade-off.
@@ -119,73 +112,6 @@ def build_user_profile(*, session: Session, user_id: uuid.UUID) -> UserProfile:
     )
 
 
-def _to_candidate(article: Article) -> CandidateArticle:
-    """Project an SQLModel Article down to the recommender's input shape."""
-    return CandidateArticle(
-        id=article.id,
-        title=article.title,
-        source=article.source,
-        category=article.category,
-        tags=tuple(article.tags or ()),
-        published_at=article.published_at,
-    )
-
-
-def _resolve_user_vector(*, session: Session, user_id: uuid.UUID) -> list[float] | None:
-    """Read the cached user vector, falling back to live recompute on miss.
-
-    The cache is populated at write time (save / unsave / click /
-    update interests). A miss here means either:
-      - The user existed before the user_embeddings table did
-      - The user has zero signal (no saves, clicks, or interests)
-      - A write-time recompute failed and the row was dropped
-
-    We try a live build to handle case 1. Cases 2 and 3 produce None
-    from the live build too, which the caller handles by skipping the
-    semantic step entirely.
-
-    The live build writes through to the cache so subsequent requests
-    hit the fast path. Failures here log and return None — the For-You
-    feed must keep working even if the embedding model is unavailable.
-    """
-    cached = crud.get_user_embedding(session=session, user_id=user_id)
-    if cached is not None:
-        return list(cached.embedding)
-
-    try:
-        return compute_and_save_user_vector(session=session, user_id=user_id)
-    except Exception:  # noqa: BLE001
-        logger.exception(
-            "Live user-vector recompute failed for %s; semantic layer "
-            "will be skipped for this request",
-            user_id,
-        )
-        return None
-
-
-def _candidate_similarities(
-    *,
-    user_vector: list[float],
-    db_articles: Sequence[Article],
-) -> dict[uuid.UUID, float]:
-    """Cosine similarity for every candidate that has an embedding.
-
-    Articles without embeddings (not yet backfilled) are absent from the
-    returned dict. ``score_candidates`` looks up by ID and treats
-    missing entries as 0 — those articles still get ranked by the
-    other signals, just without semantic contribution.
-    """
-    article_vecs: dict[uuid.UUID, list[float]] = {}
-    for article in db_articles:
-        embedding = getattr(article, "embedding", None)
-        if embedding is None:
-            continue
-        # pgvector returns numpy arrays; convert to plain lists so the
-        # math helpers in services.embeddings stay numpy-free.
-        article_vecs[article.id] = list(embedding)
-    return cosine_similarities(user_vector, article_vecs)
-
-
 def _most_similar_saved_titles(
     *,
     db_articles: Sequence[Article],
@@ -196,11 +122,9 @@ def _most_similar_saved_titles(
     Powers the "Similar to: <title>" reason label. Computed pairwise
     against the user's individual saved articles — *not* against the
     centroid user vector — because the centroid can't tell us which
-    individual save a candidate is most similar to. (The centroid is
-    what the recommender's semantic-similarity score uses; this lookup
-    is a parallel computation purely for explainability.)
+    save a candidate is most similar to.
 
-    Cost: O(C × S) cosine sims, where C ≤ candidate pool size (~200)
+    Cost is O(N · S · D) where N = candidates with embeddings, D = dim,
     and S = number of saved articles with embeddings. With 384-dim
     vectors and S=50, that's 10k × 384 ≈ 4M float ops per request —
     well under 50ms. We intentionally don't cache this between
@@ -247,23 +171,24 @@ def rank_for_you(
     scored output. Note this means total is bounded by
     ``_CANDIDATE_POOL_SIZE``; for our scale that's the right trade-off.
 
-    Semantic-similarity layer:
-      1. Resolve the user vector (cache → live recompute → None).
-      2. If we have one, compute cosine similarities against every
-         candidate article that has an embedding.
-      3. Pass the {id: similarity} map to ``score_candidates``; the
-         scorer clamps to [0, 1] (negative similarity becomes 0) and
-         applies the semantic weight.
-
-    If the user vector is None (cold-start, no signal), the semantic
-    map is None and the scorer skips that term — exactly the v0
-    behavior.
+    Pipeline:
+      1. Build the user profile from CRUD signals.
+      2. Fetch a recent-articles candidate pool, hard-excluding
+         saved + dismissed.
+      3. Score via the shared ``rank_articles`` core (semantic +
+         explicit + source + recency).
+      4. Diversity-rerank to prevent source clustering at the top of
+         the feed.
+      5. Inject exploration items in reserved slots to break the
+         filter-bubble compounding loop.
+      6. Paginate and attach reason labels (preferring "Similar to:
+         <title>" when we have a saved-article match).
     """
     profile = build_user_profile(session=session, user_id=user_id)
 
     # Fetch candidate pool: recent articles, hard-filter saved + dismissed.
-    # The recommender's filter_candidates step is a defense-in-depth pass
-    # in case the IDs have drifted between query and score.
+    # rank_articles also runs filter_candidates as defense-in-depth in case
+    # the IDs have drifted between query and score.
     excluded = set(profile.saved_article_ids) | set(profile.dismissed_article_ids)
     db_articles: Sequence[Article] = crud.get_recent_articles_excluding(
         session=session,
@@ -271,19 +196,20 @@ def rank_for_you(
         limit=_CANDIDATE_POOL_SIZE,
     )
 
-    # Semantic layer. Skipped entirely when the user has no signal —
-    # we don't even fetch embeddings in that case.
-    user_vector = _resolve_user_vector(session=session, user_id=user_id)
-    if user_vector is not None:
-        similarities = _candidate_similarities(
-            user_vector=user_vector, db_articles=db_articles
-        )
-        # For the "Similar to: <title>" reason label. Only fetched when
-        # we have a user vector — otherwise the semantic component is
-        # zero across the board and the personalized label can never
-        # fire. The lookup is pairwise against individual saved
-        # articles (not against the centroid user vector) because the
-        # centroid can't tell us which save a candidate is closest to.
+    result = rank_articles(
+        session=session,
+        user_id=user_id,
+        profile=profile,
+        db_articles=db_articles,
+    )
+    scored = result.scored
+
+    # "Similar to: <title>" reason refinement. Pairwise lookup against
+    # the user's individual saved articles — only worth doing when the
+    # semantic layer ran, since otherwise no candidate's semantic
+    # component can dominate and the "Similar to: ..." label can never
+    # fire. Skipping the DB hit on cold-start saves a query per request.
+    if result.used_semantic:
         saved_with_titles = crud.get_saved_articles_with_embeddings_and_titles(
             session=session, user_id=user_id
         )
@@ -291,13 +217,7 @@ def rank_for_you(
             db_articles=db_articles, saved=saved_with_titles
         )
     else:
-        similarities = None
         most_similar_titles = {}
-
-    candidates = [_to_candidate(a) for a in db_articles]
-    candidates = filter_candidates(candidates, profile)
-
-    scored = score_candidates(candidates, profile, semantic_similarities=similarities)
 
     # Diversity rerank between scoring and pagination. Without this, a
     # source-rich pool can fill the head of the feed with one source

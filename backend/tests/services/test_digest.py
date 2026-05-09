@@ -70,12 +70,14 @@ def test_build_digest_widens_window_for_anonymous_users_when_today_is_empty(
     fallback_article = _article(title="Fallback", source="Source A")
     calls = []
 
-    def fake_get_articles_in_window(**kwargs):
+    def fake_get_articles_in_window_with_popularity(**kwargs):
         calls.append(kwargs)
-        return [] if len(calls) == 1 else [fallback_article]
+        return [] if len(calls) == 1 else [(fallback_article, 0)]
 
     monkeypatch.setattr(
-        digest.crud, "get_articles_in_window", fake_get_articles_in_window
+        digest.crud,
+        "get_articles_in_window_with_popularity",
+        fake_get_articles_in_window_with_popularity,
     )
 
     result = build_digest(session=object(), user_id=None, now=NOW)  # type: ignore[arg-type]
@@ -86,7 +88,6 @@ def test_build_digest_widens_window_for_anonymous_users_when_today_is_empty(
         NOW - digest._PRIMARY_WINDOW,
         NOW - digest._FALLBACK_WINDOW,
     ]
-    assert calls[0]["excluded_ids"] == set()
     assert result.sections[0].articles == [fallback_article]
 
 

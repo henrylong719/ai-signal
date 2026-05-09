@@ -438,6 +438,29 @@ def update_article_embeddings(
     session.commit()
 
 
+def get_articles_in_window_with_popularity(
+    *,
+    session: Session,
+    since: datetime,
+    limit: int = 200,
+) -> Sequence[tuple[Article, int]]:
+    """Articles published since ``since`` with their global save count.
+
+    Used by the anonymous digest to rank by community popularity rather
+    than pure recency. Returns ``(article, save_count)`` tuples ordered
+    by recency (the caller re-ranks by blended score).
+    """
+    statement = (
+        select(Article, func.count(col(SavedArticle.user_id)))
+        .outerjoin(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
+        .where(col(Article.published_at) >= since)
+        .group_by(col(Article.id))
+        .order_by(col(Article.published_at).desc().nullslast(), col(Article.fetched_at).desc())
+        .limit(limit)
+    )
+    return session.exec(statement).all()
+
+
 def get_articles_in_window(
     *,
     session: Session,

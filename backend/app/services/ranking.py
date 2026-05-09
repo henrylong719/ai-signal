@@ -36,6 +36,7 @@ from app.services.embeddings import (
 from app.services.recommender import (
     CandidateArticle,
     ScoredArticle,
+    ScoringWeights,
     UserProfile,
     filter_candidates,
     score_candidates,
@@ -133,6 +134,7 @@ def rank_articles(
     user_id: uuid.UUID,
     profile: UserProfile,
     db_articles: Sequence[Article],
+    weights: ScoringWeights | None = None,
 ) -> RankingResult:
     """Score and order a pool of articles for one user.
 
@@ -164,5 +166,7 @@ def rank_articles(
     )
 
     candidates = filter_candidates([to_candidate(a) for a in db_articles], profile)
-    scored = score_candidates(candidates, profile, semantic_similarities=similarities)
+    scored = score_candidates(
+        candidates, profile, semantic_similarities=similarities, weights=weights
+    )
     return RankingResult(scored=scored, used_semantic=user_vector is not None)

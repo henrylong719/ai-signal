@@ -16,6 +16,7 @@ Two design choices worth noting:
    we add a tz field to user.
 """
 
+import math
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -28,11 +29,30 @@ from app.models import Article
 from app.schemas.source import Category
 from app.services.for_you import build_user_profile
 from app.services.ranking import rank_articles
-from app.services.recommender import UserProfile, reason_for
+from app.services.recommender import ScoringWeights, UserProfile, reason_for
 
 # Candidate pool size for digest scoring. Smaller than For You's 200
 # because the time window already constrains the input set.
 _DIGEST_POOL_SIZE = 100
+
+# Digest-specific scoring weights. Compared to the For-You defaults
+# (semantic=0.30, explicit=0.40, source=0.15, recency=0.15):
+#
+# - Semantic bumped to 0.35: the digest is a curated snapshot, so
+#   "articles like what you've saved" is a stronger quality signal.
+# - Explicit stays at 0.40: stated interests are the strongest signal.
+# - Source stays at 0.15: unchanged.
+# - Recency dropped to 0.10 with a 12h half-life: everything in the
+#   digest is already from today, so recency is mostly a tiebreaker.
+#   The shorter half-life (12h vs 7d) makes morning-vs-evening articles
+#   meaningfully different within the narrow window.
+_DIGEST_WEIGHTS = ScoringWeights(
+    semantic=0.35,
+    explicit=0.40,
+    source=0.15,
+    recency=0.10,
+    recency_half_life_days=0.5,  # 12 hours
+)
 
 # Max articles per section in the rendered digest.
 _PER_SECTION_LIMIT = 5
@@ -112,6 +132,33 @@ def _fetch_pool_with_fallback(
     return db_articles, window_start
 
 
+def _fetch_pool_with_popularity_fallback(
+    *,
+    session: Session,
+    now: datetime,
+) -> tuple[Sequence[tuple[Article, int]], datetime]:
+    """Like ``_fetch_pool_with_fallback`` but returns ``(article, save_count)`` tuples.
+
+    Used by the anonymous digest path where popularity drives ranking.
+    """
+    window_start = _window_start(now, _PRIMARY_WINDOW)
+    rows = crud.get_articles_in_window_with_popularity(
+        session=session,
+        since=window_start,
+        limit=_DIGEST_POOL_SIZE,
+    )
+    if rows:
+        return rows, window_start
+
+    window_start = _window_start(now, _FALLBACK_WINDOW)
+    rows = crud.get_articles_in_window_with_popularity(
+        session=session,
+        since=window_start,
+        limit=_DIGEST_POOL_SIZE,
+    )
+    return rows, window_start
+
+
 def _rank_personalized(
     *,
     session: Session,
@@ -131,6 +178,7 @@ def _rank_personalized(
         user_id=user_id,
         profile=profile,
         db_articles=db_articles,
+        weights=_DIGEST_WEIGHTS,
     )
     scored = result.scored
 
@@ -145,15 +193,68 @@ def _rank_personalized(
 
 
 def _rank_anonymous(
-    db_articles: Sequence[Article],
+    db_articles: Sequence[tuple[Article, int]],
+    now: datetime,
 ) -> tuple[list[Article], dict[uuid.UUID, str | None]]:
-    """Order the pool for an anonymous request.
+    """Order the pool for an anonymous request using popularity + recency.
 
-    No personalization, no semantic layer — just preserve the
-    published_at order CRUD already returned. Reasons are empty because
-    there's nothing to explain.
+    Without a user profile we blend two signals:
+
+      - **Popularity (0.6):** How many users have saved this article.
+        Log-scaled and normalized so a few saves matter a lot but
+        viral articles don't completely dominate.
+      - **Recency (0.4):** Exponential decay with a 12-hour half-life,
+        same as the personalized digest. Within a single day's window
+        this still creates meaningful spread between morning and
+        evening articles.
+
+    This replaces the old pure-recency ordering, which made the
+    anonymous digest identical to the Latest feed.
+
+    Reasons surface the popularity signal when it's meaningful
+    ("Popular in the community") so anonymous users still see *why*
+    an article appears high in the digest.
     """
-    return list(db_articles), {}
+    if not db_articles:
+        return [], {}
+
+    # Unpack and compute raw scores.
+    scored: list[tuple[Article, int, float]] = []
+    max_saves = max((count for _, count in db_articles), default=0)
+
+    for article, save_count in db_articles:
+        # Log-scaled popularity in [0, 1]. log1p(0)=0, log1p(max)=1.
+        if max_saves > 0:
+            pop = math.log1p(save_count) / math.log1p(max_saves)
+        else:
+            pop = 0.0
+
+        # Recency: 12-hour half-life decay.
+        if article.published_at is not None:
+            pub = article.published_at
+            if pub.tzinfo is None:
+                pub = pub.replace(tzinfo=timezone.utc)
+            age_days = max((now - pub).total_seconds() / 86400.0, 0.0)
+            rec = 0.5 ** (age_days / 0.5)  # 12h half-life
+        else:
+            rec = 0.0
+
+        blended = 0.6 * pop + 0.4 * rec
+        scored.append((article, save_count, blended))
+
+    scored.sort(key=lambda t: t[2], reverse=True)
+
+    articles = [a for a, _, _ in scored]
+    reasons: dict[uuid.UUID, str | None] = {}
+    for article, save_count, _ in scored:
+        if save_count >= 3:
+            reasons[article.id] = "Popular in the community"
+        elif save_count >= 1:
+            reasons[article.id] = "Trending today"
+        else:
+            reasons[article.id] = None
+
+    return articles, reasons
 
 
 def build_digest(
@@ -184,11 +285,10 @@ def build_digest(
         else set()
     )
 
-    db_articles, window_start = _fetch_pool_with_fallback(
-        session=session, now=now, excluded=excluded
-    )
-
     if profile is not None:
+        db_articles, window_start = _fetch_pool_with_fallback(
+            session=session, now=now, excluded=excluded
+        )
         assert user_id is not None
         ordered_articles, reasons = _rank_personalized(
             session=session,
@@ -197,7 +297,10 @@ def build_digest(
             db_articles=db_articles,
         )
     else:
-        ordered_articles, reasons = _rank_anonymous(db_articles)
+        db_articles_with_pop, window_start = _fetch_pool_with_popularity_fallback(
+            session=session, now=now
+        )
+        ordered_articles, reasons = _rank_anonymous(db_articles_with_pop, now)
 
     sections = _build_sections(ordered_articles, reasons)
 
@@ -255,30 +358,52 @@ def _build_sections(
 
 
 def _top_stories(articles: list[Article], *, limit: int) -> list[Article]:
+    """Pick the top stories, preferring distinct sources AND categories.
+
+    Three passes, each filling remaining slots:
+      1. Pick articles with both a new source and a new category — gives
+         the broadest overview of the day.
+      2. Pick articles with at least a new source or a new category —
+         still adds diversity on one dimension.
+      3. Fill any remaining slots from the ranked order regardless.
+    """
     selected: list[Article] = []
     selected_ids: set[uuid.UUID] = set()
     seen_sources: set[str] = set()
+    seen_categories: set[str] = set()
 
+    # Pass 1: both source and category are new.
     for article in articles:
         source_key = article.source.strip().casefold()
+        cat_key = article.category.strip().casefold()
+        if source_key not in seen_sources and cat_key not in seen_categories:
+            selected.append(article)
+            selected_ids.add(article.id)
+            seen_sources.add(source_key)
+            seen_categories.add(cat_key)
+            if len(selected) >= limit:
+                return selected
 
-        if source_key in seen_sources:
-            continue
-
-        selected.append(article)
-        selected_ids.add(article.id)
-        seen_sources.add(source_key)
-
-        if len(selected) >= limit:
-            return selected
-
+    # Pass 2: at least one of source or category is new.
     for article in articles:
         if article.id in selected_ids:
             continue
+        source_key = article.source.strip().casefold()
+        cat_key = article.category.strip().casefold()
+        if source_key not in seen_sources or cat_key not in seen_categories:
+            selected.append(article)
+            selected_ids.add(article.id)
+            seen_sources.add(source_key)
+            seen_categories.add(cat_key)
+            if len(selected) >= limit:
+                return selected
 
+    # Pass 3: fill remaining slots from ranked order.
+    for article in articles:
+        if article.id in selected_ids:
+            continue
         selected.append(article)
         selected_ids.add(article.id)
-
         if len(selected) >= limit:
             break
 

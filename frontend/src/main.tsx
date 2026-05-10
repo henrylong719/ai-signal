@@ -5,6 +5,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { createRouter, RouterProvider } from '@tanstack/react-router'
+import { Analytics } from '@vercel/analytics/react'
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { ApiError, OpenAPI } from './client'
@@ -65,6 +66,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
         <AppToaster />
+        <Analytics />
       </QueryClientProvider>
     </ThemeProvider>
   </StrictMode>,

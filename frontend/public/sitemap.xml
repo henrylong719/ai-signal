@@ -1,47 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://aisignal.app/</loc>
+    <loc>https://aisignal.now/</loc>
     <changefreq>hourly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://aisignal.app/about</loc>
+    <loc>https://aisignal.now/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aisignal.app/all-article-sources</loc>
+    <loc>https://aisignal.now/all-article-sources</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aisignal.app/sources-policy</loc>
+    <loc>https://aisignal.now/sources-policy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://aisignal.app/privacy</loc>
+    <loc>https://aisignal.now/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://aisignal.app/terms</loc>
+    <loc>https://aisignal.now/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://aisignal.app/cookies</loc>
+    <loc>https://aisignal.now/cookies</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://aisignal.app/accessibility</loc>
+    <loc>https://aisignal.now/accessibility</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://aisignal.app/contact</loc>
+    <loc>https://aisignal.now/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

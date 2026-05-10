@@ -12,6 +12,7 @@ from app.schemas.article import ArticleBase
 from app.schemas.source import Category
 
 _published_at_column = Column(DateTime(timezone=True), nullable=True)
+_archived_at_column = Column(DateTime(timezone=True), nullable=True)
 
 # Allowed values for ArticleEvent.event_type. Kept in lockstep with the
 # Postgres ENUM created in migration e3f4a5b6c7d8.
@@ -53,6 +54,16 @@ class Article(ArticleBase, table=True):
         sa_column=Column(DateTime(timezone=True), nullable=False),
     )
 
+    # Soft-archive timestamp written by the cleanup pipeline (see
+    # ``services.article_cleanup``). NULL means the article is live and
+    # shows in user-facing feeds; non-NULL hides it from public queries
+    # but keeps the row around so we can confirm the cleanup looks
+    # sensible before any hard delete fires later.
+    archived_at: datetime | None = Field(
+        default=None,
+        sa_column=_archived_at_column,
+    )
+
     # 384-dim semantic embedding. Nullable: not every article needs an
     # embedding immediately. The For-You scorer skips articles without
     # one in its semantic-similarity term and lets the other signals
@@ -69,6 +80,11 @@ class Article(ArticleBase, table=True):
 
     __table_args__ = (
         Index("ix_articles_published_at_desc", _published_at_column.desc()),
+        # Cleanup + feed-filter index. Public queries filter
+        # ``archived_at IS NULL`` and the cleanup service scans for rows
+        # with ``archived_at < cutoff``; a plain b-tree on the column
+        # serves both with the same shape.
+        Index("ix_articles_archived_at", _archived_at_column),
     )
 
 

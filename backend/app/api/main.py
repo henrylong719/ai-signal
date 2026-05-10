@@ -9,6 +9,7 @@ from app.api.routes import (
     feedback,
     ingest,
     interest,
+    internal_cleanup,
     login,
     private,
     subscription,
@@ -30,6 +31,7 @@ api_router.include_router(admin_embeddings.router)
 api_router.include_router(admin_ingest_runs.router)
 api_router.include_router(digest.router)
 api_router.include_router(subscription.router)
+api_router.include_router(internal_cleanup.router)
 
 
 if settings.ENVIRONMENT == "local":

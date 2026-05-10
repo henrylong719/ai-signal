@@ -34,8 +34,11 @@ from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.asyncio import (  # type: ignore[import-untyped]
     AsyncIOScheduler,
 )
+from sqlmodel import Session
 
 from app.core.config import settings
+from app.core.db import engine
+from app.services.article_cleanup import run_article_cleanup
 from app.services.digest_scheduler import run_digest_send
 from app.services.ingest_runner import run_tracked_ingest
 
@@ -48,6 +51,27 @@ _scheduler: AsyncIOScheduler | None = None
 
 _INGEST_JOB_ID = "ingest_all"
 _DIGEST_JOB_ID = "send_daily_digest"
+_CLEANUP_JOB_ID = "article_cleanup"
+
+
+def _run_article_cleanup_job() -> None:
+    """Scheduler entry point for the cleanup pipeline.
+
+    Opens its own DB session so the APScheduler loop doesn't have to
+    pass one in. Honors the global ``ARTICLE_CLEANUP_DRY_RUN`` setting
+    — explicitly *not* parameterized here so flipping the flag in env
+    is the only way to actually persist writes from the scheduled job.
+    """
+    if not settings.ARTICLE_CLEANUP_ENABLED:
+        logger.info("Article cleanup tick skipped: ARTICLE_CLEANUP_ENABLED=False")
+        return
+    try:
+        with Session(engine) as session:
+            run_article_cleanup(session=session)
+    except Exception:  # noqa: BLE001
+        # Cleanup failures must not crash the scheduler. The next tick
+        # will retry on a fresh session.
+        logger.exception("Article cleanup job raised; continuing")
 
 
 def start_scheduler() -> None:
@@ -111,12 +135,34 @@ def start_scheduler() -> None:
         misfire_grace_time=600,
     )
 
+    # Daily article cleanup. Two-stage safe pipeline (archive →
+    # delete), runs once per UTC day. Gated by its own scheduler-on
+    # flag so an operator can disable cleanup without touching ingest
+    # or digest. The job itself respects ARTICLE_CLEANUP_DRY_RUN, which
+    # is the default-True safety net for new deployments.
+    if settings.article_cleanup_scheduler_enabled:
+        _scheduler.add_job(
+            _run_article_cleanup_job,
+            trigger="cron",
+            hour=settings.ARTICLE_CLEANUP_SCHEDULE_HOUR_UTC,
+            minute=0,
+            id=_CLEANUP_JOB_ID,
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=3600,
+        )
+
     _scheduler.start()
     logger.info(
         "Scheduler started: ingest interval=%dmin (first at %s), "
-        "digest send=hourly",
+        "digest send=hourly, cleanup=%s",
         settings.INGEST_INTERVAL_MINUTES,
         next_run_time.isoformat(),
+        (
+            f"daily@{settings.ARTICLE_CLEANUP_SCHEDULE_HOUR_UTC:02d}:00 UTC"
+            if settings.article_cleanup_scheduler_enabled
+            else "disabled"
+        ),
     )
 
 

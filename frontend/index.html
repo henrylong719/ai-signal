@@ -11,12 +11,12 @@
       content="Track AI updates that matter — labs, research papers, engineering blogs, and trusted builders. Curated for engineers, founders, and researchers."
     />
     <meta name="theme-color" content="#0F1418" />
-    <link rel="canonical" href="https://aisignal.app/" />
+    <link rel="canonical" href="https://aisignal.now/" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="AI Signal" />
-    <meta property="og:url" content="https://aisignal.app/" />
+    <meta property="og:url" content="https://aisignal.now/" />
     <meta
       property="og:title"
       content="AI Signal — Track the AI updates that matter"
@@ -25,7 +25,7 @@
       property="og:description"
       content="Follow important AI updates from labs, research papers, engineering blogs, and trusted builders in one focused reading experience."
     />
-    <meta property="og:image" content="https://aisignal.app/og-image.png" />
+    <meta property="og:image" content="https://aisignal.now/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
@@ -43,7 +43,7 @@
       name="twitter:description"
       content="Follow important AI updates from labs, research papers, engineering blogs, and trusted builders in one focused reading experience."
     />
-    <meta name="twitter:image" content="https://aisignal.app/og-image.png" />
+    <meta name="twitter:image" content="https://aisignal.now/og-image.png" />
     <meta
       name="twitter:image:alt"
       content="AI Signal — Track the AI updates that matter"
@@ -60,8 +60,8 @@
         "@graph": [
           {
             "@type": "WebSite",
-            "@id": "https://aisignal.app/#website",
-            "url": "https://aisignal.app/",
+            "@id": "https://aisignal.now/#website",
+            "url": "https://aisignal.now/",
             "name": "AI Signal",
             "description": "Track the AI updates that matter — labs, research papers, engineering blogs, and trusted builders in one focused reading experience.",
             "inLanguage": "en",
@@ -69,17 +69,17 @@
               "@type": "SearchAction",
               "target": {
                 "@type": "EntryPoint",
-                "urlTemplate": "https://aisignal.app/search-feed/{search_term_string}"
+                "urlTemplate": "https://aisignal.now/search-feed/{search_term_string}"
               },
               "query-input": "required name=search_term_string"
             }
           },
           {
             "@type": "Organization",
-            "@id": "https://aisignal.app/#organization",
+            "@id": "https://aisignal.now/#organization",
             "name": "AI Signal",
-            "url": "https://aisignal.app/",
-            "logo": "https://aisignal.app/og-image.png"
+            "url": "https://aisignal.now/",
+            "logo": "https://aisignal.now/og-image.png"
           }
         ]
       }
@@ -87,8 +87,14 @@
 
     <style>
       /* Critical theme colors — prevents flash of wrong background before Tailwind CSS loads */
-      html { background: oklch(1 0 0); color: oklch(0.145 0 0); }
-      html.dark { background: oklch(0.13 0.006 225); color: oklch(0.93 0.012 80); }
+      html {
+        background: oklch(1 0 0);
+        color: oklch(0.145 0 0);
+      }
+      html.dark {
+        background: oklch(0.13 0.006 225);
+        color: oklch(0.93 0.012 80);
+      }
     </style>
     <script>
       (() => {

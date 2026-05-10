@@ -21,8 +21,14 @@ def count_articles(
     search: str | None = None,
     source: str | None = None,
     sources: Sequence[str] | None = None,
+    include_archived: bool = False,
+    archived_only: bool = False,
 ) -> int:
     statement = select(func.count()).select_from(Article)
+    if archived_only:
+        statement = statement.where(col(Article.archived_at).is_not(None))
+    elif not include_archived:
+        statement = statement.where(col(Article.archived_at).is_(None))
     if category is not None:
         statement = statement.where(Article.category == category)
     if source:
@@ -52,7 +58,10 @@ def count_semantic_search_articles(
     statement = (
         select(func.count())
         .select_from(Article)
-        .where(col(Article.embedding).is_not(None))
+        .where(
+            col(Article.embedding).is_not(None),
+            col(Article.archived_at).is_(None),
+        )
     )
     if category is not None:
         statement = statement.where(Article.category == category)
@@ -70,8 +79,11 @@ def get_articles(
     search: str | None = None,
     source: str | None = None,
     sources: Sequence[str] | None = None,
+    include_archived: bool = False,
 ) -> Sequence[Article]:
     statement = select(Article)
+    if not include_archived:
+        statement = statement.where(col(Article.archived_at).is_(None))
     if category is not None:
         statement = statement.where(Article.category == category)
     if source:
@@ -108,7 +120,10 @@ def get_semantic_search_articles(
 ) -> Sequence[Article]:
     embedding_column = cast(Any, Article.embedding)
     distance = embedding_column.cosine_distance(query_embedding)
-    statement = select(Article).where(col(Article.embedding).is_not(None))
+    statement = select(Article).where(
+        col(Article.embedding).is_not(None),
+        col(Article.archived_at).is_(None),
+    )
     if category is not None:
         statement = statement.where(Article.category == category)
     if source:
@@ -132,12 +147,25 @@ def get_articles_with_saved_counts(
     limit: int = 100,
     search: str | None = None,
     source: str | None = None,
+    include_archived: bool = True,
+    archived_only: bool = False,
 ) -> Sequence[ArticleWithSavedCount]:
+    """Admin listing of articles with global save counts.
+
+    Defaults to including archived rows so operators can inspect what
+    the cleanup pipeline has hidden from end users. Set
+    ``include_archived=False`` for a live-articles-only view, or
+    ``archived_only=True`` to look at just the archived backlog.
+    """
     statement = (
         select(Article, func.count(col(SavedArticle.user_id)))
         .outerjoin(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
         .group_by(col(Article.id))
     )
+    if archived_only:
+        statement = statement.where(col(Article.archived_at).is_not(None))
+    elif not include_archived:
+        statement = statement.where(col(Article.archived_at).is_(None))
     if source:
         statement = statement.where(Article.source == source)
     if search:
@@ -405,7 +433,7 @@ def get_recent_articles_excluding(
     pool would mean later pages contain articles that should have ranked
     higher than what page 1 showed, which is the wrong order.
     """
-    statement = select(Article)
+    statement = select(Article).where(col(Article.archived_at).is_(None))
     if excluded_ids:
         statement = statement.where(col(Article.id).not_in(excluded_ids))
     statement = statement.order_by(
@@ -494,7 +522,10 @@ def get_articles_in_window_with_popularity(
     statement = (
         select(Article, func.count(col(SavedArticle.user_id)))
         .outerjoin(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
-        .where(col(Article.published_at) >= since)
+        .where(
+            col(Article.published_at) >= since,
+            col(Article.archived_at).is_(None),
+        )
         .group_by(col(Article.id))
         .order_by(
             col(Article.published_at).desc().nullslast(), col(Article.fetched_at).desc()
@@ -516,7 +547,10 @@ def get_articles_in_window(
     Used by the daily digest. Time-bounded variant of
     get_recent_articles_excluding — the digest is "today", not "recent N".
     """
-    statement = select(Article).where(col(Article.published_at) >= since)
+    statement = select(Article).where(
+        col(Article.published_at) >= since,
+        col(Article.archived_at).is_(None),
+    )
     if excluded_ids:
         statement = statement.where(col(Article.id).not_in(excluded_ids))
     statement = statement.order_by(

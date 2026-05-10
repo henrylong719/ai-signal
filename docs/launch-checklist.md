@@ -2,21 +2,21 @@
 
 Use this as a production-readiness pass before opening AI Signal to public traffic. Every item below should be checked off and dated by the engineer running the launch.
 
-The production domain is **`https://aisignal.app`**. Anywhere this checklist references "production domain" it means that exact origin (with HTTPS).
+The production domain is **`https://aisignal.now`**. Anywhere this checklist references "production domain" it means that exact origin (with HTTPS).
 
 ## 1. Domain, branding, and SEO
 
-- [ ] DNS for `aisignal.app` resolves to the production deployment with a valid TLS certificate.
+- [ ] DNS for `aisignal.now` resolves to the production deployment with a valid TLS certificate.
 - [ ] `frontend/index.html` declares the right title, description, theme-color, favicon, and Open Graph / Twitter image (`/og-image.png`, 1200×630, on-brand).
 - [ ] `frontend/public/robots.txt` allows the public surface and disallows `/admin*`, `/settings*`, `/personalization`, `/saved-articles`, and the auth routes. `Sitemap:` line points at the production domain.
-- [ ] `frontend/public/sitemap.xml` references `https://aisignal.app` and lists every public route (home, about, sources directory, sources policy, privacy, terms, cookies, accessibility, contact). Authenticated-only routes are absent.
-- [ ] JSON-LD `WebSite` + `Organization` in `index.html` references the production URL (already wired — verify the SearchAction `urlTemplate` matches `https://aisignal.app/search-feed/{search_term_string}`).
+- [ ] `frontend/public/sitemap.xml` references `https://aisignal.now` and lists every public route (home, about, sources directory, sources policy, privacy, terms, cookies, accessibility, contact). Authenticated-only routes are absent.
+- [ ] JSON-LD `WebSite` + `Organization` in `index.html` references the production URL (already wired — verify the SearchAction `urlTemplate` matches `https://aisignal.now/search-feed/{search_term_string}`).
 - [ ] Per-page OG / canonical tags are emitted (helper in `frontend/src/lib/meta.ts`). Spot-check by sharing `/about`, `/today-digest`, and `/all-article-sources` URLs and confirming the previews are page-specific, not the home fallback.
 - [ ] Test share preview at https://www.opengraph.xyz/ or with the WhatsApp / Slack link unfurl.
 
 ## 2. Legal, contact, and brand mailbox
 
-- [ ] `hello@aisignal.app` (the value of `CONTACT_EMAIL` in `frontend/src/lib/legal.ts`) is a real, monitored mailbox. SPF / DKIM / DMARC records are in place for outbound mail from this domain.
+- [ ] `hello@aisignal.now` (the value of `CONTACT_EMAIL` in `frontend/src/lib/legal.ts`) is a real, monitored mailbox. SPF / DKIM / DMARC records are in place for outbound mail from this domain.
 - [ ] `LEGAL_LAST_UPDATED` reflects the actual revision date of the published policy text. Do not bump on every commit.
 - [ ] Privacy, Terms, Cookies, Accessibility, Sources Policy, About, and Contact pages are reachable from the global footer on every route.
 - [ ] All `mailto:` links (Contact page, Accessibility, Sources Policy, etc.) resolve to the brand mailbox above.
@@ -26,7 +26,7 @@ The production domain is **`https://aisignal.app`**. Anywhere this checklist ref
 Pin every value below explicitly — relying on a default is fine locally, but in prod we want intent visible at a glance.
 
 - [ ] **Secrets** — `SECRET_KEY`, `FIRST_SUPERUSER_PASSWORD`, `POSTGRES_PASSWORD` are strong, unique, and not the `changethis` placeholder.
-- [ ] **CORS / origins** — `BACKEND_CORS_ORIGINS` and `FRONTEND_HOST` reference `https://aisignal.app`. No localhost values.
+- [ ] **CORS / origins** — `BACKEND_CORS_ORIGINS` and `FRONTEND_HOST` reference `https://aisignal.now`. No localhost values.
 - [ ] **Frontend** — `VITE_API_URL` in the production frontend build points at the public API origin.
 - [ ] **Rate limiting** — `RATE_LIMIT_STORAGE_URI` set to a shared backend (e.g. `redis://redis:6379`) for any deployment running more than one worker. Without this, each worker hands out the full per-bucket allowance, multiplying the configured limit by the worker count.
 - [ ] **Ingestion scheduler** — `INGEST_SCHEDULER_ENABLED` explicitly `true` or `false`. The resolved default is enabled in non-local environments, but pinning it makes the deployed behavior survive future default changes.
@@ -52,7 +52,7 @@ These flow through the existing SMTP path in `app/utils.py`, separate from the d
 
 The digest scheduler short-circuits if credentials are missing, so missing config is silent — verify it's wired before launch.
 
-- [ ] **Resend account** — domain `aisignal.app` (or your chosen sender domain) is verified in Resend with DNS records propagated.
+- [ ] **Resend account** — domain `aisignal.now` (or your chosen sender domain) is verified in Resend with DNS records propagated.
 - [ ] **`RESEND_API_KEY`** set in production `.env`.
 - [ ] **`DIGEST_FROM_EMAIL`** set to a verified sender on the Resend domain. Falls back to `EMAILS_FROM_EMAIL` if unset; explicit value preferred so digest reputation is tracked separately from transactional mail.
 - [ ] **`DIGEST_SEND_LOCAL_HOUR`** is sensible (default `8`).
@@ -99,7 +99,7 @@ The digest scheduler short-circuits if credentials are missing, so missing confi
 - [ ] Frontend build (`bun run build` from `frontend/`) succeeds and references the production `VITE_API_URL`.
 - [ ] Generated API client is current — run `bash ./scripts/generate-client.sh` and confirm the diff is clean. Specifically, `UsersService.completeOnboarding` and `UsersService.updateDigestPreferences` exist on the SDK.
 - [ ] Auth flows (sign up, sign in, refresh, sign out, password reset) work end-to-end against the production origin.
-- [ ] OAuth providers (Google, GitHub, Facebook) — for each enabled provider: redirect URI in the provider console matches `https://aisignal.app/api/v1/login/<provider>/callback`, and a test sign-in completes.
+- [ ] OAuth providers (Google, GitHub, Facebook) — for each enabled provider: redirect URI in the provider console matches `https://aisignal.now/api/v1/login/<provider>/callback`, and a test sign-in completes.
 - [ ] Public-route smoke: `/`, `/about`, `/all-article-sources`, `/article-sources/<source>`, `/category-feed/<cat>`, `/search-feed/<q>`, `/today-digest` all render content (or the appropriate empty state) without console errors.
 - [ ] Authed-route smoke: `/settings`, `/personalization`, `/saved-articles`, For You + Following tabs all work.
 

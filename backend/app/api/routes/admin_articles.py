@@ -33,15 +33,34 @@ def read_admin_articles(
     source: str | None = Query(default=None, max_length=64),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
+    include_archived: bool = Query(
+        default=True,
+        description=(
+            "Include rows the cleanup pipeline has soft-archived. Default True "
+            "so admins can inspect what's been hidden from end users."
+        ),
+    ),
+    archived_only: bool = Query(
+        default=False,
+        description="Show only archived rows. Overrides include_archived.",
+    ),
 ) -> Any:
     """List articles for operators, including how many users saved each one."""
-    count = crud.count_articles(session=session, search=search, source=source)
+    count = crud.count_articles(
+        session=session,
+        search=search,
+        source=source,
+        include_archived=include_archived,
+        archived_only=archived_only,
+    )
     rows = crud.get_articles_with_saved_counts(
         session=session,
         search=search,
         source=source,
         skip=skip,
         limit=limit,
+        include_archived=include_archived,
+        archived_only=archived_only,
     )
     return AdminArticlesPublic(
         data=[

@@ -12,4 +12,4 @@ Disallow: /signup
 Disallow: /recover-password
 Disallow: /reset-password
 
-Sitemap: https://aisignal.app/sitemap.xml
+Sitemap: https://aisignal.now/sitemap.xml

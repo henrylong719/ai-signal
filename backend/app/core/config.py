@@ -61,9 +61,13 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
-    POSTGRES_SERVER: str
+    # Full database URL — preferred for managed providers like Neon that
+    # hand out a connection string with query params (e.g. sslmode=require).
+    # When set, takes precedence over the split POSTGRES_* vars below.
+    DATABASE_URL: str | None = None
+    POSTGRES_SERVER: str = ""
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str
+    POSTGRES_USER: str = ""
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
 
@@ -101,9 +105,57 @@ class Settings(BaseSettings):
             return self.INGEST_SCHEDULER_ENABLED
         return self.ENVIRONMENT != "local"
 
+    # Article cleanup — see app/services/article_cleanup.py. Two-stage
+    # safe pipeline: archive old unsaved/unengaged articles first, then
+    # delete archived rows that have stayed quiet for an additional
+    # window. DRY_RUN defaults to True so the first real fire (manual
+    # script, cron endpoint, scheduler) only reports counts; an operator
+    # has to flip the flag once they've inspected the numbers.
+    ARTICLE_CLEANUP_ENABLED: bool = True
+    ARTICLE_CLEANUP_DRY_RUN: bool = True
+    ARTICLE_ARCHIVE_AFTER_DAYS: int = 90
+    ARTICLE_DELETE_AFTER_DAYS: int = 180
+    ARTICLE_KEEP_CLICKED_AFTER_DAYS: int = 180
+    ARTICLE_CLEANUP_BATCH_SIZE: int = 500
+    # Shared secret for the protected /internal/article-cleanup endpoint.
+    # Unset in non-local environments disables the endpoint (503) so a
+    # misconfigured deploy can't accidentally expose destructive cleanup
+    # to the internet.
+    ARTICLE_CLEANUP_CRON_SECRET: str | None = None
+    # Like INGEST_SCHEDULER_ENABLED: explicit value wins, otherwise
+    # enabled in non-local. Pair with ARTICLE_CLEANUP_DRY_RUN=True (the
+    # default) for a safe first deployment.
+    ARTICLE_CLEANUP_SCHEDULER_ENABLED: bool | None = None
+    ARTICLE_CLEANUP_SCHEDULE_HOUR_UTC: int = 3
+
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
+    def article_cleanup_scheduler_enabled(self) -> bool:
+        """Resolved cleanup scheduler flag.
+
+        Explicit env value wins. Otherwise enabled in non-local
+        environments, disabled in local — same shape as the ingest
+        scheduler so dev-mode auto-reloads don't fire cleanup on every
+        file save.
+        """
+        if self.ARTICLE_CLEANUP_SCHEDULER_ENABLED is not None:
+            return self.ARTICLE_CLEANUP_SCHEDULER_ENABLED
+        return self.ENVIRONMENT != "local"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn | str:
+        if self.DATABASE_URL:
+            # SQLAlchemy needs the driver in the scheme. Neon (and most
+            # managed Postgres providers) hand out plain `postgresql://`
+            # URLs; rewrite the prefix once and otherwise pass the URL
+            # through verbatim so query params like `sslmode=require`
+            # survive untouched.
+            if self.DATABASE_URL.startswith("postgresql://"):
+                return (
+                    "postgresql+psycopg://" + self.DATABASE_URL[len("postgresql://") :]
+                )
+            return self.DATABASE_URL
         return PostgresDsn.build(
             scheme="postgresql+psycopg",
             username=self.POSTGRES_USER,
@@ -177,6 +229,18 @@ class Settings(BaseSettings):
                 warnings.warn(message, stacklevel=1)
             else:
                 raise ValueError(message)
+
+    @model_validator(mode="after")
+    def _require_database_config(self) -> Self:
+        # Either a full DATABASE_URL or the split POSTGRES_* vars must
+        # be supplied — otherwise SQLALCHEMY_DATABASE_URI would silently
+        # build a URL with empty host/user.
+        if not self.DATABASE_URL and not (self.POSTGRES_SERVER and self.POSTGRES_USER):
+            raise ValueError(
+                "Database is not configured: set DATABASE_URL, or both "
+                "POSTGRES_SERVER and POSTGRES_USER."
+            )
+        return self
 
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:

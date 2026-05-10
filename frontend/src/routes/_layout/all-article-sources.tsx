@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, useLocation } from '@tanstack/react-router'
-import { AlertCircleIcon } from 'lucide-react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { AlertCircleIcon, BookmarkIcon } from 'lucide-react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { source_type } from '@/client'
 import { ArticleListState } from '@/components/Articles/ArticleList'
 import { PageContainer, PageHeader } from '@/components/Layout/Page'
@@ -37,14 +37,15 @@ function AllArticleSources() {
     allArticleSourcesFilter?: unknown
     allArticleSourcesScrollY?: unknown
   }
-  const [sourceFilter, setSourceFilter] = useState<source_types>(() =>
-    isSourceType(savedRouteState.allArticleSourcesFilter)
-      ? savedRouteState.allArticleSourcesFilter
-      : 'all',
-  )
+  const userIsLoggedIn = isLoggedIn()
+  const [sourceFilter, setSourceFilter] = useState<source_types>(() => {
+    const saved = savedRouteState.allArticleSourcesFilter
+    if (!isSourceType(saved)) return 'all'
+    if (saved === 'following' && !userIsLoggedIn) return 'all'
+    return saved
+  })
   const [updatingSource, setUpdatingSource] = useState<string | null>(null)
   const hasRestoredScroll = useRef(false)
-  const userIsLoggedIn = isLoggedIn()
 
   const { sources, isLoading, isError } = useSources()
   const {
@@ -72,22 +73,47 @@ function AllArticleSources() {
     })
   }, [isLoading, savedScrollY])
 
+  const preferredSources = interests?.preferred_sources ?? []
+  const followDisabled = interestsLoading || interestsError || isSaving
+
+  const filterTypes = useMemo<source_types[]>(
+    () =>
+      userIsLoggedIn
+        ? SOURCE_TYPES
+        : SOURCE_TYPES.filter((type) => type !== 'following'),
+    [userIsLoggedIn],
+  )
+
+  const followedSources = useMemo(
+    () => sources.filter((source) => preferredSources.includes(source.name)),
+    [sources, preferredSources],
+  )
+
   const filteredSources =
     sourceFilter === 'all'
       ? sources
-      : sources.filter((source) => source.source_type === sourceFilter)
+      : sourceFilter === 'following'
+        ? followedSources
+        : sources.filter((source) => source.source_type === sourceFilter)
 
-  const groups = SOURCE_TYPES.filter(
-    (type): type is source_type => type !== 'all',
-  )
-    .map((type) => ({
-      type,
-      items: filteredSources.filter((source) => source.source_type === type),
-    }))
-    .filter((group) => group.items.length > 0)
-
-  const preferredSources = interests?.preferred_sources ?? []
-  const followDisabled = interestsLoading || interestsError || isSaving
+  const groups: Array<{
+    type: Exclude<source_types, 'all'>
+    items: typeof sources
+  }> =
+    sourceFilter === 'following'
+      ? followedSources.length > 0
+        ? [{ type: 'following', items: followedSources }]
+        : []
+      : SOURCE_TYPES.filter(
+          (type): type is source_type => type !== 'all' && type !== 'following',
+        )
+          .map((type) => ({
+            type,
+            items: filteredSources.filter(
+              (source) => source.source_type === type,
+            ),
+          }))
+          .filter((group) => group.items.length > 0)
 
   const togglePreferredSource = (sourceName: string) => {
     if (!userIsLoggedIn || interestsLoading || interestsError) {
@@ -123,7 +149,11 @@ function AllArticleSources() {
         description="Explore the labs, research feeds, analysis, policy groups, media outlets, newsletters, podcasts, and community sites behind AI Signal."
       />
 
-      <SourceFilterBar selected={sourceFilter} onSelect={setSourceFilter} />
+      <SourceFilterBar
+        selected={sourceFilter}
+        onSelect={setSourceFilter}
+        types={filterTypes}
+      />
 
       <div className="space-y-10">
         {isLoading ? (
@@ -135,25 +165,42 @@ function AllArticleSources() {
             icon={<AlertCircleIcon className="h-5 w-5 stroke-[1.5]" />}
           />
         ) : groups.length === 0 ? (
-          <ArticleListState
-            title={
-              sourceFilter === 'all'
-                ? 'No sources yet'
-                : `No ${SOURCE_FILTER_LABELS[sourceFilter]} sources yet`
-            }
-            description="Sources will appear here as soon as they are available."
-            action={
-              sourceFilter !== 'all' && (
+          sourceFilter === 'following' ? (
+            <ArticleListState
+              title="You're not following any sources yet."
+              description="Follow sources to personalize your AI Signal feed."
+              icon={<BookmarkIcon className="h-5 w-5 stroke-[1.5]" />}
+              action={
                 <button
                   type="button"
                   onClick={() => setSourceFilter('all')}
                   className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-foreground/86 dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                 >
-                  Show all sources
+                  Browse all sources
                 </button>
-              )
-            }
-          />
+              }
+            />
+          ) : (
+            <ArticleListState
+              title={
+                sourceFilter === 'all'
+                  ? 'No sources yet'
+                  : `No ${SOURCE_FILTER_LABELS[sourceFilter]} sources yet`
+              }
+              description="Sources will appear here as soon as they are available."
+              action={
+                sourceFilter !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => setSourceFilter('all')}
+                    className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-foreground/86 dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                  >
+                    Show all sources
+                  </button>
+                )
+              }
+            />
+          )
         ) : (
           groups.map((group) => (
             <SourceSection

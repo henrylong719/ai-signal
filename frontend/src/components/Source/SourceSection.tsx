@@ -1,12 +1,14 @@
 import { Link } from '@tanstack/react-router'
 import { CheckIcon, PlusIcon } from 'lucide-react'
-import type { SourcePublic, source_type } from '@/client'
+import type { SourcePublic } from '@/client'
 import { SOURCE_FILTER_LABELS, type source_types } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import AuthModal from '../Auth/AuthModal'
 
+type SourceSectionType = Exclude<source_types, 'all'>
+
 interface SourceSectionProps {
-  type: source_type
+  type: SourceSectionType
   items: SourcePublic[]
   sourceFilter: source_types
   preferredSources: string[]

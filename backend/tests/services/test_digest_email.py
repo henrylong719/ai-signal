@@ -21,8 +21,11 @@ from app.schemas import ArticleCreate, UserCreate
 from app.schemas.source import Category
 from app.services import digest_email, digest_scheduler, resend_email
 from app.services.digest_email import (
+    _SUMMARY_MAX_CHARS,
+    _clean_summary,
     make_unsubscribe_token,
     parse_unsubscribe_token,
+    render_digest_email_html,
     send_digest_email,
 )
 from app.services.digest_scheduler import (
@@ -178,9 +181,7 @@ def test_send_digest_email_skips_when_pool_empty(
     from app.services.digest import DigestPublic
 
     user = _make_user(db)
-    monkeypatch.setattr(
-        settings, "RESEND_API_KEY", "test-key", raising=False
-    )
+    monkeypatch.setattr(settings, "RESEND_API_KEY", "test-key", raising=False)
     monkeypatch.setattr(
         settings, "DIGEST_FROM_EMAIL", "digest@example.com", raising=False
     )
@@ -229,9 +230,7 @@ def test_send_digest_email_sends_when_articles_exist(
     _seed_article(db, source="Anthropic", title="Anthropic publishes safety notes")
     _seed_article(db, source="Google DeepMind", title="DeepMind shares research")
 
-    monkeypatch.setattr(
-        settings, "RESEND_API_KEY", "test-key", raising=False
-    )
+    monkeypatch.setattr(settings, "RESEND_API_KEY", "test-key", raising=False)
     monkeypatch.setattr(
         settings, "DIGEST_FROM_EMAIL", "digest@example.com", raising=False
     )
@@ -275,6 +274,46 @@ def test_send_digest_email_sends_when_articles_exist(
     assert "<html" in captured["html"].lower()
 
 
+def test_backend_public_url_overrides_frontend_host_for_unsubscribe(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Unsubscribe link uses BACKEND_PUBLIC_URL when set, FRONTEND_HOST otherwise."""
+    user = _make_user(db)
+    _seed_article(db, source="OpenAI", title="Model release")
+
+    monkeypatch.setattr(settings, "RESEND_API_KEY", "test-key", raising=False)
+    monkeypatch.setattr(
+        settings, "DIGEST_FROM_EMAIL", "digest@example.com", raising=False
+    )
+    monkeypatch.setattr(
+        settings, "FRONTEND_HOST", "https://app.example.com", raising=False
+    )
+    monkeypatch.setattr(
+        settings, "BACKEND_PUBLIC_URL", "https://api.example.com", raising=False
+    )
+
+    captured: dict = {}
+
+    def fake_send(**kwargs):
+        captured.update(kwargs)
+        return ResendSendResult(ok=True, message_id="mid")
+
+    monkeypatch.setattr(digest_email, "send_email_via_resend", fake_send)
+    send_digest_email(session=db, user=user)
+
+    assert (
+        "https://api.example.com/api/v1/digest/unsubscribe?token=" in captured["html"]
+    )
+    # Manage preferences still points at the frontend.
+    assert 'href="https://app.example.com/settings"' in captured["html"]
+    # And the List-Unsubscribe header carries the same backend URL.
+    assert (
+        "https://api.example.com/api/v1/digest/unsubscribe?token="
+        in (captured["headers"]["List-Unsubscribe"])
+    )
+
+
 def test_send_digest_email_escapes_user_content(
     db: Session,
     monkeypatch: pytest.MonkeyPatch,
@@ -294,9 +333,7 @@ def test_send_digest_email_escapes_user_content(
         ),
     )
 
-    monkeypatch.setattr(
-        settings, "RESEND_API_KEY", "test-key", raising=False
-    )
+    monkeypatch.setattr(settings, "RESEND_API_KEY", "test-key", raising=False)
     monkeypatch.setattr(
         settings, "DIGEST_FROM_EMAIL", "digest@example.com", raising=False
     )
@@ -314,8 +351,11 @@ def test_send_digest_email_escapes_user_content(
     # Raw HTML must be escaped — no executable script or attribute.
     assert "<script>" not in html_body
     assert "&lt;script&gt;" in html_body
+    # Excerpt tags are stripped (not escaped) so the email reads as clean
+    # prose; the escaped form would still show as literal "<b>" in clients.
     assert "<b>bold</b>" not in html_body
-    assert "&lt;b&gt;bold&lt;/b&gt;" in html_body
+    assert "&lt;b&gt;bold&lt;/b&gt;" not in html_body
+    assert "bold" in html_body
 
 
 # --- run_digest_send loop ---------------------------------------------------
@@ -342,9 +382,7 @@ def test_run_digest_send_marks_sent_and_is_idempotent(
     )
     _seed_article(db)
 
-    monkeypatch.setattr(
-        settings, "RESEND_API_KEY", "test-key", raising=False
-    )
+    monkeypatch.setattr(settings, "RESEND_API_KEY", "test-key", raising=False)
     monkeypatch.setattr(
         settings, "DIGEST_FROM_EMAIL", "digest@example.com", raising=False
     )
@@ -398,3 +436,188 @@ def test_unsubscribe_token_can_disable_digest(
 def test_resend_module_exposes_send_email_via_resend() -> None:
     assert callable(resend_email.send_email_via_resend)
     assert digest_scheduler.send_digest_email is send_digest_email
+
+
+# --- Summary normalization -------------------------------------------------
+
+
+def test_clean_summary_strips_html_tags() -> None:
+    cleaned = _clean_summary("<p>Hello <b>world</b></p>")
+    assert "<" not in cleaned
+    assert ">" not in cleaned
+    assert cleaned == "Hello world"
+
+
+def test_clean_summary_collapses_whitespace_and_newlines() -> None:
+    raw = "Line one.\n\nLine two.\t\t   Line three."
+    assert _clean_summary(raw) == "Line one. Line two. Line three."
+
+
+def test_clean_summary_truncates_long_text_with_ellipsis() -> None:
+    raw = "word " * 200  # 1000 chars
+    cleaned = _clean_summary(raw)
+    assert len(cleaned) <= _SUMMARY_MAX_CHARS
+    assert cleaned.endswith("…")
+
+
+def test_clean_summary_handles_empty_input() -> None:
+    assert _clean_summary(None) == ""
+    assert _clean_summary("") == ""
+    assert _clean_summary("   \n\n  ") == ""
+
+
+def test_clean_summary_strips_quoted_lines() -> None:
+    """Quote-marker lines (`>` or `|`) are upstream reply bodies; drop them."""
+    raw = "The model ships next week.\n> previous discussion\n> more quoted\nDetails follow."
+    cleaned = _clean_summary(raw)
+    assert "previous discussion" not in cleaned
+    assert "more quoted" not in cleaned
+    assert "The model ships next week." in cleaned
+    assert "Details follow." in cleaned
+
+
+def test_clean_summary_strips_reply_header() -> None:
+    """`On <date>, <name> wrote:` reply headers don't belong in the digest."""
+    raw = (
+        "Key result: latency dropped 40%.\n\n"
+        "On Mon, Jan 5, 2026, Alice wrote:\n"
+        "We should investigate further.\n"
+    )
+    cleaned = _clean_summary(raw)
+    assert "Alice wrote" not in cleaned
+    assert "Key result: latency dropped 40%." in cleaned
+
+
+def test_digest_email_truncates_long_excerpts(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Article excerpts that carry full bodies must not render in full."""
+    user = _make_user(db)
+    long_body = (
+        "This is a very long excerpt that simulates an RSS feed handing us "
+        "the full article body. " * 30
+    )
+    crud.create_article(
+        session=db,
+        article_in=ArticleCreate(
+            url=f"https://example.com/{uuid.uuid4()}",
+            title="Long body article",
+            source="OpenAI",
+            category="models",
+            excerpt=long_body,
+            published_at=datetime.now(timezone.utc),
+            tags=[],
+        ),
+    )
+
+    monkeypatch.setattr(settings, "RESEND_API_KEY", "test-key", raising=False)
+    monkeypatch.setattr(
+        settings, "DIGEST_FROM_EMAIL", "digest@example.com", raising=False
+    )
+
+    captured: dict = {}
+
+    def fake_send(**kwargs):
+        captured.update(kwargs)
+        return ResendSendResult(ok=True, message_id="mid")
+
+    monkeypatch.setattr(digest_email, "send_email_via_resend", fake_send)
+    send_digest_email(session=db, user=user)
+
+    # The full body must not appear; the truncated form must.
+    assert long_body not in captured["html"]
+    assert long_body not in captured["text"]
+    assert "…" in captured["html"]
+
+
+def test_digest_email_strips_html_from_excerpt(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """HTML markup inside RSS excerpts must be stripped, not just escaped."""
+    user = _make_user(db)
+    crud.create_article(
+        session=db,
+        article_in=ArticleCreate(
+            url=f"https://example.com/{uuid.uuid4()}",
+            title="Article with HTML excerpt",
+            source="Anthropic",
+            category="safety",
+            excerpt="<p>A new <b>finding</b> about safety.</p>",
+            published_at=datetime.now(timezone.utc),
+            tags=[],
+        ),
+    )
+
+    monkeypatch.setattr(settings, "RESEND_API_KEY", "test-key", raising=False)
+    monkeypatch.setattr(
+        settings, "DIGEST_FROM_EMAIL", "digest@example.com", raising=False
+    )
+
+    captured: dict = {}
+
+    def fake_send(**kwargs):
+        captured.update(kwargs)
+        return ResendSendResult(ok=True, message_id="mid")
+
+    monkeypatch.setattr(digest_email, "send_email_via_resend", fake_send)
+    send_digest_email(session=db, user=user)
+
+    # Tags should be gone — escaped form would still show "&lt;b&gt;" which
+    # reads as literal "<b>" in a client. We want clean prose instead.
+    assert "&lt;b&gt;" not in captured["html"]
+    assert "&lt;p&gt;" not in captured["html"]
+    assert "A new finding about safety." in captured["html"]
+
+
+# --- Empty-state preview ---------------------------------------------------
+
+
+def test_render_digest_email_html_renders_empty_state(db: Session) -> None:
+    """render_digest_email_html must not crash on a digest with no sections."""
+    from app.services.digest import DigestPublic
+
+    user = _make_user(db)
+    now = datetime.now(timezone.utc)
+    empty = DigestPublic(
+        generated_at=now,
+        window_start=now,
+        sections=[],
+        is_personalized=True,
+    )
+    html_body = render_digest_email_html(
+        digest=empty,
+        user=user,
+        empty_message="No articles available for today’s digest preview.",
+    )
+    assert "AI Signal" in html_body
+    assert "Today&rsquo;s Signal" in html_body
+    assert "No articles available" in html_body
+
+
+def test_render_digest_email_html_omits_unsubscribe_when_url_missing(
+    db: Session,
+) -> None:
+    """A render call with no unsubscribe URL must not produce a dead link."""
+    from app.services.digest import DigestPublic
+    from app.services.digest_email import _render_html
+
+    user = _make_user(db)
+    now = datetime.now(timezone.utc)
+    empty = DigestPublic(
+        generated_at=now,
+        window_start=now,
+        sections=[],
+        is_personalized=True,
+    )
+    html_body = _render_html(
+        digest=empty,
+        full_name=user.full_name,
+        unsubscribe_url="",
+        settings_url="https://app.example.com/settings",
+        home_url="https://app.example.com/today-digest",
+        empty_message="Nothing today.",
+    )
+    assert "Unsubscribe" not in html_body
+    assert "Manage preferences" in html_body

@@ -30,10 +30,11 @@ export const previewSourceTypes: SourcePublic['source_type'][] = [
 
 export const ARTICLES_PAGE_SIZE = 20
 
-export type source_types = 'all' | source_type
+export type source_types = 'all' | 'following' | source_type
 
 export const SOURCE_TYPES: source_types[] = [
   'all',
+  'following',
   'official',
   'research',
   'analysis',
@@ -49,6 +50,7 @@ export const SOURCE_TYPES: source_types[] = [
 
 export const SOURCE_FILTER_LABELS: Record<source_types, string> = {
   all: 'All',
+  following: 'Following',
   official: 'Official',
   research: 'Research',
   analysis: 'Analysis',

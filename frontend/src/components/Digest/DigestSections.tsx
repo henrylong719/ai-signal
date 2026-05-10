@@ -6,7 +6,7 @@ const signalCountLabel = (count: number) =>
 
 function DigestSections({ sections }: { sections: DigestSectionPublic[] }) {
   return (
-    <div className="space-y-18 md:space-y-22">
+    <div className="space-y-8 md:space-y-11">
       {sections.map((section, index) => (
         <section key={section.key} className="scroll-mt-20">
           <div

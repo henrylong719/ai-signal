@@ -8,14 +8,19 @@ import { cn } from '@/lib/utils'
 interface SourceFilterBarProps {
   selected: source_types
   onSelect: (type: source_types) => void
+  types?: source_types[]
 }
 
-function SourceFilterBar({ selected, onSelect }: SourceFilterBarProps) {
+function SourceFilterBar({
+  selected,
+  onSelect,
+  types = SOURCE_TYPES,
+}: SourceFilterBarProps) {
   return (
     <div className="sticky top-16 z-40 -mx-4 mb-6 overflow-x-auto border-y border-slate-200/80 bg-white/95 px-4 py-2.5 backdrop-blur sm:top-18 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 dark:border-border dark:bg-background/92 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <fieldset className="flex w-max min-w-full gap-2">
         <legend className="sr-only">Filter sources by type</legend>
-        {SOURCE_TYPES.map((type) => (
+        {types.map((type) => (
           <button
             type="button"
             key={type}

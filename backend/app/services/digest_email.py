@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import html
 import logging
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode, urljoin
@@ -52,7 +53,25 @@ logger = logging.getLogger(__name__)
 
 _UNSUB_TOKEN_TYPE = "digest-unsub"
 _UNSUB_TOKEN_TTL = timedelta(days=30)
-_EMAIL_ARTICLE_LIMIT = 8
+# Keep the digest scannable: at most five items per send. More than this
+# and the email stops reading like an editorial briefing.
+_EMAIL_ARTICLE_LIMIT = 5
+# Hard cap on the per-article summary. RSS excerpts can carry full
+# article bodies; without a ceiling the email becomes an RSS dump.
+_SUMMARY_MAX_CHARS = 280
+
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+_WHITESPACE_RE = re.compile(r"\s+")
+# Lines that start with a quote marker (`>` or `|`) are reply/quoted
+# content lifted from upstream RSS bodies. Drop them so the summary
+# doesn't open with somebody else's email.
+_QUOTED_LINE_RE = re.compile(r"^[ \t]*[>|]+[ \t]?.*$", re.MULTILINE)
+# Email-style reply headers that occasionally make it into RSS excerpts.
+# Match the line they appear on, plus the trailing content up to the
+# next blank line — anything beyond the header is the quoted body.
+_REPLY_HEADER_RE = re.compile(
+    r"(?ims)^[ \t]*(?:on\s.+?\swrote:|from:\s.+?(?:\n.+?)*?)(?:\n\s*\n|$)"
+)
 
 
 def make_unsubscribe_token(user_id: uuid.UUID) -> str:
@@ -122,11 +141,16 @@ def _backend_url(path: str, query: dict[str, str] | None = None) -> str:
 
     The unsubscribe endpoint lives in the API because it needs to mutate
     DB state directly from the email click without a SPA round-trip.
+
+    Prefers ``BACKEND_PUBLIC_URL`` when set so deployments with the API
+    on a distinct host (``https://api.aisignal.now``) — and local dev
+    where Vite on :5173 doesn't proxy /api — produce links that resolve.
+    Falls back to ``FRONTEND_HOST + API_V1_STR`` for same-origin setups.
     """
-    base = settings.FRONTEND_HOST.rstrip("/") + "/"
-    # Email recipients hit the backend via the same origin in production.
-    # FRONTEND_HOST is the public origin; the backend mounts under
-    # API_V1_STR. Build the absolute URL accordingly.
+    if settings.BACKEND_PUBLIC_URL:
+        base = settings.BACKEND_PUBLIC_URL.rstrip("/") + "/"
+    else:
+        base = settings.FRONTEND_HOST.rstrip("/") + "/"
     url = urljoin(base, settings.API_V1_STR.lstrip("/") + path)
     if query:
         url = f"{url}?{urlencode(query)}"
@@ -163,6 +187,35 @@ def _format_category(category: str | None) -> str:
     return (category or "").replace("_", " ").title()
 
 
+def _clean_summary(raw: str | None, *, max_chars: int = _SUMMARY_MAX_CHARS) -> str:
+    """Normalize an excerpt into a short, scannable summary.
+
+    RSS feeds occasionally hand us the full article body in the excerpt
+    field, complete with HTML markup and quoted blocks. The email is a
+    calm briefing, not a content reader — strip tags, collapse
+    whitespace, and truncate on a word boundary with an ellipsis. The
+    output is plain text; the caller is responsible for HTML-escaping
+    it before interpolating into the template.
+    """
+    if not raw:
+        return ""
+    text = _HTML_TAG_RE.sub(" ", raw)
+    text = html.unescape(text)
+    # Strip reply/quoted-block noise before collapsing whitespace —
+    # the patterns rely on line boundaries being intact.
+    text = _REPLY_HEADER_RE.sub(" ", text)
+    text = _QUOTED_LINE_RE.sub(" ", text)
+    text = _WHITESPACE_RE.sub(" ", text).strip()
+    if len(text) <= max_chars:
+        return text
+    # Truncate at the last word boundary that fits, leaving room for the
+    # ellipsis. Fall back to a hard cut if there's no whitespace at all.
+    cut = text[: max_chars - 1].rsplit(" ", 1)[0]
+    if not cut:
+        cut = text[: max_chars - 1]
+    return cut.rstrip(" ,.;:!?-") + "…"
+
+
 def _iter_email_articles(
     digest: DigestPublic,
     *,
@@ -184,12 +237,12 @@ def _render_article(article: Article) -> str:
     title = _escape(article.title)
     source = _escape(article.source)
     category = _escape(_format_category(article.category))
-    excerpt = _escape(article.excerpt or "")
+    summary = _escape(_clean_summary(article.excerpt))
     meta = f"{source} · {category}" if category else source
-    excerpt_block = (
+    summary_block = (
         f'<p style="margin:10px 0 0;color:#6F6A61;font-size:14px;'
-        f'line-height:22px;">{excerpt}</p>'
-        if excerpt
+        f'line-height:22px;">{summary}</p>'
+        if summary
         else ""
     )
     return (
@@ -197,9 +250,9 @@ def _render_article(article: Article) -> str:
         f'<div style="font-size:12px;color:#6F6A61;line-height:18px;'
         f'margin-bottom:7px;">{meta}</div>'
         f'<a href="{redirect}" style="color:#111111;text-decoration:none;'
-        'font-family:Georgia,\'Iowan Old Style\',serif;font-size:20px;'
+        "font-family:Georgia,'Iowan Old Style',serif;font-size:20px;"
         f'font-weight:600;line-height:28px;">{title}</a>'
-        f"{excerpt_block}"
+        f"{summary_block}"
         f'<div style="margin-top:12px;"><a href="{redirect}" '
         'style="color:#111111;text-decoration:none;font-size:14px;'
         'font-weight:600;">Read article &rarr;</a></div>'
@@ -207,26 +260,75 @@ def _render_article(article: Article) -> str:
     )
 
 
-def _render_article_rows(
-    digest: DigestPublic,
+def _render_lead_article(article: Article) -> str:
+    """Lead signal: the first article gets a warm, contained editorial card.
+
+    The container uses a slightly warmer cream than the body so the first
+    item reads as the day's anchor without breaking the minimal editorial
+    register (no color blocks, no marketing chrome).
+    """
+    redirect = _escape(_article_redirect_url(article.id))
+    title = _escape(article.title)
+    source = _escape(article.source)
+    category = _escape(_format_category(article.category))
+    summary = _escape(_clean_summary(article.excerpt))
+    meta = f"{source} · {category}" if category else source
+    summary_block = (
+        f'<p style="margin:12px 0 0;color:#5C574E;font-size:14px;'
+        f'line-height:22px;">{summary}</p>'
+        if summary
+        else ""
+    )
+    return (
+        '<div style="background:#F8F1E1;border:1px solid #EADFC4;'
+        'border-radius:14px;padding:24px;margin:0 0 6px;">'
+        '<div style="font-size:11px;font-weight:700;letter-spacing:0.16em;'
+        'text-transform:uppercase;color:#A78340;margin-bottom:14px;">'
+        '<span style="display:inline-block;width:5px;height:5px;'
+        "border-radius:50%;background:#C9A66B;vertical-align:middle;"
+        'margin-right:8px;"></span>Lead signal</div>'
+        f'<div style="font-size:12px;color:#6F6A61;line-height:18px;'
+        f'margin-bottom:8px;">{meta}</div>'
+        f'<a href="{redirect}" style="color:#111111;text-decoration:none;'
+        "font-family:Georgia,'Iowan Old Style',serif;font-size:22px;"
+        f'font-weight:600;line-height:30px;">{title}</a>'
+        f"{summary_block}"
+        f'<div style="margin-top:14px;"><a href="{redirect}" '
+        'style="color:#111111;text-decoration:none;font-size:14px;'
+        'font-weight:600;">Read article &rarr;</a></div>'
+        "</div>"
+    )
+
+
+def _render_article_block(
+    articles: list[Article],
     *,
-    article_limit: int = _EMAIL_ARTICLE_LIMIT,
     empty_message: str | None = None,
 ) -> str:
-    rows = "".join(
-        _render_article(article)
-        for article in _iter_email_articles(digest, limit=article_limit)
-    )
-    if not rows and empty_message:
-        message = _escape(empty_message)
-        rows = (
-            '<tr><td style="padding:22px 0;color:#6F6A61;font-size:15px;'
-            f'line-height:23px;">{message}</td></tr>'
-        )
-    return (
+    """Lead signal container + plain editorial rows for the rest.
+
+    The lead lives outside the table (it's a div) so it can carry its own
+    background and border. Remaining articles fall back to the existing
+    bordered rows for a calm editorial list.
+    """
+    if not articles:
+        if empty_message:
+            message = _escape(empty_message)
+            return (
+                '<div style="padding:22px 0;color:#6F6A61;font-size:15px;'
+                f'line-height:23px;">{message}</div>'
+            )
+        return ""
+    lead = _render_lead_article(articles[0])
+    rest = articles[1:]
+    if not rest:
+        return lead
+    rows = "".join(_render_article(article) for article in rest)
+    table = (
         '<table role="presentation" cellpadding="0" cellspacing="0" '
         f'style="width:100%;border-collapse:collapse;">{rows}</table>'
     )
+    return lead + table
 
 
 def _render_html(
@@ -243,27 +345,49 @@ def _render_html(
     first_name = (
         _escape(full_name.split()[0]) if full_name and full_name.strip() else None
     )
-    intro = (
-        f"Good morning, {first_name}. Here are the AI updates worth your "
-        "attention today."
-        if first_name
-        else "Here are the AI updates worth your attention today."
-    )
-    article_rows = _render_article_rows(
-        digest,
-        article_limit=article_limit,
-        empty_message=empty_message,
+    intro = f"Good morning, {first_name}." if first_name else "Here's today's briefing."
+    articles = _iter_email_articles(digest, limit=article_limit)
+    article_block = _render_article_block(articles, empty_message=empty_message)
+    articles_count = len(articles)
+    if articles_count == 0:
+        subhead_text = ""
+    elif articles_count == 1:
+        subhead_text = "1 update worth your attention today"
+    else:
+        subhead_text = f"{articles_count} updates worth your attention today"
+    subhead_html = (
+        f'<p style="margin:10px 0 0;color:#111111;font-size:16px;'
+        f'line-height:24px;font-weight:500;">{subhead_text}</p>'
+        if subhead_text
+        else ""
     )
     total_articles = sum(len(section.articles) for section in digest.sections)
     hidden_count = max(total_articles - article_limit, 0)
     continue_note = (
         f'<p style="margin:18px 0 0;color:#6F6A61;font-size:14px;'
-        f'line-height:22px;">{hidden_count} more update'
-        f'{"s are" if hidden_count != 1 else " is"} waiting in AI Signal.</p>'
+        f'line-height:22px;">{hidden_count} more signal'
+        f"{'s are' if hidden_count != 1 else ' is'} waiting in AI Signal.</p>"
         if hidden_count
         else ""
     )
     date_label = _escape(_format_date(digest.generated_at))
+    # Render Unsubscribe only when the caller actually has a working URL
+    # to point at. Skipping the link is preferable to rendering a dead
+    # one, and Gmail/Yahoo's bulk requirements are satisfied separately
+    # via the List-Unsubscribe header on the send path.
+    if unsubscribe_url:
+        footer_links = (
+            f'<a href="{_escape(settings_url)}" '
+            'style="color:#111111;text-decoration:underline;">Manage preferences</a>'
+            "&nbsp;·&nbsp;"
+            f'<a href="{_escape(unsubscribe_url)}" '
+            'style="color:#6F6A61;text-decoration:underline;">Unsubscribe</a>'
+        )
+    else:
+        footer_links = (
+            f'<a href="{_escape(settings_url)}" '
+            'style="color:#111111;text-decoration:underline;">Manage preferences</a>'
+        )
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -277,20 +401,22 @@ def _render_html(
       <td align="center" style="padding:40px 16px;">
         <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background:#FFFDF8;border-radius:16px;border:1px solid #E6E0D8;">
           <tr>
-            <td style="padding:36px 36px 10px;">
-              <div style="font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#6F6A61;">AI Signal</div>
-              <h1 style="margin:12px 0 8px;font-family:Georgia,'Iowan Old Style',serif;font-size:34px;line-height:40px;color:#111111;font-weight:500;">Today&rsquo;s Signal</h1>
-              <p style="margin:0;color:#6F6A61;font-size:15px;line-height:23px;">{date_label} · A calm briefing of the AI updates worth your attention.</p>
+            <td style="padding:36px 36px 6px;">
+              <div style="font-size:13px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#111111;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#C9A66B;vertical-align:middle;margin-right:8px;"></span>AI Signal</div>
+              <h1 style="margin:14px 0 0;font-family:Georgia,'Iowan Old Style',serif;font-size:32px;line-height:38px;color:#111111;font-weight:500;">Today&rsquo;s Signal</h1>
+              {subhead_html}
+              <p style="margin:8px 0 0;color:#8A8478;font-size:13px;line-height:20px;letter-spacing:0.04em;">{date_label}</p>
             </td>
           </tr>
           <tr>
-            <td style="padding:18px 36px 8px;">
-              <p style="margin:0;color:#111111;font-size:16px;line-height:26px;">{intro}</p>
+            <td style="padding:20px 36px 10px;">
+              <p style="margin:0;color:#6F6A61;font-size:15px;line-height:24px;">{intro}</p>
             </td>
           </tr>
-          <tr><td style="padding:0 36px 28px;">{article_rows}{continue_note}</td></tr>
+          <tr><td style="padding:4px 36px 28px;">{article_block}{continue_note}</td></tr>
           <tr>
-            <td align="center" style="padding:0 36px 36px;">
+            <td align="center" style="padding:0 36px 38px;">
+              <p style="margin:0 0 12px;color:#6F6A61;font-size:13px;line-height:20px;">Want the full feed?</p>
               <a href="{home_url}" style="display:inline-block;background:#111111;color:#FFFFFF;text-decoration:none;border-radius:999px;padding:13px 22px;font-size:14px;font-weight:700;">Open AI Signal</a>
             </td>
           </tr>
@@ -298,12 +424,7 @@ def _render_html(
             <td style="padding:26px 36px 34px;border-top:1px solid #E6E0D8;background:#FFFFFF;border-radius:0 0 16px 16px;">
               <p style="margin:0 0 4px;font-size:14px;color:#111111;line-height:21px;font-weight:700;">AI Signal</p>
               <p style="margin:0 0 14px;font-size:13px;color:#6F6A61;line-height:20px;">Find the signal in AI updates.</p>
-              <p style="margin:0 0 8px;font-size:12px;color:#6F6A61;line-height:19px;">You're receiving this because you opted into AI Signal's daily digest.</p>
-              <p style="margin:0;font-size:12px;line-height:19px;">
-                <a href="{settings_url}" style="color:#111111;text-decoration:underline;">Manage preferences</a>
-                &nbsp;·&nbsp;
-                <a href="{unsubscribe_url}" style="color:#6F6A61;text-decoration:underline;">Unsubscribe</a>
-              </p>
+              <p style="margin:0;font-size:12px;line-height:19px;">{footer_links}</p>
             </td>
           </tr>
         </table>
@@ -327,38 +448,49 @@ def _render_text(
     has a real text/plain part instead of an auto-generated one.
     """
     name_part = full_name.split()[0] if full_name and full_name.strip() else None
-    intro = (
-        f"Good morning, {name_part}. Here are the AI updates worth your "
-        "attention today."
-        if name_part
-        else "Here are the AI updates worth your attention today."
-    )
+    intro = f"Good morning, {name_part}." if name_part else "Here's today's briefing."
+    articles = _iter_email_articles(digest)
+    articles_count = len(articles)
+    if articles_count == 1:
+        subhead = "1 update worth your attention today"
+    elif articles_count > 1:
+        subhead = f"{articles_count} updates worth your attention today"
+    else:
+        subhead = ""
     lines: list[str] = [
         "AI Signal",
         f"Today’s Signal - {_format_date(digest.generated_at)}",
-        "",
-        intro,
-        "",
     ]
-    for article in _iter_email_articles(digest):
+    if subhead:
+        lines.append(subhead)
+    lines.append("")
+    lines.append(intro)
+    lines.append("")
+    for index, article in enumerate(articles):
         redirect = _article_redirect_url(article.id)
         category = _format_category(article.category)
         meta = f"{article.source} · {category}" if category else article.source
+        if index == 0:
+            lines.append("[Lead signal]")
         lines.append(article.title)
         lines.append(meta)
-        if article.excerpt:
-            lines.append(article.excerpt)
+        summary = _clean_summary(article.excerpt)
+        if summary:
+            lines.append(summary)
         lines.append(f"Read article: {redirect}")
         lines.append("")
     total_articles = sum(len(section.articles) for section in digest.sections)
     hidden_count = max(total_articles - _EMAIL_ARTICLE_LIMIT, 0)
     if hidden_count:
-        lines.append(f"{hidden_count} more updates are waiting in AI Signal.")
+        lines.append(f"{hidden_count} more signals are waiting in AI Signal.")
         lines.append("")
+    lines.append("Want the full feed?")
     lines.append(f"Open AI Signal: {home_url}")
+    lines.append("")
     lines.append("AI Signal")
     lines.append("Find the signal in AI updates.")
-    lines.append(f"Unsubscribe: {unsubscribe_url}")
+    if unsubscribe_url:
+        lines.append(f"Unsubscribe: {unsubscribe_url}")
     return "\n".join(lines)
 
 

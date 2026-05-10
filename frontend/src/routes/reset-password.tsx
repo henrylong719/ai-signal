@@ -93,7 +93,7 @@ function ResetPassword() {
     onSuccess: () => {
       showSuccessToast('Password updated. You can sign in now.')
       form.reset()
-      navigate({ to: '/login' })
+      navigate({ to: '/' })
     },
     onError: handleError.bind(showErrorToast),
   })

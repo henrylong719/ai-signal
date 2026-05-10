@@ -59,7 +59,7 @@ function TodayDigest() {
     <PageContainer
       variant="prose"
       spacing="none"
-      className="py-12 sm:py-16 md:py-20"
+      className="py-6 sm:py-8 md:py-10"
     >
       <DigestHeader digest={data} />
       <SubscribeBox />

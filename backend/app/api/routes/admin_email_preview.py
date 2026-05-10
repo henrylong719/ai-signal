@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse
 
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.models import Article, User
+from app.schemas.source import Category
 from app.services.digest import DigestPublic, DigestSection, build_digest
 from app.services.digest_email import render_digest_email_html
 
@@ -24,6 +25,56 @@ _EMPTY_PREVIEW_MESSAGE = "No articles available for today’s digest preview."
 def _sample_digest(*, limit: int) -> DigestPublic:
     now = datetime.now(timezone.utc)
     count = max(limit, 3)
+    samples: list[tuple[str, str, Category, str]] = [
+        (
+            "OpenAI previews faster multimodal agents",
+            "OpenAI",
+            "agents",
+            "A new demo shows agents coordinating across text, image, and tool use.",
+        ),
+        (
+            "Anthropic publishes a practical safety evaluation guide",
+            "Anthropic",
+            "safety",
+            "The guide outlines lightweight checks teams can run before launch.",
+        ),
+        (
+            "Researchers improve retrieval for long-context models",
+            "AI Research Lab",
+            "rag",
+            "The method combines ranking signals with chunk-level citations.",
+        ),
+        (
+            "New inference stack reduces serving latency",
+            "Modal",
+            "infrastructure",
+            "Teams are tuning batch sizes and cache behavior for production workloads.",
+        ),
+        (
+            "Enterprise AI adoption shifts toward workflow automation",
+            "The Signal",
+            "business",
+            "Operators are moving from chat pilots to repeatable internal workflows.",
+        ),
+        (
+            "Policy teams publish guidance for AI evaluations",
+            "Policy Review",
+            "policy",
+            "The recommendations focus on documenting model limitations clearly.",
+        ),
+        (
+            "Engineers share lessons from agent observability",
+            "Engineering Notes",
+            "engineering",
+            "Tracing and replay tools are becoming central to production debugging.",
+        ),
+        (
+            "Open-source model release improves small-device performance",
+            "Hugging Face",
+            "models",
+            "The release targets lower memory usage without a large quality drop.",
+        ),
+    ]
     articles = [
         Article(
             id=uuid.uuid4(),
@@ -35,58 +86,7 @@ def _sample_digest(*, limit: int) -> DigestPublic:
             published_at=now - timedelta(hours=index),
             tags=[category],
         )
-        for index, (title, source, category, excerpt) in enumerate(
-            [
-                (
-                    "OpenAI previews faster multimodal agents",
-                    "OpenAI",
-                    "agents",
-                    "A new demo shows agents coordinating across text, image, and tool use.",
-                ),
-                (
-                    "Anthropic publishes a practical safety evaluation guide",
-                    "Anthropic",
-                    "safety",
-                    "The guide outlines lightweight checks teams can run before launch.",
-                ),
-                (
-                    "Researchers improve retrieval for long-context models",
-                    "AI Research Lab",
-                    "rag",
-                    "The method combines ranking signals with chunk-level citations.",
-                ),
-                (
-                    "New inference stack reduces serving latency",
-                    "Modal",
-                    "infrastructure",
-                    "Teams are tuning batch sizes and cache behavior for production workloads.",
-                ),
-                (
-                    "Enterprise AI adoption shifts toward workflow automation",
-                    "The Signal",
-                    "business",
-                    "Operators are moving from chat pilots to repeatable internal workflows.",
-                ),
-                (
-                    "Policy teams publish guidance for AI evaluations",
-                    "Policy Review",
-                    "policy",
-                    "The recommendations focus on documenting model limitations clearly.",
-                ),
-                (
-                    "Engineers share lessons from agent observability",
-                    "Engineering Notes",
-                    "engineering",
-                    "Tracing and replay tools are becoming central to production debugging.",
-                ),
-                (
-                    "Open-source model release improves small-device performance",
-                    "Hugging Face",
-                    "models",
-                    "The release targets lower memory usage without a large quality drop.",
-                ),
-            ][:count]
-        )
+        for index, (title, source, category, excerpt) in enumerate(samples[:count])
     ]
     return DigestPublic(
         generated_at=now,
@@ -112,11 +112,12 @@ def preview_digest_html(
     sample: bool = False,
 ) -> HTMLResponse:
     """Render the Today’s Signal digest HTML without sending email."""
-    preview_user = current_user
+    preview_user: User = current_user
     if user_id is not None:
-        preview_user = session.get(User, user_id)
-        if preview_user is None:
+        looked_up = session.get(User, user_id)
+        if looked_up is None:
             raise HTTPException(status_code=404, detail="User not found")
+        preview_user = looked_up
 
     digest = (
         _sample_digest(limit=limit)

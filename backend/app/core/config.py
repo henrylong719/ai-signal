@@ -40,6 +40,14 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     FRONTEND_HOST: str = "http://localhost:5173"
+    # Public origin of the FastAPI backend, used to build absolute URLs
+    # in emails (currently: the digest unsubscribe link). When unset we
+    # fall back to ``FRONTEND_HOST + API_V1_STR``, which is correct only
+    # when frontend and backend share an origin via a reverse proxy or
+    # platform rewrite. Set this whenever the API lives on a distinct
+    # host (e.g. ``https://api.aisignal.now``) — or in local dev where
+    # the Vite server on :5173 has no API proxy.
+    BACKEND_PUBLIC_URL: str | None = None
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
     GOOGLE_OAUTH_CLIENT_ID: str | None = None
     GOOGLE_OAUTH_CLIENT_SECRET: str | None = None
@@ -195,7 +203,7 @@ class Settings(BaseSettings):
     # is delivered. The hourly scheduler matches this against each
     # user's local clock; staying configurable lets us shift the
     # send window without a code change.
-    DIGEST_SEND_LOCAL_HOUR: int = 8
+    DIGEST_SEND_LOCAL_HOUR: int = 6
 
     # --- SMTP (legacy / deprecated) ---------------------------------------
     #

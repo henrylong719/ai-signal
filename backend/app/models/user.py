@@ -19,7 +19,7 @@ class User(UserBase, table=True):
 
     # IANA timezone string (e.g. "America/New_York"). Captured from the
     # browser at sign-up and used by the daily-digest scheduler to fire
-    # the email at the user's local 8am rather than a single global UTC
+    # the email at the user's local 6am rather than a single global UTC
     # hour. NULL means "not yet known" — sender treats unset as UTC.
     timezone: str | None = Field(
         default=None,

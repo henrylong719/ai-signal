@@ -5,17 +5,33 @@ public unsubscribe link delivered via the daily-digest email.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timedelta, timezone
 
+import jwt
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app import crud
+from app.core import security
 from app.core.config import settings
 from app.models import User
 from app.schemas import UserCreate
 from app.services.digest_email import make_unsubscribe_token
 from tests.utils.user import user_authentication_headers
 from tests.utils.utils import random_email, random_lower_string
+
+
+def _expired_unsub_token(user_id: uuid.UUID) -> str:
+    """Mint a digest-unsub JWT whose ``exp`` is already in the past."""
+    return jwt.encode(
+        {
+            "sub": str(user_id),
+            "exp": datetime.now(timezone.utc) - timedelta(minutes=1),
+            "type": "digest-unsub",
+        },
+        settings.SECRET_KEY,
+        algorithm=security.ALGORITHM,
+    )
 
 
 def _create_authenticated_user(
@@ -198,6 +214,227 @@ def test_unsubscribe_for_deleted_user_is_idempotent(
     token = make_unsubscribe_token(uuid.uuid4())
     response = client.get(
         f"{settings.API_V1_STR}/digest/unsubscribe",
+        params={"token": token},
+    )
+    assert response.status_code == 200
+
+
+def test_unsubscribe_confirmation_includes_resubscribe_action(
+    client: TestClient, db: Session
+) -> None:
+    """The success page surfaces a POST form back to /digest/resubscribe."""
+    user = crud.create_user(
+        session=db,
+        user_create=UserCreate(
+            email=random_email(), password=random_lower_string()
+        ),
+    )
+    user.daily_digest_enabled = True
+    db.add(user)
+    db.commit()
+
+    token = make_unsubscribe_token(user.id)
+    response = client.get(
+        f"{settings.API_V1_STR}/digest/unsubscribe",
+        params={"token": token},
+    )
+    assert response.status_code == 200
+    body = response.text
+    assert "Resubscribe" in body
+    assert 'method="post"' in body.lower()
+    assert (
+        f'action="{settings.API_V1_STR}/digest/resubscribe?token={token}"' in body
+    )
+
+
+# --- /digest/resubscribe ----------------------------------------------------
+
+
+def test_resubscribe_enables_digest_with_valid_token(
+    client: TestClient, db: Session
+) -> None:
+    user = crud.create_user(
+        session=db,
+        user_create=UserCreate(
+            email=random_email(), password=random_lower_string()
+        ),
+    )
+    user.daily_digest_enabled = False
+    db.add(user)
+    db.commit()
+
+    token = make_unsubscribe_token(user.id)
+    response = client.post(
+        f"{settings.API_V1_STR}/digest/resubscribe",
+        params={"token": token},
+    )
+    assert response.status_code == 200
+    assert "subscribed again" in response.text.lower()
+
+    db.refresh(user)
+    assert user.daily_digest_enabled is True
+
+
+def test_resubscribe_does_not_require_login(
+    client: TestClient, db: Session
+) -> None:
+    """No Authorization header is sent — the signed token is the only auth."""
+    user = crud.create_user(
+        session=db,
+        user_create=UserCreate(
+            email=random_email(), password=random_lower_string()
+        ),
+    )
+    user.daily_digest_enabled = False
+    db.add(user)
+    db.commit()
+
+    token = make_unsubscribe_token(user.id)
+    response = client.post(
+        f"{settings.API_V1_STR}/digest/resubscribe",
+        params={"token": token},
+    )
+    assert response.status_code == 200
+
+
+def test_resubscribe_invalid_token_renders_friendly_page(
+    client: TestClient, db: Session
+) -> None:
+    """Garbage token must not flip any preference."""
+    user = crud.create_user(
+        session=db,
+        user_create=UserCreate(
+            email=random_email(), password=random_lower_string()
+        ),
+    )
+    user.daily_digest_enabled = False
+    db.add(user)
+    db.commit()
+
+    response = client.post(
+        f"{settings.API_V1_STR}/digest/resubscribe",
+        params={"token": "garbage"},
+    )
+    assert response.status_code == 200
+    text = response.text.lower()
+    assert "invalid" in text or "expired" in text
+
+    db.refresh(user)
+    assert user.daily_digest_enabled is False
+
+
+def test_resubscribe_expired_token_renders_friendly_page(
+    client: TestClient, db: Session
+) -> None:
+    """Past-exp token must not flip any preference."""
+    user = crud.create_user(
+        session=db,
+        user_create=UserCreate(
+            email=random_email(), password=random_lower_string()
+        ),
+    )
+    user.daily_digest_enabled = False
+    db.add(user)
+    db.commit()
+
+    response = client.post(
+        f"{settings.API_V1_STR}/digest/resubscribe",
+        params={"token": _expired_unsub_token(user.id)},
+    )
+    assert response.status_code == 200
+    text = response.text.lower()
+    assert "invalid" in text or "expired" in text
+
+    db.refresh(user)
+    assert user.daily_digest_enabled is False
+
+
+def test_resubscribe_is_idempotent(client: TestClient, db: Session) -> None:
+    user = crud.create_user(
+        session=db,
+        user_create=UserCreate(
+            email=random_email(), password=random_lower_string()
+        ),
+    )
+    user.daily_digest_enabled = False
+    db.add(user)
+    db.commit()
+
+    token = make_unsubscribe_token(user.id)
+    first = client.post(
+        f"{settings.API_V1_STR}/digest/resubscribe", params={"token": token}
+    )
+    second = client.post(
+        f"{settings.API_V1_STR}/digest/resubscribe", params={"token": token}
+    )
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert "subscribed again" in second.text.lower()
+
+    db.refresh(user)
+    assert user.daily_digest_enabled is True
+
+
+def test_resubscribe_updates_same_preference_as_settings(
+    client: TestClient, db: Session
+) -> None:
+    """The settings API and the resubscribe endpoint mutate the same field."""
+    user, headers = _create_authenticated_user(client, db)
+    # Disable via the settings API.
+    client.put(
+        f"{settings.API_V1_STR}/users/me/digest-preferences",
+        headers=headers,
+        json={"daily_digest_enabled": False},
+    )
+    db.refresh(user)
+    assert user.daily_digest_enabled is False
+
+    # Re-enable via the public resubscribe endpoint (no auth).
+    token = make_unsubscribe_token(user.id)
+    response = client.post(
+        f"{settings.API_V1_STR}/digest/resubscribe",
+        params={"token": token},
+    )
+    assert response.status_code == 200
+
+    db.refresh(user)
+    assert user.daily_digest_enabled is True
+
+
+def test_unsubscribe_then_resubscribe_round_trip(
+    client: TestClient, db: Session
+) -> None:
+    """End-to-end: the same token can unsubscribe then resubscribe."""
+    user = crud.create_user(
+        session=db,
+        user_create=UserCreate(
+            email=random_email(), password=random_lower_string()
+        ),
+    )
+    user.daily_digest_enabled = True
+    db.add(user)
+    db.commit()
+
+    token = make_unsubscribe_token(user.id)
+
+    client.get(
+        f"{settings.API_V1_STR}/digest/unsubscribe", params={"token": token}
+    )
+    db.refresh(user)
+    assert user.daily_digest_enabled is False
+
+    client.post(
+        f"{settings.API_V1_STR}/digest/resubscribe", params={"token": token}
+    )
+    db.refresh(user)
+    assert user.daily_digest_enabled is True
+
+
+def test_resubscribe_for_deleted_user_is_safe(client: TestClient) -> None:
+    """Token outlives the account; resubscribe must not 500."""
+    token = make_unsubscribe_token(uuid.uuid4())
+    response = client.post(
+        f"{settings.API_V1_STR}/digest/resubscribe",
         params={"token": token},
     )
     assert response.status_code == 200

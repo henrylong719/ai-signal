@@ -1,4 +1,4 @@
-"""Hourly job that sends each opted-in user their daily digest at local 8am.
+"""Hourly job that sends each opted-in user their daily digest at local 6am.
 
 Run loop sketch:
 

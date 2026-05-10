@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import useAuth from '@/hooks/useAuth'
+import { trackGuestEvent } from '@/lib/analytics'
 import { ARTICLE_FEED_LOAD_MORE_EVENT } from '@/lib/auth-prompt'
 
 const DISMISSED_KEY = 'ai-signal-load-more-auth-prompt-dismissed'
@@ -32,7 +33,16 @@ function ScrollAuthPrompt() {
   useEffect(() => {
     if (dismissed || isLoading || user) return
 
-    const openPrompt = () => setIsOpen(true)
+    const openPrompt = () => {
+      // The scroll prompt is itself a sign-up CTA — it pops the auth
+      // flow at a known funnel moment (reader hit the bottom of the
+      // feed). Tag the event with its UI location so analytics can
+      // compare it against the hero and header CTAs.
+      trackGuestEvent('guest_signup_click', {
+        payload: { metadata: { location: 'feed_sidebar' } },
+      })
+      setIsOpen(true)
+    }
     window.addEventListener(ARTICLE_FEED_LOAD_MORE_EVENT, openPrompt)
 
     return () => {

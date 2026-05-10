@@ -35,6 +35,14 @@ from app.crud.event import (
     record_event,
 )
 from app.crud.feedback import create_feedback
+from app.crud.guest_event import (
+    get_event_counts_by_type,
+    get_signup_cta_clicks_by_location,
+    get_top_clicked_articles,
+    get_top_clicked_sources,
+    get_top_clicked_topics,
+    record_guest_event,
+)
 from app.crud.ingest_run import (
     fail_ingest_run,
     finish_ingest_run,
@@ -120,6 +128,12 @@ __all__ = [
     "start_ingest_run",
     "get_articles_in_window",
     "get_articles_in_window_with_popularity",
+    "get_event_counts_by_type",
+    "get_signup_cta_clicks_by_location",
+    "get_top_clicked_articles",
+    "get_top_clicked_sources",
+    "get_top_clicked_topics",
     "get_subscriber_by_email",
+    "record_guest_event",
     "upsert_subscriber",
 ]

@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { Sparkles } from 'lucide-react'
 import type { category } from '@/client'
+import { trackGuestEvent } from '@/lib/analytics'
 import { capitalize } from '@/lib/utils'
 import { Badge } from '../ui/badge'
 
@@ -34,6 +35,9 @@ const RecommendedTopics = () => {
             key={cat}
             to="/category-feed/$cat"
             params={{ cat }}
+            onClick={() =>
+              trackGuestEvent('guest_topic_click', { payload: { topic: cat } })
+            }
             className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
           >
             <Badge

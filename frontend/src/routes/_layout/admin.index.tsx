@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Activity, Newspaper } from 'lucide-react'
+import { Activity, BarChart3, Newspaper } from 'lucide-react'
 import { Suspense } from 'react'
 
 import { type UserPublic, UsersService } from '@/client'
@@ -77,6 +77,12 @@ function AdminIndex() {
               <Link to="/admin/ingest-runs">
                 <Activity className="size-3.5" />
                 Ingest Runs
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild className="gap-2">
+              <Link to="/admin/analytics">
+                <BarChart3 className="size-3.5" />
+                Guest Funnel
               </Link>
             </Button>
             <AddUser />

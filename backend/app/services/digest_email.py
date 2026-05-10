@@ -39,7 +39,7 @@ from sqlmodel import Session
 from app.core import security
 from app.core.config import settings
 from app.models import Article, User
-from app.services.digest import DigestPublic, DigestSection, build_digest
+from app.services.digest import DigestPublic, build_digest
 from app.services.resend_email import (
     ResendSendResult,
     send_email_via_resend,
@@ -52,6 +52,7 @@ logger = logging.getLogger(__name__)
 
 _UNSUB_TOKEN_TYPE = "digest-unsub"
 _UNSUB_TOKEN_TTL = timedelta(days=30)
+_EMAIL_ARTICLE_LIMIT = 8
 
 
 def make_unsubscribe_token(user_id: uuid.UUID) -> str:
@@ -158,52 +159,73 @@ def _escape(value: str | None) -> str:
     return html.escape(value or "")
 
 
-def _render_article(article: Article, reason: str | None) -> str:
-    """One article card. Inline styles only — email clients strip <style>."""
-    redirect = _article_redirect_url(article.id)
+def _format_category(category: str | None) -> str:
+    return (category or "").replace("_", " ").title()
+
+
+def _iter_email_articles(
+    digest: DigestPublic,
+    *,
+    limit: int = _EMAIL_ARTICLE_LIMIT,
+) -> list[Article]:
+    """Flatten the built digest for email without changing digest ranking."""
+    items: list[Article] = []
+    for section in digest.sections:
+        for article in section.articles:
+            items.append(article)
+            if len(items) >= limit:
+                return items
+    return items
+
+
+def _render_article(article: Article) -> str:
+    """One editorial article row. Inline styles only — email clients strip CSS."""
+    redirect = _escape(_article_redirect_url(article.id))
     title = _escape(article.title)
     source = _escape(article.source)
+    category = _escape(_format_category(article.category))
     excerpt = _escape(article.excerpt or "")
-    reason_block = (
-        f'<div style="font-size:11px;font-weight:600;letter-spacing:0.06em;'
-        f'text-transform:uppercase;color:#94a3b8;margin-bottom:8px;">'
-        f'{_escape(reason)}</div>'
-        if reason
-        else ""
-    )
+    meta = f"{source} · {category}" if category else source
     excerpt_block = (
-        f'<p style="margin:8px 0 0;color:#475569;font-size:14px;'
+        f'<p style="margin:10px 0 0;color:#6F6A61;font-size:14px;'
         f'line-height:22px;">{excerpt}</p>'
         if excerpt
         else ""
     )
     return (
-        '<tr><td style="padding:18px 0;border-bottom:1px solid #e2e8f0;">'
-        f"{reason_block}"
-        f'<div style="font-size:13px;color:#64748b;margin-bottom:6px;">'
-        f"{source}</div>"
-        f'<a href="{redirect}" style="color:#0f172a;text-decoration:none;'
+        '<tr><td style="padding:22px 0;border-bottom:1px solid #E6E0D8;">'
+        f'<div style="font-size:12px;color:#6F6A61;line-height:18px;'
+        f'margin-bottom:7px;">{meta}</div>'
+        f'<a href="{redirect}" style="color:#111111;text-decoration:none;'
         'font-family:Georgia,\'Iowan Old Style\',serif;font-size:20px;'
         f'font-weight:600;line-height:28px;">{title}</a>'
         f"{excerpt_block}"
+        f'<div style="margin-top:12px;"><a href="{redirect}" '
+        'style="color:#111111;text-decoration:none;font-size:14px;'
+        'font-weight:600;">Read article &rarr;</a></div>'
         "</td></tr>"
     )
 
 
-def _render_section(section: DigestSection) -> str:
-    """One section: heading + each article in a single-column table."""
+def _render_article_rows(
+    digest: DigestPublic,
+    *,
+    article_limit: int = _EMAIL_ARTICLE_LIMIT,
+    empty_message: str | None = None,
+) -> str:
     rows = "".join(
-        _render_article(article, section.reasons.get(article.id))
-        for article in section.articles
+        _render_article(article)
+        for article in _iter_email_articles(digest, limit=article_limit)
     )
+    if not rows and empty_message:
+        message = _escape(empty_message)
+        rows = (
+            '<tr><td style="padding:22px 0;color:#6F6A61;font-size:15px;'
+            f'line-height:23px;">{message}</td></tr>'
+        )
     return (
-        '<tr><td style="padding:28px 0 6px;">'
-        '<div style="font-size:11px;font-weight:700;letter-spacing:0.16em;'
-        'text-transform:uppercase;color:#64748b;">'
-        f"{_escape(section.title)}</div>"
-        "</td></tr>"
-        f'<tr><td><table role="presentation" cellpadding="0" cellspacing="0" '
-        f'style="width:100%;border-collapse:collapse;">{rows}</table></td></tr>'
+        '<table role="presentation" cellpadding="0" cellspacing="0" '
+        f'style="width:100%;border-collapse:collapse;">{rows}</table>'
     )
 
 
@@ -214,44 +236,73 @@ def _render_html(
     unsubscribe_url: str,
     settings_url: str,
     home_url: str,
+    article_limit: int = _EMAIL_ARTICLE_LIMIT,
+    empty_message: str | None = None,
 ) -> str:
     """Wrap the digest sections in an editorial email shell."""
-    greeting = (
-        f"Good morning, {_escape(full_name.split()[0])}."
-        if full_name and full_name.strip()
-        else "Good morning."
+    first_name = (
+        _escape(full_name.split()[0]) if full_name and full_name.strip() else None
     )
-    sections_html = "".join(_render_section(s) for s in digest.sections)
+    intro = (
+        f"Good morning, {first_name}. Here are the AI updates worth your "
+        "attention today."
+        if first_name
+        else "Here are the AI updates worth your attention today."
+    )
+    article_rows = _render_article_rows(
+        digest,
+        article_limit=article_limit,
+        empty_message=empty_message,
+    )
+    total_articles = sum(len(section.articles) for section in digest.sections)
+    hidden_count = max(total_articles - article_limit, 0)
+    continue_note = (
+        f'<p style="margin:18px 0 0;color:#6F6A61;font-size:14px;'
+        f'line-height:22px;">{hidden_count} more update'
+        f'{"s are" if hidden_count != 1 else " is"} waiting in AI Signal.</p>'
+        if hidden_count
+        else ""
+    )
     date_label = _escape(_format_date(digest.generated_at))
     return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Signal — daily digest</title>
+<title>AI Signal — Today&rsquo;s Signal</title>
 </head>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
-  <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#f8fafc;">
+<body style="margin:0;padding:0;background:#FAFAF8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111111;">
+  <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#FAFAF8;">
     <tr>
-      <td align="center" style="padding:32px 16px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;">
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background:#FFFDF8;border-radius:16px;border:1px solid #E6E0D8;">
           <tr>
-            <td style="padding:32px 32px 8px;">
-              <div style="font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;">AI Signal · {date_label}</div>
-              <h1 style="margin:14px 0 6px;font-family:Georgia,'Iowan Old Style',serif;font-size:28px;line-height:34px;color:#0f172a;">{greeting}</h1>
-              <p style="margin:0;color:#475569;font-size:15px;line-height:23px;">Today's most important AI updates, grouped by signal area.</p>
+            <td style="padding:36px 36px 10px;">
+              <div style="font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#6F6A61;">AI Signal</div>
+              <h1 style="margin:12px 0 8px;font-family:Georgia,'Iowan Old Style',serif;font-size:34px;line-height:40px;color:#111111;font-weight:500;">Today&rsquo;s Signal</h1>
+              <p style="margin:0;color:#6F6A61;font-size:15px;line-height:23px;">{date_label} · A calm briefing of the AI updates worth your attention.</p>
             </td>
           </tr>
-          <tr><td style="padding:0 32px 24px;">{sections_html}</td></tr>
           <tr>
-            <td style="padding:24px 32px 32px;border-top:1px solid #e2e8f0;background:#f8fafc;border-radius:0 0 12px 12px;">
-              <p style="margin:0 0 8px;font-size:13px;color:#64748b;line-height:20px;">You're receiving this because you opted into AI Signal's daily digest.</p>
-              <p style="margin:0;font-size:13px;line-height:20px;">
-                <a href="{home_url}" style="color:#0f172a;text-decoration:underline;">Open AI Signal</a>
+            <td style="padding:18px 36px 8px;">
+              <p style="margin:0;color:#111111;font-size:16px;line-height:26px;">{intro}</p>
+            </td>
+          </tr>
+          <tr><td style="padding:0 36px 28px;">{article_rows}{continue_note}</td></tr>
+          <tr>
+            <td align="center" style="padding:0 36px 36px;">
+              <a href="{home_url}" style="display:inline-block;background:#111111;color:#FFFFFF;text-decoration:none;border-radius:999px;padding:13px 22px;font-size:14px;font-weight:700;">Open AI Signal</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:26px 36px 34px;border-top:1px solid #E6E0D8;background:#FFFFFF;border-radius:0 0 16px 16px;">
+              <p style="margin:0 0 4px;font-size:14px;color:#111111;line-height:21px;font-weight:700;">AI Signal</p>
+              <p style="margin:0 0 14px;font-size:13px;color:#6F6A61;line-height:20px;">Find the signal in AI updates.</p>
+              <p style="margin:0 0 8px;font-size:12px;color:#6F6A61;line-height:19px;">You're receiving this because you opted into AI Signal's daily digest.</p>
+              <p style="margin:0;font-size:12px;line-height:19px;">
+                <a href="{settings_url}" style="color:#111111;text-decoration:underline;">Manage preferences</a>
                 &nbsp;·&nbsp;
-                <a href="{settings_url}" style="color:#0f172a;text-decoration:underline;">Manage preferences</a>
-                &nbsp;·&nbsp;
-                <a href="{unsubscribe_url}" style="color:#64748b;text-decoration:underline;">Unsubscribe</a>
+                <a href="{unsubscribe_url}" style="color:#6F6A61;text-decoration:underline;">Unsubscribe</a>
               </p>
             </td>
           </tr>
@@ -276,22 +327,37 @@ def _render_text(
     has a real text/plain part instead of an auto-generated one.
     """
     name_part = full_name.split()[0] if full_name and full_name.strip() else None
-    greeting = f"Good morning, {name_part}." if name_part else "Good morning."
+    intro = (
+        f"Good morning, {name_part}. Here are the AI updates worth your "
+        "attention today."
+        if name_part
+        else "Here are the AI updates worth your attention today."
+    )
     lines: list[str] = [
-        f"AI Signal — {_format_date(digest.generated_at)}",
+        "AI Signal",
+        f"Today’s Signal - {_format_date(digest.generated_at)}",
         "",
-        greeting,
-        "Today's most important AI updates, grouped by signal area.",
+        intro,
         "",
     ]
-    for section in digest.sections:
-        lines.append(section.title.upper())
-        for article in section.articles:
-            redirect = _article_redirect_url(article.id)
-            lines.append(f"- {article.title} ({article.source})")
-            lines.append(f"  {redirect}")
+    for article in _iter_email_articles(digest):
+        redirect = _article_redirect_url(article.id)
+        category = _format_category(article.category)
+        meta = f"{article.source} · {category}" if category else article.source
+        lines.append(article.title)
+        lines.append(meta)
+        if article.excerpt:
+            lines.append(article.excerpt)
+        lines.append(f"Read article: {redirect}")
+        lines.append("")
+    total_articles = sum(len(section.articles) for section in digest.sections)
+    hidden_count = max(total_articles - _EMAIL_ARTICLE_LIMIT, 0)
+    if hidden_count:
+        lines.append(f"{hidden_count} more updates are waiting in AI Signal.")
         lines.append("")
     lines.append(f"Open AI Signal: {home_url}")
+    lines.append("AI Signal")
+    lines.append("Find the signal in AI updates.")
     lines.append(f"Unsubscribe: {unsubscribe_url}")
     return "\n".join(lines)
 
@@ -301,6 +367,39 @@ def _render_text(
 
 def _has_content(digest: DigestPublic) -> bool:
     return any(section.articles for section in digest.sections)
+
+
+def _digest_email_urls(user: User) -> tuple[str, str, str]:
+    token = make_unsubscribe_token(user.id)
+    unsubscribe_url = _backend_url("/digest/unsubscribe", {"token": token})
+    settings_url = _frontend_url("/settings")
+    home_url = _frontend_url("/today-digest")
+    return unsubscribe_url, settings_url, home_url
+
+
+def render_digest_email_html(
+    *,
+    digest: DigestPublic,
+    user: User,
+    article_limit: int = _EMAIL_ARTICLE_LIMIT,
+    empty_message: str | None = None,
+) -> str:
+    """Render the same HTML body used by the real digest sender.
+
+    This intentionally stops before the transport layer: callers that need
+    preview HTML can reuse the production email shell without touching Resend.
+    """
+    unsubscribe_url, settings_url, home_url = _digest_email_urls(user)
+
+    return _render_html(
+        digest=digest,
+        full_name=user.full_name,
+        unsubscribe_url=unsubscribe_url,
+        settings_url=settings_url,
+        home_url=home_url,
+        article_limit=article_limit,
+        empty_message=empty_message,
+    )
 
 
 def send_digest_email(*, session: Session, user: User) -> ResendSendResult:
@@ -323,12 +422,8 @@ def send_digest_email(*, session: Session, user: User) -> ResendSendResult:
         )
         return ResendSendResult(ok=False, error="empty digest")
 
-    token = make_unsubscribe_token(user.id)
-    unsubscribe_url = _backend_url("/digest/unsubscribe", {"token": token})
-    settings_url = _frontend_url("/settings")
-    home_url = _frontend_url("/today-digest")
-
-    subject = f"Your AI Signal — {_format_date(digest.generated_at)}"
+    subject = f"Today’s Signal — {_format_date(digest.generated_at)}"
+    unsubscribe_url, settings_url, home_url = _digest_email_urls(user)
     html_body = _render_html(
         digest=digest,
         full_name=user.full_name,
@@ -343,11 +438,23 @@ def send_digest_email(*, session: Session, user: User) -> ResendSendResult:
         home_url=home_url,
     )
 
+    # Bulk traffic (digest) ships from a dedicated sender — typically
+    # ``digest@aisignal.now`` — so deliverability problems on the bulk
+    # stream don't bleed into the transactional reputation of the
+    # password-reset / account address. Falls back to the global
+    # transactional sender when only one identity is configured.
+    digest_from = (
+        str(settings.DIGEST_FROM_EMAIL)
+        if settings.DIGEST_FROM_EMAIL
+        else (str(settings.EMAILS_FROM_EMAIL) if settings.EMAILS_FROM_EMAIL else None)
+    )
+
     return send_email_via_resend(
         to=user.email,
         subject=subject,
         html=html_body,
         text=text_body,
+        from_email=digest_from,
         # One-click unsubscribe headers — Gmail/Yahoo bulk-sender
         # requirements. The mailto fallback uses the same token wrapped
         # in an email so users with non-HTTP-capable mail clients can
@@ -365,5 +472,6 @@ __all__ = [
     "ResendSendResult",
     "make_unsubscribe_token",
     "parse_unsubscribe_token",
+    "render_digest_email_html",
     "send_digest_email",
 ]

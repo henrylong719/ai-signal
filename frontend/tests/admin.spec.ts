@@ -202,4 +202,13 @@ test.describe('Admin page access control', () => {
 
     await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
   })
+
+  test('Superuser can open guest funnel analytics page', async ({ page }) => {
+    await logInUser(page, firstSuperuser, firstSuperuserPassword)
+
+    await page.goto('/admin/analytics')
+
+    await expect(page.getByRole('heading', { name: 'Guest funnel' })).toBeVisible()
+    await expect(page.getByText('Last 30 days').first()).toBeVisible()
+  })
 })

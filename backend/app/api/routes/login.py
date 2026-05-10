@@ -34,10 +34,10 @@ from app.crud.refresh_session import (
 from app.models import User
 from app.models.base import get_datetime_utc
 from app.schemas import Message, NewPassword, Token, UserPublic, UserUpdate
+from app.services.email import send_password_reset_email
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
-    send_email,
     verify_password_reset_token,
 )
 
@@ -108,7 +108,7 @@ def _parse_refresh_payload(payload: dict[str, Any]) -> tuple[uuid.UUID, uuid.UUI
         raise InvalidRefreshTokenError
 
 
-def _issue_session(response: Response, session: Session, user_id: uuid.UUID) -> str:
+def issue_session(response: Response, session: Session, user_id: uuid.UUID) -> str:
     """Mint access + refresh tokens, set all three auth cookies, return access token.
 
     Returning the access token lets the test suite continue using Bearer auth
@@ -540,7 +540,7 @@ def oauth_callback(
 
         redirect = RedirectResponse(_frontend_redirect("/"), status_code=303)
         _clear_oauth_state_cookie(redirect)
-        _issue_session(redirect, session, user.id)
+        issue_session(redirect, session, user.id)
         return redirect
     except (httpx.HTTPError, ValueError) as exc:
         session.rollback()
@@ -571,7 +571,7 @@ def login_access_token(
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
 
-    access_token = _issue_session(response, session, user.id)
+    access_token = issue_session(response, session, user.id)
     return Token(access_token=access_token)
 
 
@@ -708,23 +708,36 @@ def test_token(current_user: CurrentUser) -> Any:
 
 @router.post("/password-recovery/{email}")
 def recover_password(email: str, session: SessionDep) -> Message:
-    """
-    Password Recovery
+    """Send a password-reset email via Resend.
+
+    Always returns the same generic message — including when the
+    email isn't registered, when Resend rejects the send, or when
+    ``RESEND_API_KEY`` is missing — so the response can't be used
+    to enumerate which addresses have accounts. Send failures are
+    logged for ops; users see one consistent string either way.
     """
     user = crud.get_user_by_email(session=session, email=email)
 
-    # Always return the same response to prevent email enumeration attacks
-    # Only send email if user actually exists
     if user:
-        password_reset_token = generate_password_reset_token(email=email)
-        email_data = generate_reset_password_email(
-            email_to=user.email, email=email, token=password_reset_token
-        )
-        send_email(
-            email_to=user.email,
-            subject=email_data.subject,
-            html_content=email_data.html_content,
-        )
+        try:
+            password_reset_token = generate_password_reset_token(email=email)
+            result = send_password_reset_email(
+                email_to=user.email,
+                token=password_reset_token,
+                full_name=user.full_name,
+            )
+            if not result.ok:
+                # ``ok=False`` covers config gaps (missing API key,
+                # missing sender) and Resend errors. Log so an
+                # operator can spot deliverability issues without
+                # leaking the failure mode to the caller.
+                logger.warning(
+                    "Password recovery: Resend send failed for %s: %s",
+                    email,
+                    result.error,
+                )
+        except Exception:
+            logger.exception("Failed to send password recovery email to %s", email)
     return Message(
         message="If that email is registered, we sent a password recovery link"
     )
@@ -773,7 +786,10 @@ def recover_password_html_content(email: str, session: SessionDep) -> Any:
         )
     password_reset_token = generate_password_reset_token(email=email)
     email_data = generate_reset_password_email(
-        email_to=user.email, email=email, token=password_reset_token
+        email_to=user.email,
+        email=email,
+        token=password_reset_token,
+        full_name=user.full_name,
     )
 
     return HTMLResponse(

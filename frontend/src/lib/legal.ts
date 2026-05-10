@@ -2,11 +2,16 @@
 // pages and the "last updated" date stamped on policies. The mailbox
 // must remain reachable in production — bounce-back from this address
 // breaks every "Contact us" CTA across the app.
-export const CONTACT_EMAIL = 'hello@aisignal.now';
+//
+// TODO(privacy): If first-party anonymous guest funnel analytics (see
+// `frontend/src/lib/analytics.ts`) is rolled out broadly, update the Privacy
+// policy to describe retention, aggregates-only use, and absence of ads
+// or third-party trackers.
+export const CONTACT_EMAIL = 'hello@aisignal.now'
 // Pinned date the legal pages were last revised. Bump only when a
 // policy actually changes — drifting this on every commit would erode
 // the credibility of the "Last updated" line.
-export const LEGAL_LAST_UPDATED = 'May 9, 2026';
+export const LEGAL_LAST_UPDATED = 'May 9, 2026'
 
 export interface SupportLink {
   to:
@@ -16,8 +21,8 @@ export interface SupportLink {
     | '/terms'
     | '/cookies'
     | '/accessibility'
-    | '/contact';
-  label: string;
+    | '/contact'
+  label: string
 }
 
 // The order here matches the visual order of the support footer links
@@ -31,4 +36,4 @@ export const SUPPORT_LINKS: SupportLink[] = [
   { to: '/cookies', label: 'Cookies' },
   { to: '/accessibility', label: 'Accessibility' },
   { to: '/contact', label: 'Contact' },
-];
+]

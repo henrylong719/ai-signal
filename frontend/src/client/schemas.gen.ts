@@ -111,6 +111,66 @@ export const AdminArticlesPublicSchema = {
     title: 'AdminArticlesPublic'
 } as const;
 
+export const ArticleCleanupResponseSchema = {
+    properties: {
+        archived_count: {
+            type: 'integer',
+            title: 'Archived Count'
+        },
+        deleted_count: {
+            type: 'integer',
+            title: 'Deleted Count'
+        },
+        dry_run: {
+            type: 'boolean',
+            title: 'Dry Run'
+        },
+        archive_cutoff: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Archive Cutoff'
+        },
+        delete_cutoff: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Delete Cutoff'
+        },
+        keep_clicked_since: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Keep Clicked Since'
+        },
+        errors: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Errors'
+        }
+    },
+    type: 'object',
+    required: ['archived_count', 'deleted_count', 'dry_run', 'archive_cutoff', 'delete_cutoff', 'keep_clicked_since', 'errors'],
+    title: 'ArticleCleanupResponse'
+} as const;
+
 export const ArticlePublicSchema = {
     properties: {
         url: {
@@ -297,6 +357,44 @@ export const Body_login_login_access_tokenSchema = {
     type: 'object',
     required: ['username', 'password'],
     title: 'Body_login-login_access_token'
+} as const;
+
+export const CtaLocationRowSchema = {
+    properties: {
+        location: {
+            type: 'string',
+            title: 'Location'
+        },
+        clicks: {
+            type: 'integer',
+            title: 'Clicks'
+        },
+        completed_signups: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Completed Signups'
+        },
+        conversion_rate: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Conversion Rate'
+        }
+    },
+    type: 'object',
+    required: ['location', 'clicks'],
+    title: 'CtaLocationRow'
 } as const;
 
 export const DigestArticlePublicSchema = {
@@ -740,6 +838,246 @@ export const ForYouArticlesPublicSchema = {
     type: 'object',
     required: ['data', 'count', 'candidate_pool_cap'],
     title: 'ForYouArticlesPublic'
+} as const;
+
+export const FunnelCountsSchema = {
+    properties: {
+        guest_page_view: {
+            type: 'integer',
+            title: 'Guest Page View',
+            default: 0
+        },
+        guest_article_click: {
+            type: 'integer',
+            title: 'Guest Article Click',
+            default: 0
+        },
+        guest_source_click: {
+            type: 'integer',
+            title: 'Guest Source Click',
+            default: 0
+        },
+        guest_topic_click: {
+            type: 'integer',
+            title: 'Guest Topic Click',
+            default: 0
+        },
+        guest_signup_click: {
+            type: 'integer',
+            title: 'Guest Signup Click',
+            default: 0
+        },
+        guest_login_click: {
+            type: 'integer',
+            title: 'Guest Login Click',
+            default: 0
+        },
+        guest_signup_completed: {
+            type: 'integer',
+            title: 'Guest Signup Completed',
+            default: 0
+        }
+    },
+    type: 'object',
+    title: 'FunnelCounts',
+    description: 'Raw event counts inside the selected window.'
+} as const;
+
+export const FunnelRatesSchema = {
+    properties: {
+        article_click_rate: {
+            type: 'number',
+            title: 'Article Click Rate',
+            default: 0
+        },
+        signup_click_rate: {
+            type: 'number',
+            title: 'Signup Click Rate',
+            default: 0
+        },
+        signup_conversion_rate: {
+            type: 'number',
+            title: 'Signup Conversion Rate',
+            default: 0
+        }
+    },
+    type: 'object',
+    title: 'FunnelRates',
+    description: 'Derived conversion ratios. 0.0 when the denominator is zero.'
+} as const;
+
+export const GuestEventCreateSchema = {
+    properties: {
+        anonymous_id: {
+            type: 'string',
+            maxLength: 64,
+            minLength: 1,
+            title: 'Anonymous Id'
+        },
+        event_type: {
+            type: 'string',
+            enum: ['guest_page_view', 'guest_article_click', 'guest_source_click', 'guest_topic_click', 'guest_signup_click', 'guest_login_click', 'guest_signup_completed'],
+            title: 'Event Type'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 512
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        article_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Article Id'
+        },
+        source_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Source Id',
+            description: 'Logical source identifier. In AI Signal sources are keyed by their display name (see ``schemas.source.SOURCES``), so this accepts a string rather than a UUID.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Topic'
+        },
+        referrer: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1024
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Referrer'
+        },
+        user_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Id'
+        },
+        metadata: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Metadata'
+        }
+    },
+    type: 'object',
+    required: ['anonymous_id', 'event_type'],
+    title: 'GuestEventCreate',
+    description: `Payload for the public guest-event intake endpoint.
+
+Defined as a plain \`\`pydantic.BaseModel\`\` rather than \`\`SQLModel\`\`
+because SQLModel reserves the \`\`metadata\`\` attribute for SQLAlchemy's
+\`\`MetaData\`\` binding; a field called \`\`metadata\`\` on a SQLModel
+subclass is silently shadowed at instance-access time.`
+} as const;
+
+export const GuestFunnelResponseSchema = {
+    properties: {
+        range: {
+            type: 'string',
+            enum: ['7d', '30d', '90d', 'all'],
+            title: 'Range'
+        },
+        range_start: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Range Start'
+        },
+        range_end: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Range End'
+        },
+        counts: {
+            '$ref': '#/components/schemas/FunnelCounts'
+        },
+        rates: {
+            '$ref': '#/components/schemas/FunnelRates'
+        },
+        top_articles: {
+            items: {
+                '$ref': '#/components/schemas/TopArticleRow'
+            },
+            type: 'array',
+            title: 'Top Articles'
+        },
+        top_sources: {
+            items: {
+                '$ref': '#/components/schemas/TopSourceRow'
+            },
+            type: 'array',
+            title: 'Top Sources'
+        },
+        top_topics: {
+            items: {
+                '$ref': '#/components/schemas/TopTopicRow'
+            },
+            type: 'array',
+            title: 'Top Topics'
+        },
+        signup_cta_locations: {
+            items: {
+                '$ref': '#/components/schemas/CtaLocationRow'
+            },
+            type: 'array',
+            title: 'Signup Cta Locations'
+        }
+    },
+    type: 'object',
+    required: ['range', 'range_end', 'counts', 'rates', 'top_articles', 'top_sources', 'top_topics', 'signup_cta_locations'],
+    title: 'GuestFunnelResponse'
 } as const;
 
 export const HTTPValidationErrorSchema = {
@@ -1228,6 +1566,100 @@ export const TokenSchema = {
     type: 'object',
     required: ['access_token'],
     title: 'Token'
+} as const;
+
+export const TopArticleRowSchema = {
+    properties: {
+        article_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Article Id'
+        },
+        title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Title'
+        },
+        source_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Source Name'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        published_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Published At'
+        },
+        guest_clicks: {
+            type: 'integer',
+            title: 'Guest Clicks'
+        }
+    },
+    type: 'object',
+    required: ['article_id', 'guest_clicks'],
+    title: 'TopArticleRow'
+} as const;
+
+export const TopSourceRowSchema = {
+    properties: {
+        source_name: {
+            type: 'string',
+            title: 'Source Name'
+        },
+        guest_clicks: {
+            type: 'integer',
+            title: 'Guest Clicks'
+        }
+    },
+    type: 'object',
+    required: ['source_name', 'guest_clicks'],
+    title: 'TopSourceRow'
+} as const;
+
+export const TopTopicRowSchema = {
+    properties: {
+        topic: {
+            type: 'string',
+            title: 'Topic'
+        },
+        guest_clicks: {
+            type: 'integer',
+            title: 'Guest Clicks'
+        }
+    },
+    type: 'object',
+    required: ['topic', 'guest_clicks'],
+    title: 'TopTopicRow'
 } as const;
 
 export const UpdatePasswordSchema = {

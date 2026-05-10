@@ -280,10 +280,18 @@ def test_use_access_token(
 def test_recovery_password(
     client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
-    with (
-        patch("app.core.config.settings.SMTP_HOST", "smtp.example.com"),
-        patch("app.core.config.settings.SMTP_USER", "admin@example.com"),
-    ):
+    """Password recovery routes through the Resend-based email service.
+
+    No SMTP_* settings need to be configured anymore — the Resend
+    sender is patched here so no real HTTP call is made and the
+    route's call into ``send_password_reset_email`` is asserted.
+    """
+    from app.services.resend_email import ResendSendResult
+
+    with patch(
+        "app.api.routes.login.send_password_reset_email",
+        return_value=ResendSendResult(ok=True, message_id="mid"),
+    ) as mock_send:
         email = "test@example.com"
         r = client.post(
             f"{settings.API_V1_STR}/password-recovery/{email}",
@@ -293,21 +301,68 @@ def test_recovery_password(
         assert r.json() == {
             "message": "If that email is registered, we sent a password recovery link"
         }
+        assert mock_send.called
+        assert mock_send.call_args.kwargs["email_to"] == email
+        assert isinstance(mock_send.call_args.kwargs["token"], str)
 
 
 def test_recovery_password_user_not_exits(
     client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
-    email = "jVgQr@example.com"
-    r = client.post(
-        f"{settings.API_V1_STR}/password-recovery/{email}",
-        headers=normal_user_token_headers,
+    """Generic 200 response even when the email isn't registered."""
+    from app.services.resend_email import ResendSendResult
+
+    with patch(
+        "app.api.routes.login.send_password_reset_email",
+        return_value=ResendSendResult(ok=True, message_id="mid"),
+    ) as mock_send:
+        email = "jVgQr@example.com"
+        r = client.post(
+            f"{settings.API_V1_STR}/password-recovery/{email}",
+            headers=normal_user_token_headers,
+        )
+        # Should return 200 with generic message to prevent email enumeration
+        # attacks. No send is attempted because there's no matching user.
+        assert r.status_code == 200
+        assert r.json() == {
+            "message": "If that email is registered, we sent a password recovery link"
+        }
+        assert not mock_send.called
+
+
+def test_recovery_password_safe_when_resend_misconfigured(
+    client: TestClient,
+    normal_user_token_headers: dict[str, str],
+    db: Session,
+) -> None:
+    """Missing RESEND_API_KEY must not crash the recovery endpoint.
+
+    The send returns ``ok=False`` from the service layer; the route
+    logs and still returns the same generic message so the response
+    body cannot be used to fingerprint deliverability state.
+    """
+    from app.crud import create_user
+    from app.schemas import UserCreate
+
+    email = random_email()
+    create_user(
+        session=db,
+        user_create=UserCreate(
+            email=email,
+            password=random_lower_string(),
+            full_name="Recovery Misconfig",
+        ),
     )
-    # Should return 200 with generic message to prevent email enumeration attacks
-    assert r.status_code == 200
-    assert r.json() == {
-        "message": "If that email is registered, we sent a password recovery link"
-    }
+
+    with patch("app.core.config.settings.RESEND_API_KEY", None):
+        r = client.post(
+            f"{settings.API_V1_STR}/password-recovery/{email}",
+            headers=normal_user_token_headers,
+        )
+        assert r.status_code == 200
+        assert r.json() == {
+            "message": "If that email is registered, we sent a password recovery link"
+        }
 
 
 def test_reset_password(client: TestClient, db: Session) -> None:

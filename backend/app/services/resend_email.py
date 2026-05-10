@@ -1,16 +1,19 @@
-"""Resend (https://resend.com) email sender.
+"""Low-level Resend (https://resend.com) HTTP client.
 
-Thin wrapper around the Resend HTTP API. We use Resend only for the
-daily digest — password-reset transactional mail still flows through
-``app.utils.send_email`` via the existing SMTP config. Splitting the
-two avoids deliverability cross-contamination: digest is bulk, reset
-is transactional, and ESPs reputation-score them differently.
+All AI Signal app email — transactional (password reset, new account,
+test email) and bulk (daily digest) — is delivered through this
+single Resend wrapper. The unified service in ``app.services.email``
+is the high-level surface that callers should use; this module only
+exists to keep the HTTP/transport detail in one place so the rest of
+the app never builds a Resend payload by hand.
 
-Network calls are synchronous (httpx.Client) because the digest job
-is a single background loop processing one user at a time. Per-call
+Network calls are synchronous (``httpx.post``) because every caller
+today is either a request-thread (transactional) or a single
+background loop processing one user at a time (digest). Per-call
 timeout is short enough that a stuck Resend request can't hold the
-worker for long, and any individual failure is logged and the loop
-continues with the next user.
+caller for long, and any individual failure is logged and returned
+as a structured ``ResendSendResult`` so the caller can decide
+whether to abort, retry, or continue.
 """
 
 from __future__ import annotations
@@ -42,40 +45,72 @@ class ResendSendResult:
     error: str | None = None
 
 
+def _resolve_from_label(from_email: str | None) -> str | None:
+    """Build the ``From:`` header Resend wants.
+
+    Resolution order:
+
+      1. Explicit ``from_email`` arg (caller knows what it wants — used
+         by the digest sender to override with ``DIGEST_FROM_EMAIL``
+         so transactional and bulk traffic ride different senders).
+      2. ``EMAILS_FROM_EMAIL`` from settings (the default transactional
+         identity for the whole app).
+
+    Returns ``None`` when no sender is available so the caller can
+    surface a clear configuration error instead of letting Resend
+    bounce the request.
+    """
+    sender = from_email or settings.EMAILS_FROM_EMAIL
+    if not sender:
+        return None
+    sender = str(sender)
+    # Allow callers to pass a pre-formatted ``Name <addr>`` string
+    # (e.g. when a settings value already includes the display name).
+    if "<" in sender and ">" in sender:
+        return sender
+    if settings.EMAILS_FROM_NAME:
+        return f"{settings.EMAILS_FROM_NAME} <{sender}>"
+    return sender
+
+
 def send_email_via_resend(
     *,
     to: str,
     subject: str,
     html: str,
     text: str | None = None,
+    from_email: str | None = None,
     reply_to: str | None = None,
     headers: dict[str, str] | None = None,
 ) -> ResendSendResult:
     """Send a single email through Resend.
 
-    Returns a ``ResendSendResult`` rather than raising so the digest
-    loop can record per-user outcomes and keep going. The only thing
-    that aborts the loop is mis-configuration (no API key / no
-    sender), which we surface up front via ``digest_email_enabled``.
+    Returns a ``ResendSendResult`` rather than raising so callers
+    (the password-recovery handler, the digest send loop) can record
+    per-call outcomes and decide what to do without a try/except
+    wrapper. The only thing that aborts is mis-configuration (no API
+    key / no sender), which is surfaced via ``ok=False`` + ``error``.
 
-    ``headers`` is exposed primarily so the caller can attach
+    ``headers`` is exposed primarily so the digest sender can attach
     ``List-Unsubscribe`` and ``List-Unsubscribe-Post`` for one-click
     unsubscribe — Gmail/Yahoo bulk-sender requirements as of 2024.
     """
     if not settings.RESEND_API_KEY:
+        logger.warning(
+            "Resend send aborted: RESEND_API_KEY is not configured (to=%s)",
+            to,
+        )
         return ResendSendResult(ok=False, error="RESEND_API_KEY not configured")
 
-    from_email = settings.DIGEST_FROM_EMAIL or settings.EMAILS_FROM_EMAIL
-    if not from_email:
-        return ResendSendResult(
-            ok=False, error="DIGEST_FROM_EMAIL / EMAILS_FROM_EMAIL not configured"
+    from_label = _resolve_from_label(from_email)
+    if not from_label:
+        logger.warning(
+            "Resend send aborted: EMAILS_FROM_EMAIL is not configured (to=%s)",
+            to,
         )
-
-    from_label = (
-        f"{settings.EMAILS_FROM_NAME} <{from_email}>"
-        if settings.EMAILS_FROM_NAME
-        else str(from_email)
-    )
+        return ResendSendResult(
+            ok=False, error="EMAILS_FROM_EMAIL not configured"
+        )
 
     payload: dict[str, object] = {
         "from": from_label,
@@ -121,4 +156,5 @@ def send_email_via_resend(
     except ValueError:
         return ResendSendResult(ok=True, message_id=None)
     message_id = data.get("id") if isinstance(data, dict) else None
+    logger.info("Resend accepted email to=%s message_id=%s", to, message_id)
     return ResendSendResult(ok=True, message_id=message_id)

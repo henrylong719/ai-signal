@@ -165,30 +165,51 @@ class Settings(BaseSettings):
             path=self.POSTGRES_DB,
         )
 
-    SMTP_TLS: bool = True
-    SMTP_SSL: bool = False
-    SMTP_PORT: int = 587
-    SMTP_HOST: str | None = None
-    SMTP_USER: str | None = None
-    SMTP_PASSWORD: str | None = None
-    EMAILS_FROM_EMAIL: EmailStr | None = None
-    EMAILS_FROM_NAME: str | None = None
-
-    # Resend (https://resend.com) — provider for the daily digest email.
-    # Independent of SMTP_* (those still drive password-reset transactional
-    # mail via the existing app.utils.send_email path). When unset, the
-    # digest scheduler logs and skips rather than failing — useful for
-    # local development where you don't want to wire up an account.
+    # --- Email -------------------------------------------------------------
+    #
+    # All app email — password reset, account/system, and the daily
+    # digest — flows through Resend (https://resend.com). The unified
+    # service lives in ``app.services.email``; the low-level HTTP
+    # wrapper in ``app.services.resend_email``. Set ``RESEND_API_KEY``
+    # plus ``EMAILS_FROM_EMAIL`` and the ``aisignal.now`` domain (or
+    # whatever you've verified in Resend) to enable sending. When
+    # ``RESEND_API_KEY`` is unset, callers log a warning and skip
+    # sending instead of crashing — used in local dev to avoid having
+    # to wire up an account.
     RESEND_API_KEY: str | None = None
-    # Sender for digest emails. Should be a verified domain mailbox in
-    # Resend. Falls back to EMAILS_FROM_EMAIL so the same identity used
-    # for transactional mail can be reused for the digest if not split.
+    # Default ``From:`` for app email. Must be a verified domain
+    # mailbox in Resend. Recommended:
+    # ``EMAILS_FROM_EMAIL=hello@aisignal.now``.
+    EMAILS_FROM_EMAIL: EmailStr | None = None
+    # Display name in the ``From:`` header. Defaults to PROJECT_NAME
+    # via ``_set_default_emails_from`` below so a deploy that only
+    # sets EMAILS_FROM_EMAIL still gets a friendly sender label.
+    EMAILS_FROM_NAME: str | None = None
+    # Sender for the daily digest. When set, bulk traffic goes from a
+    # dedicated mailbox (e.g. ``digest@aisignal.now``) so a digest
+    # deliverability issue can't degrade transactional reputation.
+    # Falls back to ``EMAILS_FROM_EMAIL`` when unset, which is fine
+    # for small deployments that haven't split senders yet.
     DIGEST_FROM_EMAIL: EmailStr | None = None
     # Hour of the day (0–23, in the user's local timezone) the digest
     # is delivered. The hourly scheduler matches this against each
     # user's local clock; staying configurable lets us shift the
     # send window without a code change.
     DIGEST_SEND_LOCAL_HOUR: int = 8
+
+    # --- SMTP (legacy / deprecated) ---------------------------------------
+    #
+    # Pre-Resend, transactional mail went out over SMTP via the
+    # ``emails`` PyPI package. Kept around for backward compatibility
+    # so existing ``.env`` files with SMTP_* set don't break Settings
+    # validation. Nothing in the running app reads them; remove them
+    # from your environment whenever you next rotate it.
+    SMTP_TLS: bool = True
+    SMTP_SSL: bool = False
+    SMTP_PORT: int = 587
+    SMTP_HOST: str | None = None
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
 
     @model_validator(mode="after")
     def _set_default_emails_from(self) -> Self:
@@ -201,7 +222,13 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def emails_enabled(self) -> bool:
-        return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
+        """Whether transactional email is wired up.
+
+        True iff Resend credentials and a default sender are present.
+        Old SMTP_* values are intentionally ignored — they no longer
+        drive any send path.
+        """
+        return bool(self.RESEND_API_KEY and self.EMAILS_FROM_EMAIL)
 
     @computed_field  # type: ignore[prop-decorator]
     @property

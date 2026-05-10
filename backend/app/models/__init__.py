@@ -9,6 +9,11 @@ from app.models.article import (
     SavedArticle,
 )
 from app.models.feedback import UserFeedback
+from app.models.guest_event import (
+    GUEST_EVENT_TYPES,
+    GuestEvent,
+    GuestEventType,
+)
 from app.models.ingest_run import (
     INGEST_RUN_STATUSES,
     IngestRun,
@@ -50,6 +55,9 @@ from app.schemas import (
 __all__ = [
     "ARTICLE_EVENT_TYPES",
     "EMBEDDING_DIM",
+    "GUEST_EVENT_TYPES",
+    "GuestEvent",
+    "GuestEventType",
     "INGEST_RUN_STATUSES",
     "Article",
     "ArticleEvent",

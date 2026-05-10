@@ -10,6 +10,7 @@ import {
 import AuthModal from '@/components/Auth/AuthModal'
 import type { AuthMode } from '@/components/Auth/authTypes'
 import { SupportFooterLinks } from '@/components/Legal/SupportFooterLinks'
+import { trackGuestEvent } from '@/lib/analytics'
 import ArticleSource from './ArticleSource'
 import RecommendedTopics from './RecommendedTopics'
 import TodayDigest from './TodayDigest'
@@ -27,7 +28,13 @@ export function GuestLanding({
   const [authOpen, setAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState<AuthMode>('sign-up')
 
-  const openAuth = (mode: AuthMode) => {
+  // The hero hosts both auth CTAs. We tag every CTA click with its UI
+  // location so the admin funnel can answer "which CTA performs?".
+  const openAuth = (mode: AuthMode, location: string) => {
+    trackGuestEvent(
+      mode === 'sign-up' ? 'guest_signup_click' : 'guest_login_click',
+      { payload: { metadata: { location } } },
+    )
     setAuthMode(mode)
     setAuthOpen(true)
   }
@@ -89,7 +96,7 @@ export function GuestLanding({
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <button
                   type="button"
-                  onClick={() => openAuth('sign-up')}
+                  onClick={() => openAuth('sign-up', 'hero')}
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-foreground dark:text-background dark:hover:bg-foreground/92 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                 >
                   Create free account
@@ -106,7 +113,7 @@ export function GuestLanding({
                 </a>
                 <button
                   type="button"
-                  onClick={() => openAuth('sign-in')}
+                  onClick={() => openAuth('sign-in', 'hero')}
                   className="inline-flex h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:text-muted-foreground dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                 >
                   Sign in

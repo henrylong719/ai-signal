@@ -22,6 +22,16 @@ export type AdminArticlesPublic = {
     count: number;
 };
 
+export type ArticleCleanupResponse = {
+    archived_count: number;
+    deleted_count: number;
+    dry_run: boolean;
+    archive_cutoff: (string | null);
+    delete_cutoff: (string | null);
+    keep_clicked_since: (string | null);
+    errors: Array<(string)>;
+};
+
 export type ArticlePublic = {
     url: string;
     title: string;
@@ -60,6 +70,13 @@ export type Body_login_login_access_token = {
     scope?: string;
     client_id?: (string | null);
     client_secret?: (string | null);
+};
+
+export type CtaLocationRow = {
+    location: string;
+    clicks: number;
+    completed_signups?: (number | null);
+    conversion_rate?: (number | null);
 };
 
 /**
@@ -177,6 +194,69 @@ export type ForYouArticlesPublic = {
     candidate_pool_cap: number;
     weights?: (ScoringWeightsPublic | null);
 };
+
+/**
+ * Raw event counts inside the selected window.
+ */
+export type FunnelCounts = {
+    guest_page_view?: number;
+    guest_article_click?: number;
+    guest_source_click?: number;
+    guest_topic_click?: number;
+    guest_signup_click?: number;
+    guest_login_click?: number;
+    guest_signup_completed?: number;
+};
+
+/**
+ * Derived conversion ratios. 0.0 when the denominator is zero.
+ */
+export type FunnelRates = {
+    article_click_rate?: number;
+    signup_click_rate?: number;
+    signup_conversion_rate?: number;
+};
+
+/**
+ * Payload for the public guest-event intake endpoint.
+ *
+ * Defined as a plain ``pydantic.BaseModel`` rather than ``SQLModel``
+ * because SQLModel reserves the ``metadata`` attribute for SQLAlchemy's
+ * ``MetaData`` binding; a field called ``metadata`` on a SQLModel
+ * subclass is silently shadowed at instance-access time.
+ */
+export type GuestEventCreate = {
+    anonymous_id: string;
+    event_type: 'guest_page_view' | 'guest_article_click' | 'guest_source_click' | 'guest_topic_click' | 'guest_signup_click' | 'guest_login_click' | 'guest_signup_completed';
+    path?: (string | null);
+    article_id?: (string | null);
+    /**
+     * Logical source identifier. In AI Signal sources are keyed by their display name (see ``schemas.source.SOURCES``), so this accepts a string rather than a UUID.
+     */
+    source_id?: (string | null);
+    topic?: (string | null);
+    referrer?: (string | null);
+    user_id?: (string | null);
+    metadata?: ({
+    [key: string]: unknown;
+} | null);
+};
+
+export type event_type = 'guest_page_view' | 'guest_article_click' | 'guest_source_click' | 'guest_topic_click' | 'guest_signup_click' | 'guest_login_click' | 'guest_signup_completed';
+
+export type GuestFunnelResponse = {
+    range: '7d' | '30d' | '90d' | 'all';
+    range_start?: (string | null);
+    range_end: string;
+    counts: FunnelCounts;
+    rates: FunnelRates;
+    top_articles: Array<TopArticleRow>;
+    top_sources: Array<TopSourceRow>;
+    top_topics: Array<TopTopicRow>;
+    signup_cta_locations: Array<CtaLocationRow>;
+};
+
+export type range = '7d' | '30d' | '90d' | 'all';
 
 export type HTTPValidationError = {
     detail?: Array<ValidationError>;
@@ -335,6 +415,25 @@ export type Token = {
     token_type?: string;
 };
 
+export type TopArticleRow = {
+    article_id: string;
+    title?: (string | null);
+    source_name?: (string | null);
+    url?: (string | null);
+    published_at?: (string | null);
+    guest_clicks: number;
+};
+
+export type TopSourceRow = {
+    source_name: string;
+    guest_clicks: number;
+};
+
+export type TopTopicRow = {
+    topic: string;
+    guest_clicks: number;
+};
+
 export type UpdatePassword = {
     current_password: string;
     new_password: string;
@@ -425,6 +524,14 @@ export type ValidationError = {
 
 export type AdminReadAdminArticlesData = {
     accessToken?: (string | null);
+    /**
+     * Show only archived rows. Overrides include_archived.
+     */
+    archivedOnly?: boolean;
+    /**
+     * Include rows the cleanup pipeline has soft-archived. Default True so admins can inspect what's been hidden from end users.
+     */
+    includeArchived?: boolean;
     limit?: number;
     search?: (string | null);
     skip?: number;
@@ -448,6 +555,15 @@ export type AdminEmbedPendingArticlesData = {
 
 export type AdminEmbedPendingArticlesResponse = (BackfillResponse);
 
+export type AdminPreviewDigestHtmlData = {
+    accessToken?: (string | null);
+    limit?: number;
+    sample?: boolean;
+    userId?: (string | null);
+};
+
+export type AdminPreviewDigestHtmlResponse = (string);
+
 export type AdminReadIngestRunsData = {
     accessToken?: (string | null);
     limit?: number;
@@ -455,6 +571,20 @@ export type AdminReadIngestRunsData = {
 };
 
 export type AdminReadIngestRunsResponse = (IngestRunsPublic);
+
+export type AdminReadGuestFunnelData = {
+    accessToken?: (string | null);
+    range?: '7d' | '30d' | '90d' | 'all';
+    topLimit?: number;
+};
+
+export type AdminReadGuestFunnelResponse = (GuestFunnelResponse);
+
+export type AnalyticsRecordGuestEventData = {
+    requestBody: GuestEventCreate;
+};
+
+export type AnalyticsRecordGuestEventResponse = (Message);
 
 export type ArticlesReadArticlesData = {
     category?: ('agents' | 'rag' | 'models' | 'infrastructure' | 'engineering' | 'research' | 'applications' | 'business' | 'policy' | 'safety' | 'other' | null);
@@ -571,6 +701,16 @@ export type InterestsUpdateInterestsData = {
 };
 
 export type InterestsUpdateInterestsResponse = (UserInterestPublic);
+
+export type InternalTriggerArticleCleanupData = {
+    authorization?: (string | null);
+    /**
+     * Override request-level dry_run. Can force dry-run on a live deploy, but cannot downgrade an environment-level ARTICLE_CLEANUP_DRY_RUN=True default.
+     */
+    dryRun?: (boolean | null);
+};
+
+export type InternalTriggerArticleCleanupResponse = (ArticleCleanupResponse);
 
 export type LoginStartOauthLoginData = {
     provider: string;

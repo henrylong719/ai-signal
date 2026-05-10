@@ -2,11 +2,13 @@ from fastapi import APIRouter
 
 from app.api.routes import (
     admin_articles,
+    admin_email_preview,
     admin_embeddings,
     admin_ingest_runs,
     article,
     digest,
     feedback,
+    guest_analytics,
     ingest,
     interest,
     internal_cleanup,
@@ -28,10 +30,12 @@ api_router.include_router(interest.router)
 api_router.include_router(feedback.router)
 api_router.include_router(admin_articles.router)
 api_router.include_router(admin_embeddings.router)
+api_router.include_router(admin_email_preview.router)
 api_router.include_router(admin_ingest_runs.router)
 api_router.include_router(digest.router)
 api_router.include_router(subscription.router)
 api_router.include_router(internal_cleanup.router)
+api_router.include_router(guest_analytics.router)
 
 
 if settings.ENVIRONMENT == "local":

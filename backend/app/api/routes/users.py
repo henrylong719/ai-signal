@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlmodel import col, func, select
 
 from app import crud
@@ -10,6 +10,7 @@ from app.api.deps import (
     SessionDep,
     get_current_active_superuser,
 )
+from app.api.routes.login import issue_session
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models import OAuthAccount, User
@@ -28,7 +29,7 @@ from app.schemas import (
     UserUpdate,
     UserUpdateMe,
 )
-from app.utils import generate_new_account_email, send_email
+from app.services.email import send_new_account_email
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -71,13 +72,12 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
 
     user = crud.create_user(session=session, user_create=user_in)
     if settings.emails_enabled and user_in.email:
-        email_data = generate_new_account_email(
-            email_to=user_in.email, username=user_in.email, password=user_in.password
-        )
-        send_email(
+        # Resend errors are logged inside the service; we don't fail
+        # account creation just because the welcome email bounced.
+        send_new_account_email(
             email_to=user_in.email,
-            subject=email_data.subject,
-            html_content=email_data.html_content,
+            username=user_in.email,
+            password=user_in.password,
         )
     return user
 
@@ -234,9 +234,14 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
 
 
 @router.post("/signup", response_model=UserPublic)
-def register_user(session: SessionDep, user_in: UserRegister) -> Any:
+def register_user(
+    session: SessionDep, user_in: UserRegister, response: Response
+) -> Any:
     """
     Create new user without the need to be logged in.
+
+    Issues an auth session on success so a fresh signup lands the user
+    inside the app without a separate login round-trip.
     """
     user = crud.get_user_by_email(session=session, email=user_in.email)
     if user:
@@ -246,6 +251,7 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
         )
     user_create = UserCreate.model_validate(user_in)
     user = crud.create_user(session=session, user_create=user_create)
+    issue_session(response, session, user.id)
     return user
 
 

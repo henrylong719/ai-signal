@@ -227,7 +227,7 @@ const Header = () => {
           ) : (
             <>
               <LoggedOutAppearanceMenu />
-              <AuthModal />
+              <AuthModal trackLocation="header" />
             </>
           )}
         </div>

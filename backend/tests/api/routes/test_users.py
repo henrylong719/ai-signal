@@ -94,10 +94,22 @@ def test_get_user_oauth_accounts_preserves_provider_email_snapshot(
 def test_create_user_new_email(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
+    """Email goes through Resend now — no SMTP wiring required."""
+    from app.services.resend_email import ResendSendResult
+
     with (
-        patch("app.utils.send_email", return_value=None),
-        patch("app.core.config.settings.SMTP_HOST", "smtp.example.com"),
-        patch("app.core.config.settings.SMTP_USER", "admin@example.com"),
+        # Patch the unified service entrypoint so we don't make a real
+        # HTTP call to Resend in unit tests. ``settings.emails_enabled``
+        # gates the send branch — flip RESEND_API_KEY/EMAILS_FROM_EMAIL
+        # on for the duration of this test so the route attempts a send.
+        patch("app.core.config.settings.RESEND_API_KEY", "test-key"),
+        patch(
+            "app.core.config.settings.EMAILS_FROM_EMAIL", "hello@aisignal.now"
+        ),
+        patch(
+            "app.api.routes.users.send_new_account_email",
+            return_value=ResendSendResult(ok=True, message_id="mid"),
+        ) as mock_send,
     ):
         username = random_email()
         password = random_lower_string()
@@ -112,6 +124,10 @@ def test_create_user_new_email(
         user = crud.get_user_by_email(session=db, email=username)
         assert user
         assert user.email == created_user["email"]
+        assert mock_send.called
+        kwargs = mock_send.call_args.kwargs
+        assert kwargs["email_to"] == username
+        assert kwargs["username"] == username
 
 
 def test_get_existing_user_as_superuser(

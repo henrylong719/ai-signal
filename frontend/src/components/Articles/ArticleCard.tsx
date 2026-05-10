@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { isLoggedIn } from '@/hooks/useAuth'
+import { trackGuestEvent } from '@/lib/analytics'
 import { redirectHref } from '@/lib/article-urls'
 import { capitalize, cn } from '@/lib/utils'
 import { Badge } from '../ui/badge'
@@ -64,6 +65,21 @@ export function ArticleCard({
   const loggedIn = isLoggedIn()
   const showActions = !!onBookmark || !!onDismiss
 
+  // Guest funnel: ``trackGuestEvent`` is a no-op for signed-in users,
+  // so we can call it unconditionally on every article-card click and
+  // only logged-out visitors will produce events.
+  const handleGuestArticleClick = () => {
+    trackGuestEvent('guest_article_click', {
+      payload: { article_id: article.id, source_id: article.source },
+    })
+  }
+
+  const handleGuestSourceClick = () => {
+    trackGuestEvent('guest_source_click', {
+      payload: { source_id: article.source },
+    })
+  }
+
   return (
     <article
       className={cn(
@@ -83,6 +99,7 @@ export function ArticleCard({
               key={article.source}
               to="/article-sources/$s"
               params={{ s: article.source }}
+              onClick={handleGuestSourceClick}
             >
               <span className="truncate text-slate-900 hover:text-slate-950 dark:text-foreground/88 dark:hover:text-foreground">
                 {article.source}
@@ -134,6 +151,7 @@ export function ArticleCard({
                         <AuthModal
                           title="Sign in to save articles"
                           description="Sign in to save articles, follow trusted sources, and tune your feed."
+                          trackLocation="article_gate"
                           trigger={
                             <button
                               type="button"
@@ -179,6 +197,7 @@ export function ArticleCard({
               href={href}
               target="_blank"
               rel="noreferrer"
+              onClick={handleGuestArticleClick}
               className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-4 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
             >
               <div>
@@ -226,6 +245,7 @@ export function ArticleCard({
                 href={href}
                 target="_blank"
                 rel="noreferrer"
+                onClick={handleGuestArticleClick}
                 className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-4 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
               >
                 <img

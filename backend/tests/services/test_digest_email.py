@@ -9,7 +9,7 @@ escaping or template wiring shows up here.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import pytest
 from sqlmodel import Session
@@ -18,6 +18,7 @@ from app import crud
 from app.core.config import settings
 from app.models import User
 from app.schemas import ArticleCreate, UserCreate
+from app.schemas.source import Category
 from app.services import digest_email, digest_scheduler, resend_email
 from app.services.digest_email import (
     make_unsubscribe_token,
@@ -30,7 +31,6 @@ from app.services.digest_scheduler import (
     should_send_now,
 )
 from app.services.resend_email import ResendSendResult
-
 
 # --- Helpers ----------------------------------------------------------------
 
@@ -59,15 +59,22 @@ def _make_user(
     return user
 
 
-def _seed_article(db: Session, source: str = "Anthropic") -> uuid.UUID:
+def _seed_article(
+    db: Session,
+    *,
+    source: str = "Anthropic",
+    title: str | None = None,
+    category: Category = "models",
+    excerpt: str | None = "A short excerpt.",
+) -> uuid.UUID:
     article = crud.create_article(
         session=db,
         article_in=ArticleCreate(
             url=f"https://example.com/{uuid.uuid4()}",
-            title=f"Article {uuid.uuid4()}",
+            title=title or f"Article {uuid.uuid4()}",
             source=source,
-            category="models",
-            excerpt="A short excerpt.",
+            category=category,
+            excerpt=excerpt,
             published_at=datetime.now(timezone.utc),
             tags=["test"],
         ),
@@ -213,14 +220,23 @@ def test_send_digest_email_sends_when_articles_exist(
 ) -> None:
     """Happy path: with content the renderer ships HTML+text+headers."""
     user = _make_user(db)
-    for _ in range(3):
-        _seed_article(db)
+    _seed_article(
+        db,
+        source="OpenAI",
+        title="OpenAI releases new model updates",
+        category="models",
+    )
+    _seed_article(db, source="Anthropic", title="Anthropic publishes safety notes")
+    _seed_article(db, source="Google DeepMind", title="DeepMind shares research")
 
     monkeypatch.setattr(
         settings, "RESEND_API_KEY", "test-key", raising=False
     )
     monkeypatch.setattr(
         settings, "DIGEST_FROM_EMAIL", "digest@example.com", raising=False
+    )
+    monkeypatch.setattr(
+        settings, "FRONTEND_HOST", "https://app.example.com", raising=False
     )
 
     captured: dict = {}
@@ -235,7 +251,16 @@ def test_send_digest_email_sends_when_articles_exist(
     assert result.ok is True
     assert result.message_id == "mid-123"
     assert captured["to"] == user.email
-    assert "AI Signal" in captured["subject"]
+    assert captured["from_email"] == "digest@example.com"
+    assert "Today’s Signal" in captured["subject"]
+    assert "AI Signal" in captured["html"]
+    assert "Today&rsquo;s Signal" in captured["html"]
+    assert "OpenAI releases new model updates" in captured["html"]
+    assert "OpenAI" in captured["html"]
+    assert "Models" in captured["html"]
+    assert "Read article" in captured["html"]
+    assert "https://app.example.com/today-digest" in captured["html"]
+    assert "/api/v1/articles/" in captured["html"]
     # Token-bearing unsubscribe link surfaces in both HTML and the
     # List-Unsubscribe header.
     assert "/digest/unsubscribe?token=" in captured["html"]
@@ -243,6 +268,10 @@ def test_send_digest_email_sends_when_articles_exist(
     assert "List-Unsubscribe-Post" in captured["headers"]
     # Text fallback and HTML both populated.
     assert captured["text"]
+    assert "Today’s Signal" in captured["text"]
+    assert "OpenAI releases new model updates" in captured["text"]
+    assert "OpenAI" in captured["text"]
+    assert "Open AI Signal: https://app.example.com/today-digest" in captured["text"]
     assert "<html" in captured["html"].lower()
 
 
@@ -293,7 +322,6 @@ def test_send_digest_email_escapes_user_content(
 
 
 def test_run_digest_send_no_op_without_credentials(
-    db: Session,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(settings, "RESEND_API_KEY", None, raising=False)

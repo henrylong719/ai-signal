@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic.networks import EmailStr
 
 from app.api.deps import get_current_active_superuser
 from app.schemas import Message
-from app.utils import generate_test_email, send_email
+from app.services.email import send_test_email
 
 router = APIRouter(prefix="/utils", tags=["utils"])
 
@@ -14,15 +14,20 @@ router = APIRouter(prefix="/utils", tags=["utils"])
     status_code=201,
 )
 def test_email(email_to: EmailStr) -> Message:
+    """Send a test email via Resend.
+
+    Used by operators to confirm Resend credentials and the
+    ``EMAILS_FROM_EMAIL`` sender are wired up correctly. Surfaces
+    the Resend error string in the 502 detail so a misconfigured
+    deploy is debuggable from a single API call instead of having
+    to grep logs.
     """
-    Test emails.
-    """
-    email_data = generate_test_email(email_to=email_to)
-    send_email(
-        email_to=email_to,
-        subject=email_data.subject,
-        html_content=email_data.html_content,
-    )
+    result = send_test_email(email_to=email_to)
+    if not result.ok:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Resend rejected the test email: {result.error}",
+        )
     return Message(message="Test email sent")
 
 

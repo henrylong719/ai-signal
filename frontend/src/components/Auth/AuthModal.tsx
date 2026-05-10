@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import useAuth from '@/hooks/useAuth'
+import { trackGuestEvent } from '@/lib/analytics'
 
 interface AuthModalProps {
   description?: string
@@ -22,6 +23,15 @@ interface AuthModalProps {
   open?: boolean
   title?: string
   trigger?: ReactNode
+  /**
+   * Optional UI location string that gets attached as
+   * ``metadata.location`` on the guest funnel event fired when the
+   * modal opens. When set, the modal records ``guest_signup_click`` or
+   * ``guest_login_click`` (based on ``initialMode``) the first time it
+   * transitions to open. Set undefined to opt out — callers that prefer
+   * to instrument their own trigger button do so manually.
+   */
+  trackLocation?: string
 }
 
 function AuthModal({
@@ -31,6 +41,7 @@ function AuthModal({
   open,
   title,
   trigger,
+  trackLocation,
 }: AuthModalProps) {
   const { user } = useAuth()
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
@@ -50,12 +61,22 @@ function AuthModal({
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
+      // Fire one funnel event on the open transition. Closing the modal
+      // never produces an event — it's not a meaningful product action.
+      if (nextOpen && !isOpen && trackLocation) {
+        trackGuestEvent(
+          initialMode === 'sign-up'
+            ? 'guest_signup_click'
+            : 'guest_login_click',
+          { payload: { metadata: { location: trackLocation } } },
+        )
+      }
       if (open === undefined) {
         setUncontrolledOpen(nextOpen)
       }
       onOpenChange?.(nextOpen)
     },
-    [onOpenChange, open],
+    [initialMode, isOpen, onOpenChange, open, trackLocation],
   )
 
   useEffect(() => {

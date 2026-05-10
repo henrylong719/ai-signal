@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AdminReadAdminArticlesData, AdminReadAdminArticlesResponse, AdminDeleteAdminArticleData, AdminDeleteAdminArticleResponse, AdminEmbedPendingArticlesData, AdminEmbedPendingArticlesResponse, AdminReadIngestRunsData, AdminReadIngestRunsResponse, ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadForYouData, ArticlesReadForYouResponse, ArticlesReadFollowingData, ArticlesReadFollowingResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, DigestReadTodayDigestData, DigestReadTodayDigestResponse, FeedbackSubmitFeedbackData, FeedbackSubmitFeedbackResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, LoginStartOauthLoginData, LoginStartOauthLoginResponse, LoginOauthCallbackData, LoginOauthCallbackResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutData, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SubscriptionsCreateSubscriptionData, SubscriptionsCreateSubscriptionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersCompleteOnboardingData, UsersCompleteOnboardingResponse, UsersUpdateDigestPreferencesData, UsersUpdateDigestPreferencesResponse, UsersReadUserOauthAccountsData, UsersReadUserOauthAccountsResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AdminReadAdminArticlesData, AdminReadAdminArticlesResponse, AdminDeleteAdminArticleData, AdminDeleteAdminArticleResponse, AdminEmbedPendingArticlesData, AdminEmbedPendingArticlesResponse, AdminPreviewDigestHtmlData, AdminPreviewDigestHtmlResponse, AdminReadIngestRunsData, AdminReadIngestRunsResponse, AdminReadGuestFunnelData, AdminReadGuestFunnelResponse, AnalyticsRecordGuestEventData, AnalyticsRecordGuestEventResponse, ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadForYouData, ArticlesReadForYouResponse, ArticlesReadFollowingData, ArticlesReadFollowingResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, DigestReadTodayDigestData, DigestReadTodayDigestResponse, FeedbackSubmitFeedbackData, FeedbackSubmitFeedbackResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, InternalTriggerArticleCleanupData, InternalTriggerArticleCleanupResponse, LoginStartOauthLoginData, LoginStartOauthLoginResponse, LoginOauthCallbackData, LoginOauthCallbackResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutData, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SubscriptionsCreateSubscriptionData, SubscriptionsCreateSubscriptionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersCompleteOnboardingData, UsersCompleteOnboardingResponse, UsersUpdateDigestPreferencesData, UsersUpdateDigestPreferencesResponse, UsersReadUserOauthAccountsData, UsersReadUserOauthAccountsResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class AdminService {
     /**
@@ -14,6 +14,8 @@ export class AdminService {
      * @param data.source
      * @param data.skip
      * @param data.limit
+     * @param data.includeArchived Include rows the cleanup pipeline has soft-archived. Default True so admins can inspect what's been hidden from end users.
+     * @param data.archivedOnly Show only archived rows. Overrides include_archived.
      * @param data.accessToken
      * @returns AdminArticlesPublic Successful Response
      * @throws ApiError
@@ -29,7 +31,9 @@ export class AdminService {
                 search: data.search,
                 source: data.source,
                 skip: data.skip,
-                limit: data.limit
+                limit: data.limit,
+                include_archived: data.includeArchived,
+                archived_only: data.archivedOnly
             },
             errors: {
                 422: 'Validation Error'
@@ -99,6 +103,35 @@ export class AdminService {
     }
     
     /**
+     * Preview Digest Html
+     * Render the Today’s Signal digest HTML without sending email.
+     * @param data The data for the request.
+     * @param data.limit
+     * @param data.userId
+     * @param data.sample
+     * @param data.accessToken
+     * @returns string Successful Response
+     * @throws ApiError
+     */
+    public static previewDigestHtml(data: AdminPreviewDigestHtmlData = {}): CancelablePromise<AdminPreviewDigestHtmlResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/admin/email-preview/digest-html',
+            cookies: {
+                access_token: data.accessToken
+            },
+            query: {
+                limit: data.limit,
+                user_id: data.userId,
+                sample: data.sample
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
      * Read Ingest Runs
      * List recent ingestion runs, most recent first.
      *
@@ -123,6 +156,60 @@ export class AdminService {
                 limit: data.limit,
                 status: data.status
             },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Guest Funnel
+     * Aggregate the anonymous funnel for the admin dashboard.
+     * @param data The data for the request.
+     * @param data.range
+     * @param data.topLimit
+     * @param data.accessToken
+     * @returns GuestFunnelResponse Successful Response
+     * @throws ApiError
+     */
+    public static readGuestFunnel(data: AdminReadGuestFunnelData = {}): CancelablePromise<AdminReadGuestFunnelResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/admin/analytics/guest-funnel',
+            cookies: {
+                access_token: data.accessToken
+            },
+            query: {
+                range: data.range,
+                top_limit: data.topLimit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class AnalyticsService {
+    /**
+     * Record Guest Event
+     * Record a single anonymous funnel event.
+     *
+     * Returns 202 even when the underlying insert fails: the client treats
+     * analytics as best-effort and we don't want a transient DB hiccup to
+     * surface as a noisy error in the SPA console (the network log already
+     * shows the failure for operators inspecting traffic).
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static recordGuestEvent(data: AnalyticsRecordGuestEventData): CancelablePromise<AnalyticsRecordGuestEventResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/analytics/guest-event',
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }
@@ -573,6 +660,38 @@ export class InterestsService {
     }
 }
 
+export class InternalService {
+    /**
+     * Trigger Article Cleanup
+     * Run the cleanup pipeline once and return a JSON summary.
+     *
+     * Intended for external cron triggers. The handler delegates to the
+     * same ``run_article_cleanup`` used by the manual script and the
+     * in-process scheduled job, so all three paths produce identical
+     * behavior.
+     * @param data The data for the request.
+     * @param data.dryRun Override request-level dry_run. Can force dry-run on a live deploy, but cannot downgrade an environment-level ARTICLE_CLEANUP_DRY_RUN=True default.
+     * @param data.authorization
+     * @returns ArticleCleanupResponse Successful Response
+     * @throws ApiError
+     */
+    public static triggerArticleCleanup(data: InternalTriggerArticleCleanupData = {}): CancelablePromise<InternalTriggerArticleCleanupResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/internal/article-cleanup',
+            headers: {
+                authorization: data.authorization
+            },
+            query: {
+                dry_run: data.dryRun
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
 export class LoginService {
     /**
      * Start Oauth Login
@@ -720,7 +839,13 @@ export class LoginService {
     
     /**
      * Recover Password
-     * Password Recovery
+     * Send a password-reset email via Resend.
+     *
+     * Always returns the same generic message — including when the
+     * email isn't registered, when Resend rejects the send, or when
+     * ``RESEND_API_KEY`` is missing — so the response can't be used
+     * to enumerate which addresses have accounts. Send failures are
+     * logged for ops; users see one consistent string either way.
      * @param data The data for the request.
      * @param data.email
      * @returns Message Successful Response
@@ -1058,6 +1183,9 @@ export class UsersService {
     /**
      * Register User
      * Create new user without the need to be logged in.
+     *
+     * Issues an auth session on success so a fresh signup lands the user
+     * inside the app without a separate login round-trip.
      * @param data The data for the request.
      * @param data.requestBody
      * @returns UserPublic Successful Response
@@ -1157,7 +1285,13 @@ export class UsersService {
 export class UtilsService {
     /**
      * Test Email
-     * Test emails.
+     * Send a test email via Resend.
+     *
+     * Used by operators to confirm Resend credentials and the
+     * ``EMAILS_FROM_EMAIL`` sender are wired up correctly. Surfaces
+     * the Resend error string in the 502 detail so a misconfigured
+     * deploy is debuggable from a single API call instead of having
+     * to grep logs.
      * @param data The data for the request.
      * @param data.emailTo
      * @param data.accessToken

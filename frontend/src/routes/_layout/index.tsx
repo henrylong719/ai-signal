@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { LibraryIcon, SlidersHorizontalIcon } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 import { ArticleList } from '@/components/Articles/ArticleList'
 import type { RecommenderDebugPayload } from '@/components/Articles/RecommenderDebugPanel'
@@ -13,6 +13,7 @@ import useAuth from '@/hooks/useAuth'
 import { useFollowingFeed } from '@/hooks/useFollowingFeed'
 import { useForYouFeed } from '@/hooks/useForYouFeed'
 import { useInterests } from '@/hooks/useInterests'
+import { trackGuestEvent } from '@/lib/analytics'
 import { buildPageMeta } from '@/lib/meta'
 
 // `?debug=1` opts a superuser into the recommender-debug panel. Accepts
@@ -25,8 +26,10 @@ const searchSchema = z.object({
   debug: z
     .union([z.boolean(), z.string()])
     .optional()
-    .transform((v) => v === true || v === '1' || v === 'true' || v === '')
-    .catch(false),
+    .transform((v) =>
+      v === true || v === '1' || v === 'true' || v === '' ? true : undefined,
+    )
+    .catch(undefined),
 })
 
 export const Route = createFileRoute('/_layout/')({
@@ -60,6 +63,13 @@ function Dashboard() {
   const { debug: debugParam } = Route.useSearch()
   const { user } = useAuth()
   const isAuthed = !!user
+
+  // Guest funnel: record one page view per home-page mount for
+  // logged-out visitors. ``trackGuestEvent`` is a no-op when logged in,
+  // so the effect is safe to run unconditionally.
+  useEffect(() => {
+    trackGuestEvent('guest_page_view')
+  }, [])
   const visibleTabs = useMemo(
     () => ALL_TABS.filter((tab) => !tab.authOnly || isAuthed),
     [isAuthed],

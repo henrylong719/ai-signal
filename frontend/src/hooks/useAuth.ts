@@ -8,6 +8,7 @@ import {
   type UserRegister,
   UsersService,
 } from '@/client'
+import { trackGuestEvent } from '@/lib/analytics'
 import { clearLoginState, isLoggedIn } from '@/lib/auth-state'
 import { handleError } from '@/utils'
 import useCustomToast from './useCustomToast'
@@ -33,18 +34,6 @@ const useAuth = () => {
     enabled: isLoggedIn(),
     staleTime: CURRENT_USER_STALE_TIME_MS,
     gcTime: CURRENT_USER_GC_TIME_MS,
-  })
-
-  const signUpMutation = useMutation({
-    mutationFn: (data: UserRegister) =>
-      UsersService.registerUser({ requestBody: data }),
-    onSuccess: () => {
-      navigate({ to: '/login' })
-    },
-    onError: handleError.bind(showErrorToast),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-    },
   })
 
   // Login no longer reads the response body — the access cookie is set
@@ -81,6 +70,31 @@ const useAuth = () => {
       }
     },
     onError: handleError.bind(showErrorToast),
+  })
+
+  // Backend issues a session on successful signup (sets all three auth
+  // cookies via Set-Cookie), so the response itself logs the user in.
+  // We just need to seed the currentUser cache and navigate.
+  const signUpMutation = useMutation({
+    mutationFn: (data: UserRegister) =>
+      UsersService.registerUser({ requestBody: data }),
+    onSuccess: (user) => {
+      // Guest funnel: a successful signup is the conversion event. We
+      // pass ``forceWhenLoggedIn`` because by the time React re-renders,
+      // ``isLoggedIn()`` may already return true (the marker cookie is
+      // set by the backend on signup). Failures here never block the
+      // post-signup navigate.
+      trackGuestEvent('guest_signup_completed', {
+        forceWhenLoggedIn: true,
+        payload: { user_id: user.id },
+      })
+      queryClient.setQueryData(['currentUser'], user)
+      navigate({ to: '/' })
+    },
+    onError: handleError.bind(showErrorToast),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
   })
 
   // Logout calls the server endpoint to clear all three auth cookies.

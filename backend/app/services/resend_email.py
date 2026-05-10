@@ -108,9 +108,7 @@ def send_email_via_resend(
             "Resend send aborted: EMAILS_FROM_EMAIL is not configured (to=%s)",
             to,
         )
-        return ResendSendResult(
-            ok=False, error="EMAILS_FROM_EMAIL not configured"
-        )
+        return ResendSendResult(ok=False, error="EMAILS_FROM_EMAIL not configured")
 
     payload: dict[str, object] = {
         "from": from_label,

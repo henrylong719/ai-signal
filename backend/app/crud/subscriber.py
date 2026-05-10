@@ -6,9 +6,7 @@ from app.models.base import get_datetime_utc
 from app.models.subscriber import DigestSubscriber
 
 
-def get_subscriber_by_email(
-    *, session: Session, email: str
-) -> DigestSubscriber | None:
+def get_subscriber_by_email(*, session: Session, email: str) -> DigestSubscriber | None:
     statement = select(DigestSubscriber).where(DigestSubscriber.email == email)
     return session.exec(statement).first()
 

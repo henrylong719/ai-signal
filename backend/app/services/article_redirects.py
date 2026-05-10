@@ -136,8 +136,7 @@ def resolve_redirect_url(article: Any) -> str:
             return _NO_PRIORS_FALLBACK_URL
         if _is_no_priors_raw_audio_url(article.url):
             return (
-                _no_priors_apple_episode_url(article.title)
-                or _NO_PRIORS_FALLBACK_URL
+                _no_priors_apple_episode_url(article.title) or _NO_PRIORS_FALLBACK_URL
             )
     # ``article`` is ``Any`` so we can accept either the SQLModel Article
     # row or a SimpleNamespace from tests; ``.url`` on either is a str.

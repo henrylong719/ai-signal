@@ -13,6 +13,7 @@ levels are exercised:
 
 from __future__ import annotations
 
+import re
 from unittest.mock import patch
 
 import httpx
@@ -209,7 +210,10 @@ def test_send_password_reset_email_uses_frontend_host(
     assert captured["subject"] == "Reset your AI Signal password"
     assert "AI Signal" in captured["html"]
     assert "Reset password" in captured["html"]
-    assert "This link will expire in 48 hours." in captured["html"]
+    # MJML/prettier inserts arbitrary line wraps inside paragraphs, so
+    # compare against whitespace-collapsed HTML rather than the literal.
+    normalized_html = re.sub(r"\s+", " ", captured["html"])
+    assert "This link will expire in 48 hours." in normalized_html
     assert "Hi," in captured["html"]
     assert "Hi user@example.com," not in captured["html"]
     assert "This password will expire" not in captured["html"]

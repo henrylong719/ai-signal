@@ -1,18 +1,18 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CalendarDaysIcon, CheckIcon, ClockIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { CalendarDaysIcon, CheckIcon, ClockIcon } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
-import { type DigestPreferencesUpdate, UsersService } from '@/client';
-import { LoadingButton } from '@/components/ui/loading-button';
-import useAuth from '@/hooks/useAuth';
-import useCustomToast from '@/hooks/useCustomToast';
-import { cn } from '@/lib/utils';
+import { type DigestPreferencesUpdate, UsersService } from '@/client'
+import { LoadingButton } from '@/components/ui/loading-button'
+import useAuth from '@/hooks/useAuth'
+import useCustomToast from '@/hooks/useCustomToast'
+import { cn } from '@/lib/utils'
 
 function detectTimezone(): string | null {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || null
   } catch {
-    return null;
+    return null
   }
 }
 
@@ -29,47 +29,47 @@ function detectTimezone(): string | null {
  * matches Substack/Medium etiquette for newsletter prefs.
  */
 const DigestPreferences = () => {
-  const queryClient = useQueryClient();
-  const { showSuccessToast, showErrorToast } = useCustomToast();
-  const { user } = useAuth();
+  const queryClient = useQueryClient()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const { user } = useAuth()
 
-  const detectedZone = useMemo(() => detectTimezone(), []);
-  const initialEnabled = user?.daily_digest_enabled ?? false;
-  const [enabled, setEnabled] = useState(initialEnabled);
+  const detectedZone = useMemo(() => detectTimezone(), [])
+  const initialEnabled = user?.daily_digest_enabled ?? false
+  const [enabled, setEnabled] = useState(initialEnabled)
 
   // The browser's resolvedOptions().timeZone is the source of truth for
   // "where the user is now"; we send it on save so the scheduler fires
   // at the user's local 6am. If the cached value already matches we
   // skip sending it to keep the request payload obvious.
   const timezoneToSend =
-    detectedZone && detectedZone !== user?.timezone ? detectedZone : null;
+    detectedZone && detectedZone !== user?.timezone ? detectedZone : null
 
   const mutation = useMutation({
     mutationFn: (body: DigestPreferencesUpdate) =>
       UsersService.updateDigestPreferences({ requestBody: body }),
     onSuccess: (data) => {
-      queryClient.setQueryData(['currentUser'], data);
+      queryClient.setQueryData(['currentUser'], data)
       showSuccessToast(
         data.daily_digest_enabled
           ? 'Daily digest is on. See you at 8 am.'
           : 'Daily digest is off.',
-      );
+      )
     },
     onError: () => {
-      showErrorToast('Could not update your digest preferences.');
+      showErrorToast('Could not update your digest preferences.')
     },
-  });
+  })
 
-  const dirty = enabled !== initialEnabled;
+  const dirty = enabled !== initialEnabled
 
   const handleSave = () => {
     mutation.mutate({
       daily_digest_enabled: enabled,
       timezone: timezoneToSend,
-    });
-  };
+    })
+  }
 
-  const displayedZone = user?.timezone ?? detectedZone ?? 'UTC';
+  const displayedZone = user?.timezone ?? detectedZone ?? 'UTC'
 
   return (
     <div className="space-y-4">
@@ -154,7 +154,7 @@ const DigestPreferences = () => {
         </LoadingButton>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default DigestPreferences;
+export default DigestPreferences

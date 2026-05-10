@@ -149,7 +149,9 @@ def _render_page(
             f'<a class="btn btn-secondary" href="{home_url}">Open AI Signal</a>'
         )
     else:
-        actions = f'<a class="btn btn-secondary" href="{home_url}">Back to AI Signal</a>'
+        actions = (
+            f'<a class="btn btn-secondary" href="{home_url}">Back to AI Signal</a>'
+        )
     return _UNSUB_PAGE_TEMPLATE.format(title=title, body=body, actions=actions)
 
 

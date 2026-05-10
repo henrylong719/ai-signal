@@ -185,10 +185,7 @@ def update_digest_preferences(
         # When disabling, reset the watermark so re-enabling on the
         # same calendar day still triggers a send (the loop's
         # idempotency check would otherwise skip "already sent today").
-        if (
-            current_user.daily_digest_enabled
-            and not body.daily_digest_enabled
-        ):
+        if current_user.daily_digest_enabled and not body.daily_digest_enabled:
             current_user.last_digest_sent_at = get_datetime_utc()
         current_user.daily_digest_enabled = body.daily_digest_enabled
     if body.timezone is not None:

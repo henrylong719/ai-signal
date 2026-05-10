@@ -66,9 +66,7 @@ def send_email(
     # imports the generate_*_email helpers from this module.
     from app.services.email import send_email as _send_email_via_service
 
-    result = _send_email_via_service(
-        to=email_to, subject=subject, html=html_content
-    )
+    result = _send_email_via_service(to=email_to, subject=subject, html=html_content)
     if not result.ok:
         logger.warning(
             "send_email shim: Resend send failed (to=%s): %s",

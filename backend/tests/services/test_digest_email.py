@@ -220,6 +220,16 @@ def test_send_digest_email_sends_when_articles_exist(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Happy path: with content the renderer ships HTML+text+headers."""
+    # Other tests in this suite seed articles into the session-scoped
+    # DB. Clear the pool so the digest's ranked top-N is guaranteed to
+    # surface the three rows we seed below.
+    from sqlmodel import delete as _delete
+
+    from app.models import Article as _Article
+
+    db.exec(_delete(_Article))
+    db.commit()
+
     user = _make_user(db)
     _seed_article(
         db,
@@ -401,8 +411,8 @@ def test_run_digest_send_marks_sent_and_is_idempotent(
         lambda **_: ResendSendResult(ok=True, message_id="mid"),
     )
 
-    # 12:00 UTC == 8:00 EDT.
-    fire_at = datetime(2026, 6, 1, 12, 0, tzinfo=timezone.utc)
+    # 10:00 UTC == 6:00 EDT (matches DIGEST_SEND_LOCAL_HOUR=6).
+    fire_at = datetime(2026, 6, 1, 10, 0, tzinfo=timezone.utc)
 
     outcome_1 = run_digest_send(now=fire_at)
     assert outcome_1.sent == 1

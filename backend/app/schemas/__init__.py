@@ -28,6 +28,7 @@ from app.schemas.source import (
     SourcesPublic,
     SourceType,
 )
+from app.schemas.subscriber import SubscriptionCreate, SubscriptionPublic
 from app.schemas.token import NewPassword, Token, TokenPayload
 from app.schemas.user import (
     OAuthAccountPublic,
@@ -65,6 +66,8 @@ __all__ = [
     "SourcePublic",
     "SourcesPublic",
     "SourceType",
+    "SubscriptionCreate",
+    "SubscriptionPublic",
     "Token",
     "TokenPayload",
     "UpdatePassword",

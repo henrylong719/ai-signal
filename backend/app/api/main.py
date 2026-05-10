@@ -11,6 +11,7 @@ from app.api.routes import (
     interest,
     login,
     private,
+    subscription,
     users,
     utils,
 )
@@ -28,6 +29,7 @@ api_router.include_router(admin_articles.router)
 api_router.include_router(admin_embeddings.router)
 api_router.include_router(admin_ingest_runs.router)
 api_router.include_router(digest.router)
+api_router.include_router(subscription.router)
 
 
 if settings.ENVIRONMENT == "local":

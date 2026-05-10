@@ -1,26 +1,6 @@
 import type { DigestSectionPublic } from '@/client';
 import DigestArticle from '@/components/Digest/DigestArticle';
 
-const SECTION_DESCRIPTIONS: Record<string, string> = {
-  top: 'Start here: the stories most likely to matter across the AI ecosystem.',
-  research:
-    'Papers, benchmarks, and technical results moving the field forward.',
-  engineering: 'Practical implementation notes for teams building with AI.',
-  models:
-    'New model releases, evaluations, and capability shifts worth tracking.',
-  infrastructure:
-    'Serving, data, tooling, chips, and platform updates behind AI systems.',
-  agents: 'Agent frameworks, workflows, automation, and product patterns.',
-  rag: 'Retrieval, indexing, search, and grounding techniques for production apps.',
-  applications:
-    'Real-world AI products and use cases showing adoption patterns.',
-  business:
-    'Funding, strategy, partnerships, and market signals from AI companies.',
-  policy: 'Regulation, governance, copyright, and public-sector AI decisions.',
-  safety: 'Alignment, security, reliability, and risk research.',
-  other: 'Relevant AI updates that do not fit neatly into one category.',
-};
-
 const signalCountLabel = (count: number) =>
   count === 1 ? '1 signal' : `${count} signals`;
 
@@ -47,11 +27,6 @@ function DigestSections({ sections }: { sections: DigestSectionPublic[] }) {
               <h2 className="font-serif text-4xl font-medium leading-none tracking-normal text-slate-950 sm:text-5xl dark:text-foreground">
                 {section.title}
               </h2>
-              {SECTION_DESCRIPTIONS[section.key] ? (
-                <p className="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base dark:text-muted-foreground">
-                  {SECTION_DESCRIPTIONS[section.key]}
-                </p>
-              ) : null}
             </div>
           </div>
 

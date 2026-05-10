@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AdminReadAdminArticlesData, AdminReadAdminArticlesResponse, AdminDeleteAdminArticleData, AdminDeleteAdminArticleResponse, AdminEmbedPendingArticlesData, AdminEmbedPendingArticlesResponse, AdminReadIngestRunsData, AdminReadIngestRunsResponse, ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadForYouData, ArticlesReadForYouResponse, ArticlesReadFollowingData, ArticlesReadFollowingResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, DigestReadTodayDigestData, DigestReadTodayDigestResponse, FeedbackSubmitFeedbackData, FeedbackSubmitFeedbackResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, LoginStartOauthLoginData, LoginStartOauthLoginResponse, LoginOauthCallbackData, LoginOauthCallbackResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutData, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersReadUserOauthAccountsData, UsersReadUserOauthAccountsResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AdminReadAdminArticlesData, AdminReadAdminArticlesResponse, AdminDeleteAdminArticleData, AdminDeleteAdminArticleResponse, AdminEmbedPendingArticlesData, AdminEmbedPendingArticlesResponse, AdminReadIngestRunsData, AdminReadIngestRunsResponse, ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadForYouData, ArticlesReadForYouResponse, ArticlesReadFollowingData, ArticlesReadFollowingResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, DigestReadTodayDigestData, DigestReadTodayDigestResponse, FeedbackSubmitFeedbackData, FeedbackSubmitFeedbackResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, LoginStartOauthLoginData, LoginStartOauthLoginResponse, LoginOauthCallbackData, LoginOauthCallbackResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutData, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SubscriptionsCreateSubscriptionData, SubscriptionsCreateSubscriptionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersReadUserOauthAccountsData, UsersReadUserOauthAccountsResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class AdminService {
     /**
@@ -134,6 +134,11 @@ export class ArticlesService {
     /**
      * Read Articles
      * Retrieve articles.
+     *
+     * Rate-limited to 60 requests/minute per bucket (per-user when
+     * authenticated, per-IP otherwise — see ``app.core.rate_limit``).
+     * Semantic / keyword search shares this bucket; if search ever moves
+     * to its own endpoint, give it a stricter quota (~30/min).
      * @param data The data for the request.
      * @param data.category
      * @param data.search
@@ -255,6 +260,11 @@ export class ArticlesService {
     /**
      * Read Saved Articles
      * Get current user's saved articles.
+     *
+     * Reads articles via a single JOIN against ``saved_articles`` so the
+     * page comes back in one query rather than the two-query (saved IDs,
+     * then articles by ID) pattern. Ordering is by ``saved_at desc`` so
+     * the most recently saved article is first.
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
@@ -786,6 +796,27 @@ export class PrivateService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/private/users/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class SubscriptionsService {
+    /**
+     * Create Subscription
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns SubscriptionPublic Successful Response
+     * @throws ApiError
+     */
+    public static createSubscription(data: SubscriptionsCreateSubscriptionData): CancelablePromise<SubscriptionsCreateSubscriptionResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/subscriptions',
             body: data.requestBody,
             mediaType: 'application/json',
             errors: {

@@ -1,19 +1,19 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { LibraryIcon, SlidersHorizontalIcon } from 'lucide-react';
-import { DateTime } from 'luxon';
-import { useMemo, useRef, useState } from 'react';
-import { z } from 'zod';
-import { ArticleList } from '@/components/Articles/ArticleList';
-import type { RecommenderDebugPayload } from '@/components/Articles/RecommenderDebugPanel';
-import { MobileSidebar, Sidebar } from '@/components/Landing/Sidebar';
-import { PageContainer } from '@/components/Layout/Page';
-import { GuestPersonalizationCard } from '@/components/Personalization/GuestPersonalizationCard';
-import { PersonalizationCard } from '@/components/Personalization/PersonalizationCard';
-import { useArticleFeed } from '@/hooks/useArticleFeed';
-import useAuth from '@/hooks/useAuth';
-import { useFollowingFeed } from '@/hooks/useFollowingFeed';
-import { useForYouFeed } from '@/hooks/useForYouFeed';
-import { useInterests } from '@/hooks/useInterests';
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { LibraryIcon, SlidersHorizontalIcon } from 'lucide-react'
+import { DateTime } from 'luxon'
+import { useMemo, useRef, useState } from 'react'
+import { z } from 'zod'
+import { ArticleList } from '@/components/Articles/ArticleList'
+import type { RecommenderDebugPayload } from '@/components/Articles/RecommenderDebugPanel'
+import { MobileSidebar, Sidebar } from '@/components/Landing/Sidebar'
+import { PageContainer } from '@/components/Layout/Page'
+import { GuestPersonalizationCard } from '@/components/Personalization/GuestPersonalizationCard'
+import { PersonalizationCard } from '@/components/Personalization/PersonalizationCard'
+import { useArticleFeed } from '@/hooks/useArticleFeed'
+import useAuth from '@/hooks/useAuth'
+import { useFollowingFeed } from '@/hooks/useFollowingFeed'
+import { useForYouFeed } from '@/hooks/useForYouFeed'
+import { useInterests } from '@/hooks/useInterests'
 
 // `?debug=1` opts a superuser into the recommender-debug panel. Accepts
 // the conventional truthy strings (`1`, `true`) and the bare presence
@@ -27,7 +27,7 @@ const searchSchema = z.object({
     .optional()
     .transform((v) => v === true || v === '1' || v === 'true' || v === '')
     .catch(false),
-});
+})
 
 export const Route = createFileRoute('/_layout/')({
   component: Dashboard,
@@ -39,60 +39,60 @@ export const Route = createFileRoute('/_layout/')({
       },
     ],
   }),
-});
+})
 
-type Tab = 'for-you' | 'following' | 'latest';
+type Tab = 'for-you' | 'following' | 'latest'
 
 interface TabDef {
-  value: Tab;
-  label: string;
-  authOnly?: boolean;
+  value: Tab
+  label: string
+  authOnly?: boolean
 }
 
 const ALL_TABS: TabDef[] = [
   { value: 'for-you', label: 'For you', authOnly: true },
   { value: 'following', label: 'Following', authOnly: true },
   { value: 'latest', label: 'Latest' },
-];
+]
 
 function Dashboard() {
-  const { debug: debugParam } = Route.useSearch();
-  const { user } = useAuth();
-  const isAuthed = !!user;
+  const { debug: debugParam } = Route.useSearch()
+  const { user } = useAuth()
+  const isAuthed = !!user
   const visibleTabs = useMemo(
     () => ALL_TABS.filter((tab) => !tab.authOnly || isAuthed),
     [isAuthed],
-  );
+  )
   const [activeTab, setActiveTab] = useState<Tab>(() =>
     isAuthed ? 'for-you' : 'latest',
-  );
+  )
   // Guests should never see auth-only tabs — if a previously-authed
   // session left activeTab on 'for-you' or 'following' (e.g. after
   // logout in another tab), normalize back to 'latest' instead of
   // rendering an auth-only feed.
   const isAuthOnly = (tab: Tab): boolean =>
-    tab === 'for-you' || tab === 'following';
+    tab === 'for-you' || tab === 'following'
   const resolvedTab: Tab =
-    !isAuthed && isAuthOnly(activeTab) ? 'latest' : activeTab;
-  const feedTopRef = useRef<HTMLDivElement>(null);
-  const latestQuery = useArticleFeed();
-  const { dataUpdatedAt: latestFeedUpdatedAt, ...latest } = latestQuery;
-  const following = useFollowingFeed();
+    !isAuthed && isAuthOnly(activeTab) ? 'latest' : activeTab
+  const feedTopRef = useRef<HTMLDivElement>(null)
+  const latestQuery = useArticleFeed()
+  const { dataUpdatedAt: latestFeedUpdatedAt, ...latest } = latestQuery
+  const following = useFollowingFeed()
 
   // Debug mode is the AND of "URL asked for it" and "user is privileged".
   // The backend silently ignores ?debug=1 from non-superusers, but
   // gating client-side too means the debug query key matches what the
   // server actually returned, avoiding a wasted refetch when a regular
   // user lands on a debug URL pasted from a superuser session.
-  const debugRequested = !!debugParam && !!user?.is_superuser;
+  const debugRequested = !!debugParam && !!user?.is_superuser
 
   // useForYouFeed always runs, but its query needs auth — when the user
   // isn't logged in we render the sign-in CTA instead. Calling the hook
   // unconditionally keeps the hooks order stable.
-  const forYou = useForYouFeed({ debug: debugRequested });
+  const forYou = useForYouFeed({ debug: debugRequested })
   // The activation card needs to know how many preferences the user has set.
   // useInterests is auth-gated so this is a no-op for anonymous visitors.
-  const { interests } = useInterests();
+  const { interests } = useInterests()
 
   // Threshold: show the card while the user has fewer than 3 total signals
   // across topics, tags, and preferred sources. At 3+ they've meaningfully
@@ -100,54 +100,54 @@ function Dashboard() {
   const totalPreferences =
     (interests?.categories?.length ?? 0) +
     (interests?.tags?.length ?? 0) +
-    (interests?.preferred_sources?.length ?? 0);
-  const showActivationCard = !!user && totalPreferences < 3;
+    (interests?.preferred_sources?.length ?? 0)
+  const showActivationCard = !!user && totalPreferences < 3
 
   // Build a stable id→reason map. ForYouArticle extends ArticlePublic so
   // the underlying article objects are compatible with ArticleList; the
   // reason is passed alongside via this map.
   const forYouReasons = useMemo(() => {
-    const m = new Map<string, string | null>();
+    const m = new Map<string, string | null>()
     for (const article of forYou.articles) {
-      m.set(article.id, article.reason ?? null);
+      m.set(article.id, article.reason ?? null)
     }
-    return m;
-  }, [forYou.articles]);
+    return m
+  }, [forYou.articles])
 
   // Parallel id→debug map. Only populated when the backend actually
   // returned debug payloads (i.e. effective debug = requested AND
   // superuser at the server). When empty the map is still passed
   // through but lookups all miss and no panels render.
   const forYouDebug = useMemo(() => {
-    const m = new Map<string, RecommenderDebugPayload>();
+    const m = new Map<string, RecommenderDebugPayload>()
     if (!debugRequested) {
-      return m;
+      return m
     }
     for (const article of forYou.articles) {
       // The generated client may not yet expose `debug` on the type
       // before the next OpenAPI codegen run — narrow defensively so
       // this compiles either way.
-      const dbg = (article as { debug?: RecommenderDebugPayload | null }).debug;
+      const dbg = (article as { debug?: RecommenderDebugPayload | null }).debug
       if (dbg) {
-        m.set(article.id, dbg);
+        m.set(article.id, dbg)
       }
     }
-    return m;
-  }, [forYou.articles, debugRequested]);
+    return m
+  }, [forYou.articles, debugRequested])
 
   const handleTabChange = (tab: Tab) => {
     if (tab === resolvedTab) {
-      return;
+      return
     }
 
-    setActiveTab(tab);
+    setActiveTab(tab)
     window.requestAnimationFrame(() => {
       feedTopRef.current?.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
-      });
-    });
-  };
+      })
+    })
+  }
 
   return (
     <PageContainer
@@ -287,5 +287,5 @@ function Dashboard() {
       </div>
       <Sidebar />
     </PageContainer>
-  );
+  )
 }

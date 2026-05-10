@@ -57,6 +57,7 @@ from app.crud.refresh_session import (
     refresh_session_is_active,
     revoke_refresh_sessions_for_user,
 )
+from app.crud.subscriber import get_subscriber_by_email, upsert_subscriber
 from app.crud.user import authenticate, create_user, get_user_by_email, update_user
 from app.crud.user_embedding import (
     delete_user_embedding,
@@ -119,4 +120,6 @@ __all__ = [
     "start_ingest_run",
     "get_articles_in_window",
     "get_articles_in_window_with_popularity",
+    "get_subscriber_by_email",
+    "upsert_subscriber",
 ]

@@ -1,4 +1,4 @@
-import { Link as RouterLink } from '@tanstack/react-router';
+import { Link as RouterLink } from '@tanstack/react-router'
 import {
   Bookmark,
   Check,
@@ -11,10 +11,10 @@ import {
   SlidersHorizontal,
   Sun,
   UserStar,
-} from 'lucide-react';
-import { useState } from 'react';
-import { FeedbackDialog } from '@/components/Common/FeedbackDialog';
-import { type Theme, useTheme } from '@/components/theme-provider';
+} from 'lucide-react'
+import { useState } from 'react'
+import { FeedbackDialog } from '@/components/Common/FeedbackDialog'
+import { type Theme, useTheme } from '@/components/theme-provider'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,20 +25,20 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import useAuth from '@/hooks/useAuth';
-import { useIsMobile } from '@/hooks/useMobile';
-import { getInitials } from '@/utils';
-import { Avatar, AvatarFallback } from '../ui/avatar';
+} from '@/components/ui/dropdown-menu'
+import useAuth from '@/hooks/useAuth'
+import { useIsMobile } from '@/hooks/useMobile'
+import { getInitials } from '@/utils'
+import { Avatar, AvatarFallback } from '../ui/avatar'
 
 interface UserInfoProps {
-  fullName?: string;
-  email?: string;
+  fullName?: string
+  email?: string
 }
 
 function UserInfo({ fullName, email }: UserInfoProps) {
-  const displayName = fullName?.trim() || 'AI Signal reader';
-  const initialsSource = fullName?.trim() || email || 'User';
+  const displayName = fullName?.trim() || 'AI Signal reader'
+  const initialsSource = fullName?.trim() || email || 'User'
 
   return (
     <div className="flex min-w-0 items-center gap-3">
@@ -58,35 +58,35 @@ function UserInfo({ fullName, email }: UserInfoProps) {
         )}
       </div>
     </div>
-  );
+  )
 }
 
 const themeOptions: { value: Theme; label: string; icon: typeof Monitor }[] = [
   { value: 'system', label: 'System Default', icon: Monitor },
   { value: 'light', label: 'Light', icon: Sun },
   { value: 'dark', label: 'Dark', icon: Moon },
-];
+]
 
 export const HeaderActionsMenu = () => {
-  const [open, setOpen] = useState(false);
-  const [mobileAppearanceOpen, setMobileAppearanceOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const { setTheme, theme } = useTheme();
-  const isMobile = useIsMobile();
-  const initialsSource = user?.full_name?.trim() || user?.email || 'User';
-  const currentTheme = themeOptions.find((option) => option.value === theme);
-  const CurrentThemeIcon = currentTheme?.icon ?? Monitor;
+  const [open, setOpen] = useState(false)
+  const [mobileAppearanceOpen, setMobileAppearanceOpen] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const { user, logout } = useAuth()
+  const { setTheme, theme } = useTheme()
+  const isMobile = useIsMobile()
+  const initialsSource = user?.full_name?.trim() || user?.email || 'User'
+  const currentTheme = themeOptions.find((option) => option.value === theme)
+  const CurrentThemeIcon = currentTheme?.icon ?? Monitor
 
   const handleLogout = () => {
-    void logout();
-  };
+    void logout()
+  }
 
   const renderThemeOption = (
     option: (typeof themeOptions)[number],
     nested = false,
   ) => {
-    const OptionIcon = option.icon;
+    const OptionIcon = option.icon
 
     return (
       <DropdownMenuItem
@@ -101,17 +101,17 @@ export const HeaderActionsMenu = () => {
         )}
         {option.label}
       </DropdownMenuItem>
-    );
-  };
+    )
+  }
 
   return (
     <>
       <DropdownMenu
         open={open}
         onOpenChange={(nextOpen) => {
-          setOpen(nextOpen);
+          setOpen(nextOpen)
           if (nextOpen) {
-            setMobileAppearanceOpen(false);
+            setMobileAppearanceOpen(false)
           }
         }}
       >
@@ -194,8 +194,8 @@ export const HeaderActionsMenu = () => {
             <>
               <DropdownMenuItem
                 onSelect={(event) => {
-                  event.preventDefault();
-                  setMobileAppearanceOpen((value) => !value);
+                  event.preventDefault()
+                  setMobileAppearanceOpen((value) => !value)
                 }}
                 className="h-10 rounded-md bg-slate-100 px-2.5 text-[0.925rem] font-medium text-slate-700 transition-colors focus:bg-slate-100 focus:text-slate-950 data-[highlighted]:bg-slate-100 dark:bg-accent dark:text-foreground/86 dark:focus:bg-accent dark:focus:text-foreground dark:data-[highlighted]:bg-accent [&_svg]:text-slate-400 dark:[&_svg]:text-muted-foreground"
               >
@@ -231,5 +231,5 @@ export const HeaderActionsMenu = () => {
       </DropdownMenu>
       <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </>
-  );
-};
+  )
+}

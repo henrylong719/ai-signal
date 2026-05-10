@@ -17,6 +17,7 @@ from app.models.ingest_run import (
 from app.models.interest import UserInterest
 from app.models.oauth_account import OAuthAccount
 from app.models.refresh_session import RefreshSession
+from app.models.subscriber import DigestSubscriber
 from app.models.user import User
 from app.models.user_embedding import UserEmbedding
 from app.schemas import (
@@ -33,6 +34,8 @@ from app.schemas import (
     OAuthAccountPublic,
     OAuthAccountsPublic,
     Source,
+    SubscriptionCreate,
+    SubscriptionPublic,
     Token,
     TokenPayload,
     UpdatePassword,
@@ -68,6 +71,9 @@ __all__ = [
     "OAuthAccountsPublic",
     "SOURCES",
     "Source",
+    "SubscriptionCreate",
+    "SubscriptionPublic",
+    "DigestSubscriber",
     "SQLModel",
     "Token",
     "TokenPayload",

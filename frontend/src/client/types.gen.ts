@@ -294,6 +294,18 @@ export type SourcesPublic = {
     count: number;
 };
 
+export type SubscriptionCreate = {
+    email: string;
+};
+
+export type SubscriptionPublic = {
+    id: string;
+    email: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+};
+
 export type Token = {
     access_token: string;
     token_type?: string;
@@ -597,6 +609,12 @@ export type PrivateCreateUserData = {
 };
 
 export type PrivateCreateUserResponse = (UserPublic);
+
+export type SubscriptionsCreateSubscriptionData = {
+    requestBody: SubscriptionCreate;
+};
+
+export type SubscriptionsCreateSubscriptionResponse = (SubscriptionPublic);
 
 export type UsersReadUsersData = {
     accessToken?: (string | null);

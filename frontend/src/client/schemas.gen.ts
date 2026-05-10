@@ -1104,6 +1104,51 @@ export const SourcesPublicSchema = {
     title: 'SourcesPublic'
 } as const;
 
+export const SubscriptionCreateSchema = {
+    properties: {
+        email: {
+            type: 'string',
+            format: 'email',
+            title: 'Email'
+        }
+    },
+    type: 'object',
+    required: ['email'],
+    title: 'SubscriptionCreate'
+} as const;
+
+export const SubscriptionPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        email: {
+            type: 'string',
+            format: 'email',
+            title: 'Email'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['id', 'email', 'is_active', 'created_at', 'updated_at'],
+    title: 'SubscriptionPublic'
+} as const;
+
 export const TokenSchema = {
     properties: {
         access_token: {

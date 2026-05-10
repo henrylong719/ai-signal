@@ -4,6 +4,7 @@ import DigestHeader from '@/components/Digest/DigestHeader'
 import DigestSections from '@/components/Digest/DigestSections'
 import DigestSkeleton from '@/components/Digest/DigestSkeleton'
 import DigestState from '@/components/Digest/DigestState'
+import SubscribeBox from '@/components/Digest/SubscribeBox'
 import { PageContainer } from '@/components/Layout/Page'
 import { useTodayDigest } from '@/hooks/useTodayDigest'
 
@@ -60,6 +61,7 @@ function TodayDigest() {
       className="max-w-4xl py-12 sm:py-16 md:py-20"
     >
       <DigestHeader digest={data} />
+      <SubscribeBox />
       <DigestBody data={data} isLoading={isLoading} isError={isError} />
     </PageContainer>
   )

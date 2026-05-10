@@ -1,0 +1,10 @@
+node_modules/
+/backend/
+/docs/
+/img/
+/hooks/
+/scripts/
+/*.md
+/compose*.yml
+/pyrightconfig.json
+/bun.lock

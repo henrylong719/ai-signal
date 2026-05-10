@@ -8,3 +8,5 @@ node_modules/
 AGENTS.md
 CLAUDE.md
 .env
+.vercel
+.env*.local

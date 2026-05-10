@@ -1,18 +1,18 @@
-import { ArrowRightIcon, SparklesIcon } from 'lucide-react';
+import { ArrowRightIcon, SparklesIcon } from 'lucide-react'
 import {
   type CSSProperties,
   type ReactNode,
   useLayoutEffect,
   useRef,
   useState,
-} from 'react';
+} from 'react'
 
-import AuthModal from '@/components/Auth/AuthModal';
-import type { AuthMode } from '@/components/Auth/authTypes';
-import { SupportFooterLinks } from '@/components/Legal/SupportFooterLinks';
-import ArticleSource from './ArticleSource';
-import RecommendedTopics from './RecommendedTopics';
-import TodayDigest from './TodayDigest';
+import AuthModal from '@/components/Auth/AuthModal'
+import type { AuthMode } from '@/components/Auth/authTypes'
+import { SupportFooterLinks } from '@/components/Legal/SupportFooterLinks'
+import ArticleSource from './ArticleSource'
+import RecommendedTopics from './RecommendedTopics'
+import TodayDigest from './TodayDigest'
 
 /**
  * Logged-out home experience. The article feed stays central so guests can
@@ -21,16 +21,16 @@ import TodayDigest from './TodayDigest';
 export function GuestLanding({
   children,
 }: {
-  children: ReactNode;
-  latestUpdatedAt?: number;
+  children: ReactNode
+  latestUpdatedAt?: number
 }) {
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<AuthMode>('sign-up');
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authMode, setAuthMode] = useState<AuthMode>('sign-up')
 
   const openAuth = (mode: AuthMode) => {
-    setAuthMode(mode);
-    setAuthOpen(true);
-  };
+    setAuthMode(mode)
+    setAuthOpen(true)
+  }
 
   return (
     <>
@@ -149,7 +149,7 @@ export function GuestLanding({
         trigger={null}
       />
     </>
-  );
+  )
 }
 
 function MobileGuestBriefing() {
@@ -157,35 +157,35 @@ function MobileGuestBriefing() {
     <aside className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-[0_1px_1px_rgba(15,23,42,0.025)] lg:hidden dark:border-border/70 dark:bg-card/35 dark:shadow-none">
       <TodayDigest />
     </aside>
-  );
+  )
 }
 
 function GuestSidebar() {
-  const sidebarRef = useRef<HTMLElement>(null);
-  const [sidebarHeight, setSidebarHeight] = useState(0);
+  const sidebarRef = useRef<HTMLElement>(null)
+  const [sidebarHeight, setSidebarHeight] = useState(0)
 
   useLayoutEffect(() => {
-    const sidebar = sidebarRef.current;
+    const sidebar = sidebarRef.current
 
     if (!sidebar) {
-      return;
+      return
     }
 
     const updateHeight = () => {
-      setSidebarHeight(Math.ceil(sidebar.getBoundingClientRect().height));
-    };
-
-    updateHeight();
-
-    if (typeof ResizeObserver === 'undefined') {
-      return;
+      setSidebarHeight(Math.ceil(sidebar.getBoundingClientRect().height))
     }
 
-    const observer = new ResizeObserver(updateHeight);
-    observer.observe(sidebar);
+    updateHeight()
 
-    return () => observer.disconnect();
-  }, []);
+    if (typeof ResizeObserver === 'undefined') {
+      return
+    }
+
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(sidebar)
+
+    return () => observer.disconnect()
+  }, [])
 
   // When the rail is taller than the viewport, let it scroll with the page
   // until its bottom edge reaches the viewport.
@@ -194,7 +194,7 @@ function GuestSidebar() {
       sidebarHeight > 0
         ? `min(6.5rem, calc(100vh - ${sidebarHeight}px - 2rem))`
         : '6.5rem',
-  };
+  }
 
   return (
     <aside
@@ -211,5 +211,5 @@ function GuestSidebar() {
         <SupportFooterLinks variant="wrap" withCopyright />
       </div>
     </aside>
-  );
+  )
 }

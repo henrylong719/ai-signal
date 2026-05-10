@@ -1,14 +1,14 @@
-import type { ReactNode } from 'react';
-import { PageContainer } from '@/components/Layout/Page';
-import { cn } from '@/lib/utils';
+import { isValidElement, type ReactNode } from 'react'
+import { PageContainer } from '@/components/Layout/Page'
+import { cn } from '@/lib/utils'
 
 interface LegalPageLayoutProps {
-  eyebrow?: string;
-  title: ReactNode;
-  intro?: ReactNode;
-  lastUpdated?: string;
-  children: ReactNode;
-  contentClassName?: string;
+  eyebrow?: string
+  title: ReactNode
+  intro?: ReactNode
+  lastUpdated?: string
+  children: ReactNode
+  contentClassName?: string
 }
 
 export function LegalPageLayout({
@@ -35,6 +35,11 @@ export function LegalPageLayout({
             {intro}
           </p>
         )}
+        {lastUpdated && (
+          <p className="mt-6 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-muted-foreground">
+            Last updated: {lastUpdated}
+          </p>
+        )}
       </header>
       <div
         className={cn(
@@ -45,13 +50,13 @@ export function LegalPageLayout({
         {children}
       </div>
     </PageContainer>
-  );
+  )
 }
 
 interface PolicySectionProps {
-  title: ReactNode;
-  children: ReactNode;
-  id?: string;
+  title: ReactNode
+  children: ReactNode
+  id?: string
 }
 
 export function PolicySection({ title, children, id }: PolicySectionProps) {
@@ -62,21 +67,29 @@ export function PolicySection({ title, children, id }: PolicySectionProps) {
       </h2>
       <div className="space-y-3">{children}</div>
     </section>
-  );
+  )
 }
 
 interface PolicyListProps {
-  items: ReactNode[];
+  items: ReactNode[]
+}
+
+function policyListItemKey(item: ReactNode): string {
+  if (typeof item === 'string' || typeof item === 'number') return String(item)
+  if (isValidElement(item) && item.key != null) return String(item.key)
+  throw new Error(
+    'PolicyList items must be a string, number, or React element with an explicit key prop.',
+  )
 }
 
 export function PolicyList({ items }: PolicyListProps) {
   return (
     <ul className="ml-5 list-disc space-y-2 marker:text-slate-400 dark:marker:text-muted-foreground">
-      {items.map((item, index) => (
-        <li key={index} className="pl-1">
+      {items.map((item) => (
+        <li key={policyListItemKey(item)} className="pl-1">
           {item}
         </li>
       ))}
     </ul>
-  );
+  )
 }

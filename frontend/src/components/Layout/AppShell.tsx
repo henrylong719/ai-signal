@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
 import { useLocation } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import ScrollAuthPrompt from '@/components/Auth/ScrollAuthPrompt'
 import Header from '@/components/Common/Header'
 import {

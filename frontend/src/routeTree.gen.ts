@@ -22,6 +22,7 @@ import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutSavedArticlesRouteImport } from './routes/_layout/saved-articles'
 import { Route as LayoutPrivacyRouteImport } from './routes/_layout/privacy'
 import { Route as LayoutPersonalizationRouteImport } from './routes/_layout/personalization'
+import { Route as LayoutDataDeletionRouteImport } from './routes/_layout/data-deletion'
 import { Route as LayoutCookiesRouteImport } from './routes/_layout/cookies'
 import { Route as LayoutContactRouteImport } from './routes/_layout/contact'
 import { Route as LayoutAllArticleSourcesRouteImport } from './routes/_layout/all-article-sources'
@@ -98,6 +99,11 @@ const LayoutPrivacyRoute = LayoutPrivacyRouteImport.update({
 const LayoutPersonalizationRoute = LayoutPersonalizationRouteImport.update({
   id: '/personalization',
   path: '/personalization',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutDataDeletionRoute = LayoutDataDeletionRouteImport.update({
+  id: '/data-deletion',
+  path: '/data-deletion',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutCookiesRoute = LayoutCookiesRouteImport.update({
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/all-article-sources': typeof LayoutAllArticleSourcesRoute
   '/contact': typeof LayoutContactRoute
   '/cookies': typeof LayoutCookiesRoute
+  '/data-deletion': typeof LayoutDataDeletionRoute
   '/personalization': typeof LayoutPersonalizationRoute
   '/privacy': typeof LayoutPrivacyRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
@@ -203,6 +210,7 @@ export interface FileRoutesByTo {
   '/all-article-sources': typeof LayoutAllArticleSourcesRoute
   '/contact': typeof LayoutContactRoute
   '/cookies': typeof LayoutCookiesRoute
+  '/data-deletion': typeof LayoutDataDeletionRoute
   '/personalization': typeof LayoutPersonalizationRoute
   '/privacy': typeof LayoutPrivacyRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/_layout/all-article-sources': typeof LayoutAllArticleSourcesRoute
   '/_layout/contact': typeof LayoutContactRoute
   '/_layout/cookies': typeof LayoutCookiesRoute
+  '/_layout/data-deletion': typeof LayoutDataDeletionRoute
   '/_layout/personalization': typeof LayoutPersonalizationRoute
   '/_layout/privacy': typeof LayoutPrivacyRoute
   '/_layout/saved-articles': typeof LayoutSavedArticlesRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/all-article-sources'
     | '/contact'
     | '/cookies'
+    | '/data-deletion'
     | '/personalization'
     | '/privacy'
     | '/saved-articles'
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/all-article-sources'
     | '/contact'
     | '/cookies'
+    | '/data-deletion'
     | '/personalization'
     | '/privacy'
     | '/saved-articles'
@@ -315,6 +326,7 @@ export interface FileRouteTypes {
     | '/_layout/all-article-sources'
     | '/_layout/contact'
     | '/_layout/cookies'
+    | '/_layout/data-deletion'
     | '/_layout/personalization'
     | '/_layout/privacy'
     | '/_layout/saved-articles'
@@ -431,6 +443,13 @@ declare module '@tanstack/react-router' {
       path: '/personalization'
       fullPath: '/personalization'
       preLoaderRoute: typeof LayoutPersonalizationRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/data-deletion': {
+      id: '/_layout/data-deletion'
+      path: '/data-deletion'
+      fullPath: '/data-deletion'
+      preLoaderRoute: typeof LayoutDataDeletionRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/cookies': {
@@ -552,6 +571,7 @@ interface LayoutRouteChildren {
   LayoutAllArticleSourcesRoute: typeof LayoutAllArticleSourcesRoute
   LayoutContactRoute: typeof LayoutContactRoute
   LayoutCookiesRoute: typeof LayoutCookiesRoute
+  LayoutDataDeletionRoute: typeof LayoutDataDeletionRoute
   LayoutPersonalizationRoute: typeof LayoutPersonalizationRoute
   LayoutPrivacyRoute: typeof LayoutPrivacyRoute
   LayoutSavedArticlesRoute: typeof LayoutSavedArticlesRoute
@@ -572,6 +592,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAllArticleSourcesRoute: LayoutAllArticleSourcesRoute,
   LayoutContactRoute: LayoutContactRoute,
   LayoutCookiesRoute: LayoutCookiesRoute,
+  LayoutDataDeletionRoute: LayoutDataDeletionRoute,
   LayoutPersonalizationRoute: LayoutPersonalizationRoute,
   LayoutPrivacyRoute: LayoutPrivacyRoute,
   LayoutSavedArticlesRoute: LayoutSavedArticlesRoute,

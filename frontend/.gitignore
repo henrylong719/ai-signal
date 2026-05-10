@@ -30,3 +30,4 @@ openapi.json
 /playwright/.auth/
 .vercel
 .env*.local
+.tanstack/tmp/

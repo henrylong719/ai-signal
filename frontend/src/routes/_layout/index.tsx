@@ -158,7 +158,7 @@ function Dashboard() {
 
   if (!isAuthed) {
     return (
-      <PageContainer variant="default" spacing="none" gutters>
+      <PageContainer variant="default" spacing="none">
         <GuestLanding latestUpdatedAt={latestFeedUpdatedAt}>
           <ArticleList
             {...latest}
@@ -186,9 +186,9 @@ function Dashboard() {
 
         <div
           id="homepage-feed"
-          className="sticky top-16 z-40 -mx-4 border-b border-slate-200/80 bg-white/95 px-4 pt-3 backdrop-blur sm:top-[72px] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 dark:border-border/80 dark:bg-background/92"
+          className="sticky top-16 z-40 -mx-4 border-b border-slate-200/80 bg-white/95 px-4 backdrop-blur sm:top-[72px] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 dark:border-border/80 dark:bg-background/92"
         >
-          <div className="flex items-center">
+          <div className="flex h-16 items-center">
             <MobileSidebar />
             <div className="flex gap-8 sm:gap-10">
               {visibleTabs.map((tab) => (
@@ -196,7 +196,7 @@ function Dashboard() {
                   key={tab.value}
                   type="button"
                   onClick={() => handleTabChange(tab.value)}
-                  className={`relative rounded-sm pb-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-4 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background ${
+                  className={`relative inline-flex h-16 items-center rounded-sm text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-4 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background ${
                     resolvedTab === tab.value
                       ? 'text-slate-950 dark:text-foreground'
                       : 'text-slate-500 hover:text-slate-800 dark:text-muted-foreground dark:hover:text-foreground/86'

@@ -1,14 +1,14 @@
-import type { ReactNode } from 'react'
-import { PageContainer } from '@/components/Layout/Page'
-import { cn } from '@/lib/utils'
+import type { ReactNode } from 'react';
+import { PageContainer } from '@/components/Layout/Page';
+import { cn } from '@/lib/utils';
 
 interface LegalPageLayoutProps {
-  eyebrow?: string
-  title: ReactNode
-  intro?: ReactNode
-  lastUpdated?: string
-  children: ReactNode
-  contentClassName?: string
+  eyebrow?: string;
+  title: ReactNode;
+  intro?: ReactNode;
+  lastUpdated?: string;
+  children: ReactNode;
+  contentClassName?: string;
 }
 
 export function LegalPageLayout({
@@ -35,11 +35,6 @@ export function LegalPageLayout({
             {intro}
           </p>
         )}
-        {lastUpdated && (
-          <p className="mt-5 text-xs text-slate-500 dark:text-muted-foreground">
-            Last updated {lastUpdated}
-          </p>
-        )}
       </header>
       <div
         className={cn(
@@ -50,13 +45,13 @@ export function LegalPageLayout({
         {children}
       </div>
     </PageContainer>
-  )
+  );
 }
 
 interface PolicySectionProps {
-  title: ReactNode
-  children: ReactNode
-  id?: string
+  title: ReactNode;
+  children: ReactNode;
+  id?: string;
 }
 
 export function PolicySection({ title, children, id }: PolicySectionProps) {
@@ -67,11 +62,11 @@ export function PolicySection({ title, children, id }: PolicySectionProps) {
       </h2>
       <div className="space-y-3">{children}</div>
     </section>
-  )
+  );
 }
 
 interface PolicyListProps {
-  items: ReactNode[]
+  items: ReactNode[];
 }
 
 export function PolicyList({ items }: PolicyListProps) {
@@ -83,5 +78,5 @@ export function PolicyList({ items }: PolicyListProps) {
         </li>
       ))}
     </ul>
-  )
+  );
 }

@@ -2,7 +2,10 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { Check, Library, Monitor, Moon, SearchIcon, Sun } from 'lucide-react'
 import { useState } from 'react'
 import { type UseFormReturn, useForm } from 'react-hook-form'
-import { PageContainer } from '@/components/Layout/Page'
+import {
+  pageContainerGutters,
+  pageContainerWidths,
+} from '@/components/Layout/Page'
 import { type Theme, useTheme } from '@/components/theme-provider'
 import {
   DropdownMenu,
@@ -11,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import useAuth from '@/hooks/useAuth'
+import { cn } from '@/lib/utils'
 import AuthModal from '../Auth/AuthModal'
 import { Form, FormControl, FormField, FormItem } from '../ui/form'
 import {
@@ -144,12 +148,17 @@ const Header = () => {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.02)] backdrop-blur dark:border-border dark:bg-background/92 dark:shadow-none">
-      <PageContainer
-        variant="default"
-        spacing="none"
-        gutters
-        className="grid h-16 grid-cols-[1fr_auto] items-center gap-4 sm:h-18 md:grid-cols-[minmax(10rem,1fr)_minmax(22rem,40rem)_minmax(10rem,1fr)]"
+    <header
+      className={cn(
+        'sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.02)] backdrop-blur dark:border-border dark:bg-background/92 dark:shadow-none',
+        pageContainerGutters,
+      )}
+    >
+      <div
+        className={cn(
+          'mx-auto grid h-16 w-full grid-cols-[1fr_auto] items-center gap-4 sm:h-18 md:grid-cols-[minmax(10rem,1fr)_minmax(22rem,40rem)_minmax(10rem,1fr)]',
+          pageContainerWidths.default,
+        )}
       >
         <div className="flex min-w-0 items-center justify-start">
           <Link
@@ -222,7 +231,7 @@ const Header = () => {
             </>
           )}
         </div>
-      </PageContainer>
+      </div>
     </header>
   )
 }

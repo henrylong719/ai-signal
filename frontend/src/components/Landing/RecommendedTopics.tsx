@@ -6,11 +6,15 @@ import { Badge } from '../ui/badge'
 
 const PREVIEW_TOPICS = [
   'agents',
+  'rag',
   'models',
   'research',
   'engineering',
   'infrastructure',
+  'applications',
+  'business',
   'policy',
+  'safety',
 ] satisfies category[]
 
 const RecommendedTopics = () => {

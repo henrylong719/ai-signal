@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useLocation } from '@tanstack/react-router'
 import ScrollAuthPrompt from '@/components/Auth/ScrollAuthPrompt'
 import Header from '@/components/Common/Header'
 import {
@@ -16,13 +17,16 @@ interface AppShellProps {
 export const MAIN_CONTENT_ID = 'main-content'
 
 export function AppShell({ children }: AppShellProps) {
+  const location = useLocation()
+  const isHomePage = location.pathname === '/'
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* Keyboard-only skip link — visually hidden until focused, lets
           tab-only users jump past the header straight to the page body. */}
       <a
         href={`#${MAIN_CONTENT_ID}`}
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:inline-flex focus:h-10 focus:items-center focus:rounded-full focus:bg-slate-950 focus:px-4 focus:text-sm focus:font-medium focus:text-white focus:shadow-md focus:outline-none focus:ring-2 focus:ring-slate-950/15 focus:ring-offset-2 dark:focus:bg-foreground dark:focus:text-background dark:focus:ring-ring/35 dark:focus:ring-offset-background"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-100 focus:inline-flex focus:h-10 focus:items-center focus:rounded-full focus:bg-slate-950 focus:px-4 focus:text-sm focus:font-medium focus:text-white focus:shadow-md focus:outline-none focus:ring-2 focus:ring-slate-950/15 focus:ring-offset-2 dark:focus:bg-foreground dark:focus:text-background dark:focus:ring-ring/35 dark:focus:ring-offset-background"
       >
         Skip to main content
       </a>
@@ -35,6 +39,7 @@ export function AppShell({ children }: AppShellProps) {
       <footer
         className={cn(
           'border-t border-slate-200/70 bg-background dark:border-border/70',
+          isHomePage && 'lg:hidden',
           pageContainerGutters,
         )}
       >

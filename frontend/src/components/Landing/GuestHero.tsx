@@ -1,8 +1,15 @@
 import { ArrowRightIcon, SparklesIcon } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import {
+  type CSSProperties,
+  type ReactNode,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import AuthModal from '@/components/Auth/AuthModal';
 import type { AuthMode } from '@/components/Auth/authTypes';
+import { SupportFooterLinks } from '@/components/Legal/SupportFooterLinks';
 import ArticleSource from './ArticleSource';
 import RecommendedTopics from './RecommendedTopics';
 import TodayDigest from './TodayDigest';
@@ -154,12 +161,54 @@ function MobileGuestBriefing() {
 }
 
 function GuestSidebar() {
+  const sidebarRef = useRef<HTMLElement>(null);
+  const [sidebarHeight, setSidebarHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const sidebar = sidebarRef.current;
+
+    if (!sidebar) {
+      return;
+    }
+
+    const updateHeight = () => {
+      setSidebarHeight(Math.ceil(sidebar.getBoundingClientRect().height));
+    };
+
+    updateHeight();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(sidebar);
+
+    return () => observer.disconnect();
+  }, []);
+
+  // When the rail is taller than the viewport, let it scroll with the page
+  // until its bottom edge reaches the viewport.
+  const sidebarStyle: CSSProperties = {
+    top:
+      sidebarHeight > 0
+        ? `min(6.5rem, calc(100vh - ${sidebarHeight}px - 2rem))`
+        : '6.5rem',
+  };
+
   return (
-    <aside className="hidden border-t border-slate-200/70 pt-7 lg:sticky lg:top-26 lg:block lg:self-start lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0 dark:border-border/70">
+    <aside
+      ref={sidebarRef}
+      style={sidebarStyle}
+      className="hidden border-t border-slate-200/70 pt-7 lg:sticky lg:block lg:self-start lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0 dark:border-border/70"
+    >
       <div className="divide-y divide-slate-200/70 *:py-7 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0 dark:divide-border">
         <TodayDigest />
         <RecommendedTopics />
         <ArticleSource />
+      </div>
+      <div className="mt-7 border-t border-slate-200/70 pt-5 dark:border-border/70">
+        <SupportFooterLinks variant="wrap" withCopyright />
       </div>
     </aside>
   );

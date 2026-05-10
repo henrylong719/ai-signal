@@ -117,7 +117,7 @@ Optional rate-limiting configuration (defaults are production-safe):
 RATE_LIMIT_ENABLED=true
 # Shared backend so multi-worker deployments don't multiply each
 # bucket by the worker count. None ⇒ in-memory (fine for single-worker).
-RATE_LIMIT_STORAGE_URI=redis://redis:6379
+RATE_LIMIT_STORAGE_URI=
 ```
 
 Per-route limits (per authenticated user when signed in, per IP otherwise):

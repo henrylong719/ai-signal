@@ -402,6 +402,41 @@ Matches ForYouArticlePublic's shape so the frontend can reuse the
 same article-card rendering and reason-badge component.`
 } as const;
 
+export const DigestPreferencesUpdateSchema = {
+    properties: {
+        daily_digest_enabled: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Daily Digest Enabled'
+        },
+        timezone: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Timezone'
+        }
+    },
+    type: 'object',
+    title: 'DigestPreferencesUpdate',
+    description: `Body for the settings-page digest toggle.
+
+Allows changing the opt-in flag and the cached timezone independent
+of the onboarding flow. Both fields are optional so the client can
+update only what changed.`
+} as const;
+
 export const DigestPublicSchemaSchema = {
     properties: {
         generated_at: {
@@ -903,6 +938,35 @@ export const OAuthAccountsPublicSchema = {
     title: 'OAuthAccountsPublic'
 } as const;
 
+export const OnboardingCompleteSchema = {
+    properties: {
+        timezone: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Timezone'
+        },
+        daily_digest_enabled: {
+            type: 'boolean',
+            title: 'Daily Digest Enabled',
+            default: false
+        }
+    },
+    type: 'object',
+    title: 'OnboardingComplete',
+    description: `Payload submitted at the end of the first-run onboarding flow.
+
+The client sends the timezone it detected from the browser plus
+whether the user accepted the daily digest opt-in. The endpoint
+sets \`\`onboarded_at = now()\`\` so the modal does not reopen.`
+} as const;
+
 export const PrivateUserCreateSchema = {
     properties: {
         email: {
@@ -1366,6 +1430,34 @@ export const UserPublicSchema = {
                 }
             ],
             title: 'Created At'
+        },
+        timezone: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Timezone'
+        },
+        daily_digest_enabled: {
+            type: 'boolean',
+            title: 'Daily Digest Enabled',
+            default: false
+        },
+        onboarded_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Onboarded At'
         }
     },
     type: 'object',

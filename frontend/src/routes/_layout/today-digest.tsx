@@ -7,16 +7,17 @@ import DigestState from '@/components/Digest/DigestState'
 import SubscribeBox from '@/components/Digest/SubscribeBox'
 import { PageContainer } from '@/components/Layout/Page'
 import { useTodayDigest } from '@/hooks/useTodayDigest'
+import { buildPageMeta } from '@/lib/meta'
 
 export const Route = createFileRoute('/_layout/today-digest')({
   component: TodayDigest,
-  head: () => ({
-    meta: [
-      {
-        title: "Today's AI Signal",
-      },
-    ],
-  }),
+  head: () =>
+    buildPageMeta({
+      title: "Today's digest",
+      description:
+        'A daily snapshot of the most important AI updates, grouped by signal area — research, engineering, models, infrastructure, agents, and more.',
+      path: '/today-digest',
+    }),
 })
 
 type DigestBodyProps = {
@@ -56,9 +57,9 @@ function TodayDigest() {
 
   return (
     <PageContainer
-      variant="narrow"
+      variant="prose"
       spacing="none"
-      className="max-w-4xl py-12 sm:py-16 md:py-20"
+      className="py-12 sm:py-16 md:py-20"
     >
       <DigestHeader digest={data} />
       <SubscribeBox />

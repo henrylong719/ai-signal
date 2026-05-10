@@ -83,6 +83,18 @@ export type DigestArticlePublic = {
     reason?: (string | null);
 };
 
+/**
+ * Body for the settings-page digest toggle.
+ *
+ * Allows changing the opt-in flag and the cached timezone independent
+ * of the onboarding flow. Both fields are optional so the client can
+ * update only what changed.
+ */
+export type DigestPreferencesUpdate = {
+    daily_digest_enabled?: (boolean | null);
+    timezone?: (string | null);
+};
+
 export type DigestPublicSchema = {
     generated_at: string;
     window_start: string;
@@ -224,6 +236,18 @@ export type OAuthAccountsPublic = {
     data: Array<OAuthAccountPublic>;
 };
 
+/**
+ * Payload submitted at the end of the first-run onboarding flow.
+ *
+ * The client sends the timezone it detected from the browser plus
+ * whether the user accepted the daily digest opt-in. The endpoint
+ * sets ``onboarded_at = now()`` so the modal does not reopen.
+ */
+export type OnboardingComplete = {
+    timezone?: (string | null);
+    daily_digest_enabled?: boolean;
+};
+
 export type PrivateUserCreate = {
     email: string;
     password: string;
@@ -360,6 +384,9 @@ export type UserPublic = {
     id: string;
     has_password?: boolean;
     created_at?: (string | null);
+    timezone?: (string | null);
+    daily_digest_enabled?: boolean;
+    onboarded_at?: (string | null);
 };
 
 export type UserRegister = {
@@ -656,6 +683,20 @@ export type UsersUpdatePasswordMeData = {
 };
 
 export type UsersUpdatePasswordMeResponse = (Message);
+
+export type UsersCompleteOnboardingData = {
+    accessToken?: (string | null);
+    requestBody: OnboardingComplete;
+};
+
+export type UsersCompleteOnboardingResponse = (UserPublic);
+
+export type UsersUpdateDigestPreferencesData = {
+    accessToken?: (string | null);
+    requestBody: DigestPreferencesUpdate;
+};
+
+export type UsersUpdateDigestPreferencesResponse = (UserPublic);
 
 export type UsersReadUserOauthAccountsData = {
     accessToken?: (string | null);

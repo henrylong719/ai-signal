@@ -1,11 +1,16 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
+// Three semantic widths. `prose` is for long-form reading (legal,
+// digest); `narrow` is for focused two-column forms (settings,
+// personalization); `default` is the page chrome width — header,
+// footer, every feed surface, every directory page. Keep this list
+// short on purpose: introducing a fourth width should be a deliberate
+// decision, not a one-off className override.
 export const pageContainerWidths = {
-  shell: 'max-w-[1265px]',
-  wide: 'max-w-[1200px]',
-  default: 'max-w-6xl',
+  prose: 'max-w-3xl',
   narrow: 'max-w-5xl',
+  default: 'max-w-[1200px]',
 } as const
 
 export const pageContainerGutters = 'px-4 sm:px-6 lg:px-8'

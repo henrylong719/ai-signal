@@ -5,19 +5,17 @@ import {
   PolicySection,
 } from '@/components/Legal/LegalPageLayout'
 import { CONTACT_EMAIL, LEGAL_LAST_UPDATED } from '@/lib/legal'
+import { buildPageMeta } from '@/lib/meta'
 
 export const Route = createFileRoute('/_layout/privacy')({
   component: PrivacyPage,
-  head: () => ({
-    meta: [
-      { title: 'Privacy Policy — AI Signal' },
-      {
-        name: 'description',
-        content:
-          'How AI Signal collects, uses, and protects information about the people who use the product.',
-      },
-    ],
-  }),
+  head: () =>
+    buildPageMeta({
+      title: 'Privacy Policy',
+      description:
+        'How AI Signal collects, uses, and protects information about the people who use the product.',
+      path: '/privacy',
+    }),
 })
 
 function PrivacyPage() {

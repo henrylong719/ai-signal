@@ -5,19 +5,17 @@ import {
   PolicySection,
 } from '@/components/Legal/LegalPageLayout'
 import { CONTACT_EMAIL, LEGAL_LAST_UPDATED } from '@/lib/legal'
+import { buildPageMeta } from '@/lib/meta'
 
 export const Route = createFileRoute('/_layout/cookies')({
   component: CookiesPage,
-  head: () => ({
-    meta: [
-      { title: 'Cookie Policy — AI Signal' },
-      {
-        name: 'description',
-        content:
-          'How AI Signal uses cookies, local storage, and similar technologies to keep the product running.',
-      },
-    ],
-  }),
+  head: () =>
+    buildPageMeta({
+      title: 'Cookie Policy',
+      description:
+        'How AI Signal uses cookies, local storage, and similar technologies to keep the product running.',
+      path: '/cookies',
+    }),
 })
 
 function CookiesPage() {

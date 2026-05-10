@@ -25,7 +25,7 @@ function SubscribeBox() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-20 flex flex-col items-start justify-between gap-6 border-slate-100 border-y py-8 md:flex-row md:items-center dark:border-border"
+      className="mb-5 flex flex-col items-start justify-between gap-6 border-slate-100 border-y py-8 md:flex-row md:items-center dark:border-border"
     >
       <div>
         <h3 className="mb-1 font-medium font-sans text-slate-900 text-sm uppercase tracking-wider dark:text-foreground">

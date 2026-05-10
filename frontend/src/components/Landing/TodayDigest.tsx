@@ -21,13 +21,8 @@ const getPreviewArticles = (
 
 const TodayDigestSkeleton = () => (
   <>
-    {['a', 'b', 'c'].map((key, index) => (
-      <div
-        key={key}
-        className={`flex items-start gap-3 lg:gap-4 ${
-          index === 2 ? 'hidden lg:flex' : ''
-        }`}
-      >
+    {['a', 'b'].map((key) => (
+      <div key={key} className="flex items-start gap-3">
         <Skeleton className="h-8 w-6 rounded bg-slate-100 dark:bg-muted" />
         <div className="flex-1 space-y-2">
           <Skeleton className="h-4 w-full rounded bg-slate-100 dark:bg-muted" />
@@ -46,16 +41,10 @@ const TodayDigestMessage = ({ children }: { children: React.ReactNode }) => (
 
 const TodayDigestPreviewItem = ({
   article,
-  hideOnSmall,
 }: {
   article: DigestArticlePublic
-  hideOnSmall: boolean
 }) => (
-  <div
-    className={`group flex items-start gap-3 lg:gap-4 ${
-      hideOnSmall ? 'hidden lg:flex' : ''
-    }`}
-  >
+  <div className="group flex items-start gap-3">
     <div className="min-w-0 flex-1">
       <a
         href={redirectHref(article.id)}
@@ -63,7 +52,7 @@ const TodayDigestPreviewItem = ({
         rel="noreferrer"
         className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
       >
-        <h4 className="mb-1 line-clamp-2 text-[0.9375rem] font-medium leading-6 text-slate-950 transition-colors group-hover:text-slate-700 lg:mb-1.5 lg:line-clamp-none lg:font-serif lg:text-base lg:leading-snug dark:text-foreground dark:group-hover:text-foreground/78">
+        <h4 className="mb-1 line-clamp-2 text-[0.9375rem] font-medium leading-6 text-slate-950 transition-colors group-hover:text-slate-700 lg:font-serif lg:text-base lg:leading-snug dark:text-foreground dark:group-hover:text-foreground/78">
           {article.title}
         </h4>
       </a>
@@ -82,7 +71,7 @@ const TodayDigest = () => {
 
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 lg:mb-4">
+      <div className="mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1">
         <div className="flex items-center gap-2.5">
           <div className="text-slate-400 dark:text-muted-foreground">
             <CalendarIcon className="h-4 w-4 stroke-[1.6]" />
@@ -97,7 +86,7 @@ const TodayDigest = () => {
           </span>
         ) : null}
       </div>
-      <div className="mt-2 space-y-3 lg:space-y-5">
+      <div className="mt-2 space-y-3.5">
         {isLoading ? (
           <TodayDigestSkeleton />
         ) : isError ? (
@@ -110,19 +99,15 @@ const TodayDigest = () => {
             the day's most important AI updates by signal area.
           </TodayDigestMessage>
         ) : (
-          articles.map((article, index) => (
-            <TodayDigestPreviewItem
-              key={article.id}
-              article={article}
-              hideOnSmall={index === 2}
-            />
+          articles.map((article) => (
+            <TodayDigestPreviewItem key={article.id} article={article} />
           ))
         )}
       </div>
 
       <Link
         to="/today-digest"
-        className="mt-3 inline-flex items-center rounded-sm text-xs font-semibold text-slate-500 transition-colors hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 lg:mt-4 dark:text-muted-foreground dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+        className="mt-3 inline-flex items-center rounded-sm text-xs font-semibold text-slate-500 transition-colors hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:text-muted-foreground dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
       >
         Read all daily digests
         <ChevronRightIcon className="w-3 h-3 ml-0.5 stroke-2" />

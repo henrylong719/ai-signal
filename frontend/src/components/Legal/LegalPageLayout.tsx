@@ -20,7 +20,7 @@ export function LegalPageLayout({
   contentClassName,
 }: LegalPageLayoutProps) {
   return (
-    <PageContainer variant="narrow" spacing="spacious">
+    <PageContainer variant="prose" spacing="spacious">
       <header className="mb-10 border-b border-slate-200/80 pb-8 dark:border-border">
         {eyebrow && (
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-muted-foreground">

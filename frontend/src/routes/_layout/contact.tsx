@@ -5,19 +5,17 @@ import {
   PolicySection,
 } from '@/components/Legal/LegalPageLayout'
 import { CONTACT_EMAIL } from '@/lib/legal'
+import { buildPageMeta } from '@/lib/meta'
 
 export const Route = createFileRoute('/_layout/contact')({
   component: ContactPage,
-  head: () => ({
-    meta: [
-      { title: 'Contact — AI Signal' },
-      {
-        name: 'description',
-        content:
-          'Reach out to AI Signal for feedback, bug reports, source suggestions, accessibility issues, or removal requests.',
-      },
-    ],
-  }),
+  head: () =>
+    buildPageMeta({
+      title: 'Contact',
+      description:
+        'Reach out to AI Signal for feedback, bug reports, source suggestions, accessibility issues, or removal requests.',
+      path: '/contact',
+    }),
 })
 
 interface ReasonProps {

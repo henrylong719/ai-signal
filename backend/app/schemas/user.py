@@ -41,6 +41,38 @@ class UserPublic(UserBase):
     id: uuid.UUID
     has_password: bool = True
     created_at: datetime | None = None
+    # Surfaced to the client so the SPA can: open the onboarding modal
+    # when ``onboarded_at`` is null, render the digest toggle in
+    # /settings, and decide which timezone label to show.
+    timezone: str | None = None
+    daily_digest_enabled: bool = False
+    onboarded_at: datetime | None = None
+
+
+class OnboardingComplete(SQLModel):
+    """Payload submitted at the end of the first-run onboarding flow.
+
+    The client sends the timezone it detected from the browser plus
+    whether the user accepted the daily digest opt-in. The endpoint
+    sets ``onboarded_at = now()`` so the modal does not reopen.
+    """
+
+    # IANA timezone string. Optional — older browsers or privacy modes
+    # may not expose it; in that case the sender falls back to UTC.
+    timezone: str | None = Field(default=None, max_length=64)
+    daily_digest_enabled: bool = False
+
+
+class DigestPreferencesUpdate(SQLModel):
+    """Body for the settings-page digest toggle.
+
+    Allows changing the opt-in flag and the cached timezone independent
+    of the onboarding flow. Both fields are optional so the client can
+    update only what changed.
+    """
+
+    daily_digest_enabled: bool | None = None
+    timezone: str | None = Field(default=None, max_length=64)
 
 
 class UsersPublic(SQLModel):

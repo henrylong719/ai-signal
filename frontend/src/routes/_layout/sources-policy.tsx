@@ -5,19 +5,17 @@ import {
   PolicySection,
 } from '@/components/Legal/LegalPageLayout'
 import { CONTACT_EMAIL, LEGAL_LAST_UPDATED } from '@/lib/legal'
+import { buildPageMeta } from '@/lib/meta'
 
 export const Route = createFileRoute('/_layout/sources-policy')({
   component: SourcesPolicyPage,
-  head: () => ({
-    meta: [
-      { title: 'Sources & Content Policy — AI Signal' },
-      {
-        name: 'description',
-        content:
-          'How AI Signal selects sources, what we display, and how publishers and rights holders can reach us.',
-      },
-    ],
-  }),
+  head: () =>
+    buildPageMeta({
+      title: 'Sources & Content Policy',
+      description:
+        'How AI Signal selects sources, what we display, and how publishers and rights holders can reach us.',
+      path: '/sources-policy',
+    }),
 })
 
 function SourcesPolicyPage() {

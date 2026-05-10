@@ -36,6 +36,7 @@ from apscheduler.schedulers.asyncio import (  # type: ignore[import-untyped]
 )
 
 from app.core.config import settings
+from app.services.digest_scheduler import run_digest_send
 from app.services.ingest_runner import run_tracked_ingest
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ logger = logging.getLogger(__name__)
 _scheduler: AsyncIOScheduler | None = None
 
 _INGEST_JOB_ID = "ingest_all"
+_DIGEST_JOB_ID = "send_daily_digest"
 
 
 def start_scheduler() -> None:
@@ -93,9 +95,26 @@ def start_scheduler() -> None:
         misfire_grace_time=300,
     )
 
+    # Daily digest send loop. Fires every hour on the hour (UTC); each
+    # tick walks the user table and sends to anyone whose local clock
+    # currently reads the configured send hour and who has not been
+    # sent today. cron trigger (vs interval) so the cadence stays
+    # aligned to top-of-hour boundaries instead of drifting from
+    # process start.
+    _scheduler.add_job(
+        run_digest_send,
+        trigger="cron",
+        minute=0,
+        id=_DIGEST_JOB_ID,
+        coalesce=True,
+        max_instances=1,
+        misfire_grace_time=600,
+    )
+
     _scheduler.start()
     logger.info(
-        "Ingest scheduler started: interval=%dmin, first run at %s",
+        "Scheduler started: ingest interval=%dmin (first at %s), "
+        "digest send=hourly",
         settings.INGEST_INTERVAL_MINUTES,
         next_run_time.isoformat(),
     )

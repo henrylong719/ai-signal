@@ -13,10 +13,13 @@ from app.api.deps import (
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models import OAuthAccount, User
+from app.models.base import get_datetime_utc
 from app.schemas import (
+    DigestPreferencesUpdate,
     Message,
     OAuthAccountPublic,
     OAuthAccountsPublic,
+    OnboardingComplete,
     UpdatePassword,
     UserCreate,
     UserPublic,
@@ -130,6 +133,69 @@ def read_user_me(current_user: CurrentUser) -> Any:
     """
     Get current user.
     """
+    return current_user
+
+
+@router.put("/me/onboarding", response_model=UserPublic)
+def complete_onboarding(
+    *,
+    session: SessionDep,
+    body: OnboardingComplete,
+    current_user: CurrentUser,
+) -> Any:
+    """Mark first-run onboarding complete and persist captured preferences.
+
+    The frontend calls this from the final step of the welcome modal
+    once the user has picked their topics/sources. Setting
+    ``onboarded_at`` here is what stops the modal from re-opening on
+    the next sign-in. Repeated calls (user navigates back, picks a
+    different digest opt-in, finishes again) overwrite cleanly.
+
+    The actual interest data (categories, tags, preferred sources) is
+    written through the existing /users/me/interests endpoint earlier
+    in the flow — this endpoint only owns the metadata fields that
+    didn't have a home before (timezone, digest opt-in, completion
+    timestamp).
+    """
+    if body.timezone is not None:
+        current_user.timezone = body.timezone
+    current_user.daily_digest_enabled = body.daily_digest_enabled
+    if current_user.onboarded_at is None:
+        current_user.onboarded_at = get_datetime_utc()
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return current_user
+
+
+@router.put("/me/digest-preferences", response_model=UserPublic)
+def update_digest_preferences(
+    *,
+    session: SessionDep,
+    body: DigestPreferencesUpdate,
+    current_user: CurrentUser,
+) -> Any:
+    """Update digest opt-in flag and/or cached timezone.
+
+    Independent of the onboarding flow so the user can change their
+    mind from the settings page after first run. Both fields are
+    optional; omitted fields keep their current value.
+    """
+    if body.daily_digest_enabled is not None:
+        # When disabling, reset the watermark so re-enabling on the
+        # same calendar day still triggers a send (the loop's
+        # idempotency check would otherwise skip "already sent today").
+        if (
+            current_user.daily_digest_enabled
+            and not body.daily_digest_enabled
+        ):
+            current_user.last_digest_sent_at = get_datetime_utc()
+        current_user.daily_digest_enabled = body.daily_digest_enabled
+    if body.timezone is not None:
+        current_user.timezone = body.timezone
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
     return current_user
 
 

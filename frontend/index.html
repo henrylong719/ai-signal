@@ -48,6 +48,43 @@
       name="twitter:image:alt"
       content="AI Signal — Track the AI updates that matter"
     />
+
+    <!-- Structured data: site-wide WebSite + Organization. Tells search
+         engines what AI Signal is, exposes the search action for sitelinks
+         search box, and links the brand to the social account. Lives in
+         index.html so it's picked up regardless of which SPA route is
+         crawled — the SPA does not rewrite this on navigation. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://aisignal.app/#website",
+            "url": "https://aisignal.app/",
+            "name": "AI Signal",
+            "description": "Track the AI updates that matter — labs, research papers, engineering blogs, and trusted builders in one focused reading experience.",
+            "inLanguage": "en",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://aisignal.app/search-feed/{search_term_string}"
+              },
+              "query-input": "required name=search_term_string"
+            }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://aisignal.app/#organization",
+            "name": "AI Signal",
+            "url": "https://aisignal.app/",
+            "logo": "https://aisignal.app/og-image.png"
+          }
+        ]
+      }
+    </script>
+
     <style>
       /* Critical theme colors — prevents flash of wrong background before Tailwind CSS loads */
       html { background: oklch(1 0 0); color: oklch(0.145 0 0); }

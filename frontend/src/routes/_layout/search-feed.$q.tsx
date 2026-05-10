@@ -5,6 +5,15 @@ import { useArticleFeed } from '@/hooks/useArticleFeed'
 
 export const Route = createFileRoute('/_layout/search-feed/$q')({
   component: SearchFeed,
+  // Search-results pages aren't crawl targets — their content depends on
+  // the user's query and the live article index. Set the tab title for
+  // back-button clarity and tell crawlers not to index.
+  head: ({ params }) => ({
+    meta: [
+      { title: `Search: ${params.q} — AI Signal` },
+      { name: 'robots', content: 'noindex,follow' },
+    ],
+  }),
 })
 
 function SearchFeed() {

@@ -31,8 +31,10 @@ from app.schemas.source import (
 from app.schemas.subscriber import SubscriptionCreate, SubscriptionPublic
 from app.schemas.token import NewPassword, Token, TokenPayload
 from app.schemas.user import (
+    DigestPreferencesUpdate,
     OAuthAccountPublic,
     OAuthAccountsPublic,
+    OnboardingComplete,
     UpdatePassword,
     UserCreate,
     UserPublic,
@@ -71,6 +73,8 @@ __all__ = [
     "Token",
     "TokenPayload",
     "UpdatePassword",
+    "DigestPreferencesUpdate",
+    "OnboardingComplete",
     "UserCreate",
     "UserInterestPublic",
     "UserInterestUpdate",

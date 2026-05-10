@@ -87,7 +87,7 @@ function AdminArticlesPage() {
 
   return (
     <PageContainer
-      variant="wide"
+      variant="default"
       spacing="compact"
       className="flex flex-col gap-6"
     >

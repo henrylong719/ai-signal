@@ -5,19 +5,17 @@ import {
   PolicyList,
   PolicySection,
 } from '@/components/Legal/LegalPageLayout'
+import { buildPageMeta } from '@/lib/meta'
 
 export const Route = createFileRoute('/_layout/about')({
   component: AboutPage,
-  head: () => ({
-    meta: [
-      { title: 'About AI Signal' },
-      {
-        name: 'description',
-        content:
-          'AI Signal is a focused reading dashboard that helps builders track the AI updates that matter — labs, research, engineering blogs, and trusted voices.',
-      },
-    ],
-  }),
+  head: () =>
+    buildPageMeta({
+      title: 'About',
+      description:
+        'AI Signal is a focused reading dashboard that helps builders track the AI updates that matter — labs, research, engineering blogs, and trusted voices.',
+      path: '/about',
+    }),
 })
 
 function AboutPage() {

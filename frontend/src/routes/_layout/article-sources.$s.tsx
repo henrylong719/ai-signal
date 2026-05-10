@@ -8,10 +8,17 @@ import { PageContainer, PageHeader } from '@/components/Layout/Page'
 import ArticleSourceSkeleton from '@/components/Source/ArticleSourceSkeleton'
 import { useArticleFeed } from '@/hooks/useArticleFeed'
 import { useSources } from '@/hooks/useSources'
+import { buildPageMeta } from '@/lib/meta'
 import { capitalize } from '@/lib/utils'
 
 export const Route = createFileRoute('/_layout/article-sources/$s')({
   component: ArticlesSources,
+  head: ({ params }) =>
+    buildPageMeta({
+      title: `${params.s} — articles`,
+      description: `Recent articles from ${params.s} on AI Signal — research, engineering, product, and more from the source.`,
+      path: `/article-sources/${encodeURIComponent(params.s)}`,
+    }),
 })
 
 function ArticlesSources() {
@@ -51,7 +58,7 @@ function ArticlesSources() {
 
   if (sourcesError) {
     return (
-      <PageContainer variant="narrow" spacing="compact" className="max-w-3xl">
+      <PageContainer variant="prose" spacing="compact">
         <ArticleListState
           title="Could not load source"
           description="Please refresh the page or try again in a moment."
@@ -73,7 +80,7 @@ function ArticlesSources() {
 
   if (!source) {
     return (
-      <PageContainer variant="narrow" spacing="compact" className="max-w-3xl">
+      <PageContainer variant="prose" spacing="compact">
         <ArticleListState
           title="Source not found"
           description="This source may have been removed or renamed."

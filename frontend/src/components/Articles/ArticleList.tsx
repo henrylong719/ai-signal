@@ -27,6 +27,7 @@ interface ArticleListProps {
    * affect what the recommender shows you, not the chronological lists.
    */
   showDismiss?: boolean
+  articleClassName?: string
   /**
    * Map of article id → recommendation reason badge. Set by the For-You
    * feed; chronological feeds leave it undefined and no badges render.
@@ -86,6 +87,7 @@ export function ArticleList({
   errorTitle = 'Could not load articles',
   errorDescription = 'Please refresh the page or try again in a moment.',
   showDismiss = false,
+  articleClassName,
   reasons,
   debug,
 }: ArticleListProps) {
@@ -193,6 +195,7 @@ export function ArticleList({
         <ArticleCard
           article={article}
           key={article.id}
+          className={articleClassName}
           onBookmark={handleBookmark(article.id)}
           onBookmarkAuthRequired={handleBookmarkAuthRequired(article.id)}
           isBookmarked={savedArticleIds.has(article.id)}

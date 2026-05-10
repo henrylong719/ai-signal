@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   AlertCircleIcon,
+  CalendarDaysIcon,
   LinkIcon,
   LogInIcon,
   ShieldCheckIcon,
@@ -16,6 +17,7 @@ import SettingsSkeleton from '@/components/Setting/SettingsSkeleton'
 import ChangePassword from '@/components/UserSettings/ChangePassword'
 import ConnectedAccounts from '@/components/UserSettings/ConnectedAccounts'
 import DeleteAccount from '@/components/UserSettings/DeleteAccount'
+import DigestPreferences from '@/components/UserSettings/DigestPreferences'
 import UserInformation from '@/components/UserSettings/UserInformation'
 import useAuth from '@/hooks/useAuth'
 
@@ -141,6 +143,15 @@ function UserSettings() {
           className={hasPassword ? 'lg:col-span-2' : 'lg:self-start'}
         >
           <ConnectedAccounts hasPassword={hasPassword} />
+        </SettingsSection>
+
+        <SettingsSection
+          title="Daily Digest"
+          description="One email per day, grouped by signal area, in your local time."
+          icon={<CalendarDaysIcon className="h-4 w-4 stroke-[1.8]" />}
+          className="lg:col-span-2"
+        >
+          <DigestPreferences />
         </SettingsSection>
 
         <SettingsSection

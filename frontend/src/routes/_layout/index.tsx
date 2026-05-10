@@ -1,19 +1,19 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { LibraryIcon, SlidersHorizontalIcon } from 'lucide-react'
-import { DateTime } from 'luxon'
 import { useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 import { ArticleList } from '@/components/Articles/ArticleList'
 import type { RecommenderDebugPayload } from '@/components/Articles/RecommenderDebugPanel'
+import { GuestLanding } from '@/components/Landing/GuestHero'
 import { MobileSidebar, Sidebar } from '@/components/Landing/Sidebar'
 import { PageContainer } from '@/components/Layout/Page'
-import { GuestPersonalizationCard } from '@/components/Personalization/GuestPersonalizationCard'
 import { PersonalizationCard } from '@/components/Personalization/PersonalizationCard'
 import { useArticleFeed } from '@/hooks/useArticleFeed'
 import useAuth from '@/hooks/useAuth'
 import { useFollowingFeed } from '@/hooks/useFollowingFeed'
 import { useForYouFeed } from '@/hooks/useForYouFeed'
 import { useInterests } from '@/hooks/useInterests'
+import { buildPageMeta } from '@/lib/meta'
 
 // `?debug=1` opts a superuser into the recommender-debug panel. Accepts
 // the conventional truthy strings (`1`, `true`) and the bare presence
@@ -32,13 +32,14 @@ const searchSchema = z.object({
 export const Route = createFileRoute('/_layout/')({
   component: Dashboard,
   validateSearch: searchSchema,
-  head: () => ({
-    meta: [
-      {
-        title: 'AI Signal',
-      },
-    ],
-  }),
+  head: () =>
+    buildPageMeta({
+      title: 'AI Signal — Track the AI updates that matter',
+      description:
+        'A focused reading layer for builders. Follow AI labs, research, engineering blogs, newsletters, and trusted voices in one calm dashboard.',
+      path: '/',
+      suppressSuffix: true,
+    }),
 })
 
 type Tab = 'for-you' | 'following' | 'latest'
@@ -141,17 +142,38 @@ function Dashboard() {
     }
 
     setActiveTab(tab)
+    // The JS scroll-behavior option overrides CSS, so the global
+    // prefers-reduced-motion rule in index.css can't catch this path —
+    // check the user pref directly and fall back to instant scroll.
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
     window.requestAnimationFrame(() => {
       feedTopRef.current?.scrollIntoView({
-        behavior: 'smooth',
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
         block: 'start',
       })
     })
   }
 
+  if (!isAuthed) {
+    return (
+      <PageContainer variant="default" spacing="none" gutters>
+        <GuestLanding latestUpdatedAt={latestFeedUpdatedAt}>
+          <ArticleList
+            {...latest}
+            articleClassName="py-6 sm:py-7"
+            emptyTitle="Nothing in Latest yet"
+            emptyDescription="Fresh signals will land here as we ingest new posts from labs, research, engineering blogs, and newsletters."
+          />
+        </GuestLanding>
+      </PageContainer>
+    )
+  }
+
   return (
     <PageContainer
-      variant="wide"
+      variant="default"
       spacing="none"
       className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] xl:gap-10"
     >
@@ -189,17 +211,6 @@ function Dashboard() {
             </div>
           </div>
         </div>
-
-        {!isAuthed &&
-          resolvedTab === 'latest' &&
-          !latest.isPending &&
-          !latest.isError &&
-          latestFeedUpdatedAt > 0 && (
-            <p className="mt-3 text-xs font-medium text-slate-500 dark:text-muted-foreground/85">
-              Feed updated{' '}
-              {DateTime.fromMillis(latestFeedUpdatedAt).toRelative()}
-            </p>
-          )}
 
         {resolvedTab === 'for-you' && isAuthed && (
           <>
@@ -275,14 +286,11 @@ function Dashboard() {
           />
         )}
         {resolvedTab === 'latest' && (
-          <>
-            {!isAuthed && <GuestPersonalizationCard />}
-            <ArticleList
-              {...latest}
-              emptyTitle="Nothing in Latest yet"
-              emptyDescription="Fresh signals will land here as we ingest new posts from labs, research, engineering blogs, and newsletters."
-            />
-          </>
+          <ArticleList
+            {...latest}
+            emptyTitle="Nothing in Latest yet"
+            emptyDescription="Fresh signals will land here as we ingest new posts from labs, research, engineering blogs, and newsletters."
+          />
         )}
       </div>
       <Sidebar />

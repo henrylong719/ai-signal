@@ -13,7 +13,7 @@ from app.models import Article, User
 from app.models.article import EMBEDDING_DIM
 from app.schemas import ArticleCreate, UserCreate
 from app.schemas.source import SOURCES, Category
-from app.services import article_search
+from app.services import article_redirects, article_search
 from tests.utils.article import create_random_article
 from tests.utils.user import user_authentication_headers
 from tests.utils.utils import random_email, random_lower_string
@@ -685,7 +685,7 @@ def test_go_to_no_priors_legacy_homepage_link_uses_reachable_fallback(
     )
 
     assert response.status_code == 302
-    assert response.headers["location"] == article_routes._NO_PRIORS_FALLBACK_URL
+    assert response.headers["location"] == article_redirects._NO_PRIORS_FALLBACK_URL
 
 
 def test_go_to_no_priors_audio_link_uses_apple_episode_landing(
@@ -705,7 +705,7 @@ def test_go_to_no_priors_audio_link_uses_apple_episode_landing(
     )
 
     monkeypatch.setattr(
-        article_routes,
+        article_redirects,
         "_no_priors_apple_episode_url",
         lambda title: apple_episode_url,
     )
@@ -731,7 +731,7 @@ def test_go_to_no_priors_audio_link_falls_back_to_apple_show_landing(
     )
 
     monkeypatch.setattr(
-        article_routes,
+        article_redirects,
         "_no_priors_apple_episode_url",
         lambda title: None,
     )
@@ -742,7 +742,7 @@ def test_go_to_no_priors_audio_link_falls_back_to_apple_show_landing(
     )
 
     assert response.status_code == 302
-    assert response.headers["location"] == article_routes._NO_PRIORS_FALLBACK_URL
+    assert response.headers["location"] == article_redirects._NO_PRIORS_FALLBACK_URL
 
 
 def test_user_vector_refresh_failure_does_not_break_article_signal_endpoints(

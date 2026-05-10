@@ -5,19 +5,17 @@ import {
   PolicySection,
 } from '@/components/Legal/LegalPageLayout'
 import { CONTACT_EMAIL, LEGAL_LAST_UPDATED } from '@/lib/legal'
+import { buildPageMeta } from '@/lib/meta'
 
 export const Route = createFileRoute('/_layout/accessibility')({
   component: AccessibilityPage,
-  head: () => ({
-    meta: [
-      { title: 'Accessibility — AI Signal' },
-      {
-        name: 'description',
-        content:
-          'How AI Signal approaches accessibility, what we already do, and how to report issues.',
-      },
-    ],
-  }),
+  head: () =>
+    buildPageMeta({
+      title: 'Accessibility',
+      description:
+        'How AI Signal approaches accessibility, what we already do, and how to report issues.',
+      path: '/accessibility',
+    }),
 })
 
 function AccessibilityPage() {

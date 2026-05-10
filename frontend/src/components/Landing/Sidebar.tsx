@@ -106,9 +106,6 @@ export function Sidebar() {
     >
       <div className="divide-y divide-slate-200/70 *:py-7 [&>*:first-child]:pt-5 [&>*:last-child]:pb-5 dark:divide-border">
         <SidebarSections />
-        <div>
-          <SupportFooterLinks variant="wrap" withCopyright />
-        </div>
       </div>
     </aside>
   )

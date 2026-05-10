@@ -4,10 +4,19 @@ import { ArticleList } from '@/components/Articles/ArticleList'
 import { PageContainer, PageHeader } from '@/components/Layout/Page'
 import { useArticleFeed } from '@/hooks/useArticleFeed'
 import { CATEGORIES } from '@/lib/constants'
+import { buildPageMeta } from '@/lib/meta'
 import { capitalize } from '@/lib/utils'
 
 export const Route = createFileRoute('/_layout/category-feed/$cat')({
   component: CategoryFeed,
+  head: ({ params }) => {
+    const label = capitalize(params.cat)
+    return buildPageMeta({
+      title: `${label} — AI signals`,
+      description: `The latest ${label} updates from trusted AI labs, research, engineering blogs, newsletters, and independent voices.`,
+      path: `/category-feed/${params.cat}`,
+    })
+  },
 })
 
 function CategoryFeed() {

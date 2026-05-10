@@ -39,7 +39,7 @@ const buildDigestIntro = (digest: DigestPublicSchema | undefined): string => {
 
 function DigestHeader({ digest }: { digest: DigestPublicSchema | undefined }) {
   return (
-    <header className="mb-14 text-center sm:mb-16 md:mb-20">
+    <header className="mb-10 text-center sm:mb-10 md:mb-10">
       <div className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-muted-foreground">
         <CalendarIcon className="h-4 w-4 stroke-[1.5]" />
         {formatDigestDate(digest?.generated_at)}
@@ -50,11 +50,6 @@ function DigestHeader({ digest }: { digest: DigestPublicSchema | undefined }) {
       <p className="mx-auto mt-5 max-w-2xl font-serif text-lg leading-8 text-slate-500 sm:text-xl sm:leading-9 dark:text-muted-foreground">
         {buildDigestIntro(digest)}
       </p>
-      {digest?.generated_at ? (
-        <p className="mx-auto mt-4 max-w-2xl text-center text-xs font-medium text-slate-400 dark:text-muted-foreground/80">
-          Updated {DateTime.fromISO(digest.generated_at).toRelative()}
-        </p>
-      ) : null}
     </header>
   )
 }

@@ -1,8 +1,11 @@
 // Single source of truth for the contact email surfaced on legal/support
-// pages and the "last updated" date stamped on policies. TODO before
-// public launch: replace this with a verified AI Signal domain mailbox
-// such as hello@aisignal.app once it exists.
-export const CONTACT_EMAIL = 'henrylong719@gmail.com'
+// pages and the "last updated" date stamped on policies. The mailbox
+// must remain reachable in production — bounce-back from this address
+// breaks every "Contact us" CTA across the app.
+export const CONTACT_EMAIL = 'hello@aisignal.app'
+// Pinned date the legal pages were last revised. Bump only when a
+// policy actually changes — drifting this on every commit would erode
+// the credibility of the "Last updated" line.
 export const LEGAL_LAST_UPDATED = 'May 9, 2026'
 
 export interface SupportLink {

@@ -32,21 +32,48 @@ const sourceTypeIcons: Record<SourcePublic['source_type'], LucideIcon> = {
   podcast: MegaphoneIcon,
 }
 
-const shuffle = <T,>(items: T[]) => {
+// Seeded PRNG (mulberry32). Same seed → same sequence, so the rail
+// preview is stable for the lifetime of one daily seed instead of
+// re-shuffling on every navigation.
+const mulberry32 = (seed: number) => {
+  let state = seed >>> 0
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0
+    let t = state
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+const seededShuffle = <T,>(items: readonly T[], rng: () => number): T[] => {
   const shuffled = [...items]
-
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1))
+    const swapIndex = Math.floor(rng() * (index + 1))
     const currentItem = shuffled[index]
-
     shuffled[index] = shuffled[swapIndex]
     shuffled[swapIndex] = currentItem
   }
-
   return shuffled
 }
 
-const getPreviewSources = (sources: SourcePublic[], limit = 4) => {
+// Daily seed: YYYYMMDD in UTC. Stable for everyone on the same day,
+// rotates once per day. UTC keeps the seed identical across timezones
+// so caching and snapshot tests don't depend on the viewer's clock.
+const dailySeed = (): number => {
+  const now = new Date()
+  return (
+    now.getUTCFullYear() * 10000 +
+    (now.getUTCMonth() + 1) * 100 +
+    now.getUTCDate()
+  )
+}
+
+const getPreviewSources = (
+  sources: SourcePublic[],
+  rng: () => number,
+  limit = 4,
+) => {
   const selected: SourcePublic[] = []
   const selectedNames = new Set<string>()
   const sourcesByType = new Map<SourcePublic['source_type'], SourcePublic[]>()
@@ -57,10 +84,10 @@ const getPreviewSources = (sources: SourcePublic[], limit = 4) => {
     sourcesByType.set(source.source_type, [...existingSources, source])
   }
 
-  for (const sourceType of shuffle(previewSourceTypes)) {
+  for (const sourceType of seededShuffle(previewSourceTypes, rng)) {
     if (selected.length >= limit) break
 
-    const source = shuffle(sourcesByType.get(sourceType) ?? [])[0]
+    const source = seededShuffle(sourcesByType.get(sourceType) ?? [], rng)[0]
 
     if (source) {
       selected.push(source)
@@ -68,7 +95,7 @@ const getPreviewSources = (sources: SourcePublic[], limit = 4) => {
     }
   }
 
-  for (const source of shuffle(sources)) {
+  for (const source of seededShuffle(sources, rng)) {
     if (selected.length >= limit) break
 
     if (!selectedNames.has(source.name)) {
@@ -83,7 +110,10 @@ const getPreviewSources = (sources: SourcePublic[], limit = 4) => {
 const ArticleSource = () => {
   const { sources: allSources, isLoading, isError } = useSources()
 
-  const sources = useMemo(() => getPreviewSources(allSources), [allSources])
+  const sources = useMemo(() => {
+    const rng = mulberry32(dailySeed())
+    return getPreviewSources(allSources, rng)
+  }, [allSources])
 
   return (
     <div>
@@ -161,7 +191,8 @@ const ArticleSource = () => {
         to="/all-article-sources"
         className="mt-3 inline-flex items-center rounded-sm text-xs font-semibold text-slate-500 transition-colors hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:text-muted-foreground dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
       >
-        See all sources <ChevronRightIcon className="w-3 h-3 ml-0.5 stroke-2" />
+        View all sources{' '}
+        <ChevronRightIcon className="w-3 h-3 ml-0.5 stroke-2" />
       </Link>
     </div>
   )

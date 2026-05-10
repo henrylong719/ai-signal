@@ -122,6 +122,22 @@ class Settings(BaseSettings):
     EMAILS_FROM_EMAIL: EmailStr | None = None
     EMAILS_FROM_NAME: str | None = None
 
+    # Resend (https://resend.com) — provider for the daily digest email.
+    # Independent of SMTP_* (those still drive password-reset transactional
+    # mail via the existing app.utils.send_email path). When unset, the
+    # digest scheduler logs and skips rather than failing — useful for
+    # local development where you don't want to wire up an account.
+    RESEND_API_KEY: str | None = None
+    # Sender for digest emails. Should be a verified domain mailbox in
+    # Resend. Falls back to EMAILS_FROM_EMAIL so the same identity used
+    # for transactional mail can be reused for the digest if not split.
+    DIGEST_FROM_EMAIL: EmailStr | None = None
+    # Hour of the day (0–23, in the user's local timezone) the digest
+    # is delivered. The hourly scheduler matches this against each
+    # user's local clock; staying configurable lets us shift the
+    # send window without a code change.
+    DIGEST_SEND_LOCAL_HOUR: int = 8
+
     @model_validator(mode="after")
     def _set_default_emails_from(self) -> Self:
         if not self.EMAILS_FROM_NAME:
@@ -134,6 +150,18 @@ class Settings(BaseSettings):
     @property
     def emails_enabled(self) -> bool:
         return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def digest_email_enabled(self) -> bool:
+        """Whether the daily-digest sender has the credentials it needs.
+
+        The scheduler checks this on every fire and short-circuits when
+        false, so a dev environment without Resend credentials silently
+        skips digest delivery instead of crashing the job.
+        """
+        from_email = self.DIGEST_FROM_EMAIL or self.EMAILS_FROM_EMAIL
+        return bool(self.RESEND_API_KEY and from_email)
 
     EMAIL_TEST_USER: EmailStr = "test@example.com"
     FIRST_SUPERUSER: EmailStr

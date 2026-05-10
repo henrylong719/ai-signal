@@ -1,12 +1,17 @@
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
+from fastapi.responses import HTMLResponse
 from sqlmodel import SQLModel
 
 from app.api.deps import OptionalCurrentUser, SessionDep
+from app.core.config import settings
+from app.models import User
+from app.models.base import get_datetime_utc
 from app.schemas import ArticlePublic
 from app.services.digest import DigestPublic, DigestSection, build_digest
+from app.services.digest_email import parse_unsubscribe_token
 
 router = APIRouter(prefix="/digest", tags=["digest"])
 
@@ -83,3 +88,106 @@ def read_today_digest(
         user_id=user.id if user is not None else None,
     )
     return _serialize_digest(digest)
+
+
+# --- Unsubscribe ------------------------------------------------------------
+#
+# Reachable from the link in every digest email AND from the
+# List-Unsubscribe header (one-click). Both paths land on the same
+# endpoint with a signed token; we flip the user's opt-in flag and
+# render a small HTML confirmation. No auth required — possession of
+# the signed token is the authorization.
+
+_UNSUB_HTML_OK = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Unsubscribed — AI Signal</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body {{ margin:0; background:#f8fafc; color:#0f172a;
+       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }}
+.card {{ max-width:520px; margin:80px auto; padding:40px;
+       background:#fff; border:1px solid #e2e8f0; border-radius:12px;
+       box-shadow:0 1px 2px rgba(15,23,42,.04); }}
+h1 {{ font-family:Georgia,'Iowan Old Style',serif; font-size:24px; margin:0 0 12px; }}
+p  {{ font-size:15px; line-height:23px; color:#475569; margin:0 0 12px; }}
+a  {{ color:#0f172a; }}
+</style></head>
+<body><div class="card">
+<h1>{title}</h1>
+<p>{body}</p>
+<p><a href="{home}">Back to AI Signal</a></p>
+</div></body></html>"""
+
+
+@router.get("/unsubscribe", response_class=HTMLResponse, include_in_schema=False)
+def digest_unsubscribe(
+    session: SessionDep,
+    token: str = Query(..., min_length=1, max_length=4096),
+) -> HTMLResponse:
+    """Disable the daily digest for the user identified by ``token``.
+
+    Idempotent — repeated clicks land the user on the same confirmation
+    page without raising. Always 200 (even on bad tokens) so the email
+    client doesn't surface a scary error UI; the body explains the
+    state.
+    """
+    home_url = settings.FRONTEND_HOST.rstrip("/") + "/"
+    user_id = parse_unsubscribe_token(token)
+    if user_id is None:
+        return HTMLResponse(
+            _UNSUB_HTML_OK.format(
+                title="Link expired",
+                body=(
+                    "This unsubscribe link is no longer valid. You can "
+                    "manage email preferences from your account settings."
+                ),
+                home=home_url,
+            ),
+            status_code=200,
+        )
+
+    user = session.get(User, user_id)
+    if user is None:
+        # The account was deleted after the email was sent. Show the
+        # same generic confirmation — no point distinguishing this
+        # case to a recipient who can't act on it.
+        return HTMLResponse(
+            _UNSUB_HTML_OK.format(
+                title="You're unsubscribed",
+                body="You will not receive further AI Signal digests.",
+                home=home_url,
+            ),
+            status_code=200,
+        )
+
+    if user.daily_digest_enabled:
+        user.daily_digest_enabled = False
+        # Reset the send watermark so a future re-subscribe doesn't
+        # silently skip "already sent today" on the same calendar day.
+        user.last_digest_sent_at = get_datetime_utc()
+        session.add(user)
+        session.commit()
+
+    return HTMLResponse(
+        _UNSUB_HTML_OK.format(
+            title="You're unsubscribed",
+            body=(
+                "You will not receive further AI Signal digests. "
+                "You can re-enable them anytime from your account settings."
+            ),
+            home=home_url,
+        ),
+        status_code=200,
+    )
+
+
+@router.post("/unsubscribe", response_class=HTMLResponse, include_in_schema=False)
+def digest_unsubscribe_one_click(
+    session: SessionDep,
+    token: str = Query(..., min_length=1, max_length=4096),
+) -> HTMLResponse:
+    """One-click unsubscribe target referenced by the email's
+    ``List-Unsubscribe`` header. Same effect as the GET — kept as a
+    separate handler so RFC 8058 compliant clients can POST without
+    falling through to the GET error page.
+    """
+    return digest_unsubscribe(session=session, token=token)

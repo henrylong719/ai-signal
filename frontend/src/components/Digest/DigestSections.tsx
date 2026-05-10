@@ -1,8 +1,8 @@
-import type { DigestSectionPublic } from '@/client';
-import DigestArticle from '@/components/Digest/DigestArticle';
+import type { DigestSectionPublic } from '@/client'
+import DigestArticle from '@/components/Digest/DigestArticle'
 
 const signalCountLabel = (count: number) =>
-  count === 1 ? '1 signal' : `${count} signals`;
+  count === 1 ? '1 signal' : `${count} signals`
 
 function DigestSections({ sections }: { sections: DigestSectionPublic[] }) {
   return (
@@ -38,7 +38,7 @@ function DigestSections({ sections }: { sections: DigestSectionPublic[] }) {
         </section>
       ))}
     </div>
-  );
+  )
 }
 
-export default DigestSections;
+export default DigestSections

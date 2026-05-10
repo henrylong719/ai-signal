@@ -5,19 +5,17 @@ import {
   PolicySection,
 } from '@/components/Legal/LegalPageLayout'
 import { CONTACT_EMAIL, LEGAL_LAST_UPDATED } from '@/lib/legal'
+import { buildPageMeta } from '@/lib/meta'
 
 export const Route = createFileRoute('/_layout/terms')({
   component: TermsPage,
-  head: () => ({
-    meta: [
-      { title: 'Terms of Service — AI Signal' },
-      {
-        name: 'description',
-        content:
-          'The terms that apply when you use AI Signal — written in plain English, not boilerplate.',
-      },
-    ],
-  }),
+  head: () =>
+    buildPageMeta({
+      title: 'Terms of Service',
+      description:
+        'The terms that apply when you use AI Signal — written in plain English, not boilerplate.',
+      path: '/terms',
+    }),
 })
 
 function TermsPage() {

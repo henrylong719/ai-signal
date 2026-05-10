@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AdminReadAdminArticlesData, AdminReadAdminArticlesResponse, AdminDeleteAdminArticleData, AdminDeleteAdminArticleResponse, AdminEmbedPendingArticlesData, AdminEmbedPendingArticlesResponse, AdminReadIngestRunsData, AdminReadIngestRunsResponse, ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadForYouData, ArticlesReadForYouResponse, ArticlesReadFollowingData, ArticlesReadFollowingResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, DigestReadTodayDigestData, DigestReadTodayDigestResponse, FeedbackSubmitFeedbackData, FeedbackSubmitFeedbackResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, LoginStartOauthLoginData, LoginStartOauthLoginResponse, LoginOauthCallbackData, LoginOauthCallbackResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutData, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SubscriptionsCreateSubscriptionData, SubscriptionsCreateSubscriptionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersReadUserOauthAccountsData, UsersReadUserOauthAccountsResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AdminReadAdminArticlesData, AdminReadAdminArticlesResponse, AdminDeleteAdminArticleData, AdminDeleteAdminArticleResponse, AdminEmbedPendingArticlesData, AdminEmbedPendingArticlesResponse, AdminReadIngestRunsData, AdminReadIngestRunsResponse, ArticlesReadArticlesData, ArticlesReadArticlesResponse, ArticlesReadForYouData, ArticlesReadForYouResponse, ArticlesReadFollowingData, ArticlesReadFollowingResponse, ArticlesReadSourcesData, ArticlesReadSourcesResponse, ArticlesReadSavedArticlesData, ArticlesReadSavedArticlesResponse, ArticlesReadSavedArticleIdsData, ArticlesReadSavedArticleIdsResponse, ArticlesReadArticleData, ArticlesReadArticleResponse, ArticlesSaveArticleData, ArticlesSaveArticleResponse, ArticlesUnsaveArticleData, ArticlesUnsaveArticleResponse, ArticlesGoToArticleData, ArticlesGoToArticleResponse, ArticlesDismissArticleData, ArticlesDismissArticleResponse, DigestReadTodayDigestData, DigestReadTodayDigestResponse, FeedbackSubmitFeedbackData, FeedbackSubmitFeedbackResponse, IngestTriggerIngestData, IngestTriggerIngestResponse, InterestsReadInterestsData, InterestsReadInterestsResponse, InterestsUpdateInterestsData, InterestsUpdateInterestsResponse, LoginStartOauthLoginData, LoginStartOauthLoginResponse, LoginOauthCallbackData, LoginOauthCallbackResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginRefreshSessionData, LoginRefreshSessionResponse, LoginLogoutData, LoginLogoutResponse, LoginTestTokenData, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SubscriptionsCreateSubscriptionData, SubscriptionsCreateSubscriptionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersReadUserMeData, UsersReadUserMeResponse, UsersDeleteUserMeData, UsersDeleteUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersCompleteOnboardingData, UsersCompleteOnboardingResponse, UsersUpdateDigestPreferencesData, UsersUpdateDigestPreferencesResponse, UsersReadUserOauthAccountsData, UsersReadUserOauthAccountsResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class AdminService {
     /**
@@ -392,6 +392,8 @@ export class ArticlesService {
      * The destination URL comes from the article row in the DB (never from a
      * query parameter), which means this endpoint cannot be repurposed as an
      * open redirect by an attacker. The scheme is whitelisted defensively.
+     * Per-source rewrites (e.g. No Priors) live in
+     * ``services.article_redirects`` so the route stays a thin lookup.
      * @param data The data for the request.
      * @param data.articleId
      * @param data.accessToken
@@ -957,6 +959,70 @@ export class UsersService {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/api/v1/users/me/password',
+            cookies: {
+                access_token: data.accessToken
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Complete Onboarding
+     * Mark first-run onboarding complete and persist captured preferences.
+     *
+     * The frontend calls this from the final step of the welcome modal
+     * once the user has picked their topics/sources. Setting
+     * ``onboarded_at`` here is what stops the modal from re-opening on
+     * the next sign-in. Repeated calls (user navigates back, picks a
+     * different digest opt-in, finishes again) overwrite cleanly.
+     *
+     * The actual interest data (categories, tags, preferred sources) is
+     * written through the existing /users/me/interests endpoint earlier
+     * in the flow — this endpoint only owns the metadata fields that
+     * didn't have a home before (timezone, digest opt-in, completion
+     * timestamp).
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @param data.accessToken
+     * @returns UserPublic Successful Response
+     * @throws ApiError
+     */
+    public static completeOnboarding(data: UsersCompleteOnboardingData): CancelablePromise<UsersCompleteOnboardingResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/users/me/onboarding',
+            cookies: {
+                access_token: data.accessToken
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Digest Preferences
+     * Update digest opt-in flag and/or cached timezone.
+     *
+     * Independent of the onboarding flow so the user can change their
+     * mind from the settings page after first run. Both fields are
+     * optional; omitted fields keep their current value.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @param data.accessToken
+     * @returns UserPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateDigestPreferences(data: UsersUpdateDigestPreferencesData): CancelablePromise<UsersUpdateDigestPreferencesResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/users/me/digest-preferences',
             cookies: {
                 access_token: data.accessToken
             },

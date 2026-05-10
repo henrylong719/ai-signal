@@ -3,7 +3,6 @@ import uuid
 from typing import Any
 from urllib.parse import urlparse
 
-import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, SQLModel
@@ -24,6 +23,10 @@ from app.schemas.source import (
     SourcePublic,
     SourcesPublic,
     SourceType,
+)
+from app.services.article_redirects import (
+    ALLOWED_REDIRECT_SCHEMES,
+    resolve_redirect_url,
 )
 from app.services.article_search import search_articles
 from app.services.embeddings import compute_and_save_user_vector
@@ -316,75 +319,6 @@ def unsave_article(
 # --- Behavioral events ---
 
 
-_ALLOWED_REDIRECT_SCHEMES = {"http", "https"}
-_NO_PRIORS_DEAD_HOSTS = {"no-priors.com", "www.no-priors.com"}
-_NO_PRIORS_AUDIO_HOSTS = {"traffic.megaphone.fm", "dcs-cached.megaphone.fm"}
-_NO_PRIORS_FALLBACK_URL = (
-    "https://podcasts.apple.com/us/podcast/"
-    "no-priors-artificial-intelligence-technology-startups/id1668002688"
-)
-_NO_PRIORS_APPLE_SEARCH_URL = "https://itunes.apple.com/search"
-_NO_PRIORS_APPLE_COLLECTION_ID = 1668002688
-
-
-def _is_no_priors_raw_audio_url(url: str) -> bool:
-    parsed = urlparse(url)
-    return (
-        parsed.netloc.lower() in _NO_PRIORS_AUDIO_HOSTS
-        and parsed.path.lower().endswith(".mp3")
-    )
-
-
-def _no_priors_apple_episode_url(title: str) -> str | None:
-    try:
-        response = httpx.get(
-            _NO_PRIORS_APPLE_SEARCH_URL,
-            params={
-                "term": f"No Priors {title}",
-                "media": "podcast",
-                "entity": "podcastEpisode",
-                "limit": 5,
-            },
-            timeout=2.0,
-        )
-        response.raise_for_status()
-        results = response.json().get("results", [])
-    except (httpx.HTTPError, ValueError, TypeError):
-        # Apple lookup failed — caller falls back to the show-landing URL,
-        # so this isn't a user-visible error. Logged at info so chronic
-        # failures show up in operational metrics without alarming on
-        # transient timeouts.
-        logger.info(
-            "Apple Podcasts lookup failed for No Priors title %r; "
-            "falling back to show landing",
-            title,
-        )
-        return None
-
-    for result in results:
-        if not isinstance(result, dict):
-            continue
-        if result.get("collectionId") != _NO_PRIORS_APPLE_COLLECTION_ID:
-            continue
-        episode_url = result.get("trackViewUrl")
-        parsed = urlparse(str(episode_url or ""))
-        if parsed.scheme in _ALLOWED_REDIRECT_SCHEMES and parsed.netloc.lower() in {
-            "podcasts.apple.com",
-            "itunes.apple.com",
-        }:
-            return str(episode_url)
-    return None
-
-
-def _article_redirect_url(article: Any) -> str:
-    parsed = urlparse(article.url)
-    if article.source == "No Priors" and parsed.netloc.lower() in _NO_PRIORS_DEAD_HOSTS:
-        return _NO_PRIORS_FALLBACK_URL
-    if article.source == "No Priors" and _is_no_priors_raw_audio_url(article.url):
-        return _no_priors_apple_episode_url(article.title) or _NO_PRIORS_FALLBACK_URL
-    return article.url
-
-
 @router.get("/{article_id}/go")
 def go_to_article(
     session: SessionDep,
@@ -400,14 +334,16 @@ def go_to_article(
     The destination URL comes from the article row in the DB (never from a
     query parameter), which means this endpoint cannot be repurposed as an
     open redirect by an attacker. The scheme is whitelisted defensively.
+    Per-source rewrites (e.g. No Priors) live in
+    ``services.article_redirects`` so the route stays a thin lookup.
     """
     article = crud.get_article(session=session, article_id=article_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
 
-    destination_url = _article_redirect_url(article)
+    destination_url = resolve_redirect_url(article)
     parsed = urlparse(destination_url)
-    if parsed.scheme not in _ALLOWED_REDIRECT_SCHEMES or not parsed.netloc:
+    if parsed.scheme not in ALLOWED_REDIRECT_SCHEMES or not parsed.netloc:
         # Should never happen for ingested articles, but defense in depth.
         raise HTTPException(status_code=400, detail="Article URL is invalid")
 

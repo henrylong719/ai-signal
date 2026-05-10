@@ -57,12 +57,12 @@ function HeaderSearchForm({
             <FormItem>
               <FormControl>
                 <div className="group/search relative">
-                  <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/search:text-slate-700 dark:text-muted-foreground dark:group-focus-within/search:text-foreground" />
+                  <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/search:text-slate-500 dark:text-muted-foreground dark:group-focus-within/search:text-foreground/80" />
                   <input
                     type="text"
                     aria-label="Search AI Signal"
                     placeholder={placeholder}
-                    className={`h-11 w-full rounded-full border border-slate-200/90 bg-white pl-11 pr-4 text-sm text-slate-950 shadow-[0_1px_2px_rgba(15,23,42,0.03),inset_0_1px_0_rgba(255,255,255,0.9)] outline-none transition-all placeholder:text-slate-400 hover:border-slate-300 hover:shadow-[0_3px_12px_rgba(15,23,42,0.05)] focus:border-slate-400 focus:ring-4 focus:ring-stone-950/[0.04] dark:border-border dark:bg-muted/45 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:hover:border-foreground/18 dark:focus:border-ring/50 dark:focus:ring-ring/15 ${inputClassName}`}
+                    className={`h-11 w-full rounded-full border border-slate-200/70 bg-white pl-11 pr-4 text-sm text-slate-950 shadow-[0_1px_1px_rgba(15,23,42,0.025),inset_0_1px_0_rgba(255,255,255,0.9)] outline-none transition-all placeholder:text-slate-400 hover:border-slate-200 hover:shadow-[0_2px_8px_rgba(15,23,42,0.035)] focus:border-slate-300 focus:ring-4 focus:ring-stone-950/2.5 dark:border-border/80 dark:bg-muted/45 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:hover:border-foreground/16 dark:focus:border-ring/40 dark:focus:ring-ring/10 ${inputClassName}`}
                     {...field}
                   />
                 </div>
@@ -146,7 +146,7 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.02)] backdrop-blur dark:border-border dark:bg-background/92 dark:shadow-none">
       <PageContainer
-        variant="shell"
+        variant="default"
         spacing="none"
         gutters
         className="grid h-16 grid-cols-[1fr_auto] items-center gap-4 sm:h-18 md:grid-cols-[minmax(10rem,1fr)_minmax(22rem,40rem)_minmax(10rem,1fr)]"
@@ -172,13 +172,6 @@ const Header = () => {
         </div>
 
         <div className="flex items-center justify-end gap-2 sm:gap-4">
-          <Link
-            to="/all-article-sources"
-            aria-label="Sources"
-            className="hidden h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 md:inline-flex lg:hidden dark:border-border dark:bg-muted/45 dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-          >
-            <Library className="h-5 w-5 stroke-[1.7]" />
-          </Link>
           <Sheet open={mobileSearchOpen} onOpenChange={setMobileSearchOpen}>
             <SheetTrigger asChild>
               <button
@@ -208,10 +201,11 @@ const Header = () => {
           </Sheet>
           <Link
             to="/all-article-sources"
-            className="hidden h-10 items-center gap-2 rounded-full px-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 lg:inline-flex dark:text-foreground/78 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+            aria-label="Sources"
+            className="hidden h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 md:inline-flex lg:px-3.5 dark:border-border dark:bg-muted/45 dark:text-foreground/78 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
           >
             <Library className="h-4 w-4 stroke-[1.7]" />
-            Sources
+            <span className="hidden lg:inline">Sources</span>
           </Link>
           {user ? (
             <>

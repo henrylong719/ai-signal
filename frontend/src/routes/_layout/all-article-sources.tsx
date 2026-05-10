@@ -15,19 +15,17 @@ import {
   SOURCE_TYPES,
   type source_types,
 } from '@/lib/constants'
+import { buildPageMeta } from '@/lib/meta'
 
 export const Route = createFileRoute('/_layout/all-article-sources')({
   component: AllArticleSources,
-  head: () => ({
-    meta: [
-      { title: 'All article sources — AI Signal' },
-      {
-        name: 'description',
-        content:
-          'Browse every source behind AI Signal — labs, research feeds, analysis, policy groups, media outlets, newsletters, podcasts, and community sites.',
-      },
-    ],
-  }),
+  head: () =>
+    buildPageMeta({
+      title: 'All article sources',
+      description:
+        'Browse every source behind AI Signal — labs, research feeds, analysis, policy groups, media outlets, newsletters, podcasts, and community sites.',
+      path: '/all-article-sources',
+    }),
 })
 
 const isSourceType = (value: unknown): value is source_types =>
@@ -118,7 +116,7 @@ function AllArticleSources() {
   }
 
   return (
-    <PageContainer variant="wide">
+    <PageContainer variant="default">
       <PageHeader
         eyebrow="Directory"
         title="Sources"

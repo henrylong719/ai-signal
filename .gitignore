@@ -10,3 +10,5 @@ CLAUDE.md
 .env
 .vercel
 .env*.local
+.DS_Store
+.tanstack/tmp/

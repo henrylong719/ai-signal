@@ -4,10 +4,6 @@
   "workspaces": {
     "": {
       "name": "fastapi-cloud",
-      "dependencies": {
-        "react": "^19.2.6",
-        "react-dom": "^19.2.6",
-      },
     },
     "frontend": {
       "name": "frontend",

@@ -10,6 +10,8 @@ import {
 import AuthModal from '@/components/Auth/AuthModal'
 import type { AuthMode } from '@/components/Auth/authTypes'
 import { SupportFooterLinks } from '@/components/Legal/SupportFooterLinks'
+import { useSources } from '@/hooks/useSources'
+import { useTodayDigest } from '@/hooks/useTodayDigest'
 import { trackGuestEvent } from '@/lib/analytics'
 import ArticleSource from './ArticleSource'
 import RecommendedTopics from './RecommendedTopics'
@@ -168,6 +170,10 @@ function MobileGuestBriefing() {
 }
 
 function GuestSidebar() {
+  const { isLoading: sourcesLoading } = useSources()
+  const { isLoading: digestLoading } = useTodayDigest()
+  const isLoading = sourcesLoading || digestLoading
+
   const sidebarRef = useRef<HTMLElement>(null)
   const [sidebarHeight, setSidebarHeight] = useState(0)
 
@@ -211,7 +217,7 @@ function GuestSidebar() {
     >
       <div className="divide-y divide-slate-200/70 *:py-7 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0 dark:divide-border">
         <TodayDigest />
-        <RecommendedTopics />
+        <RecommendedTopics isLoading={isLoading} />
         <ArticleSource />
       </div>
       <div className="mt-7 border-t border-slate-200/70 pt-5 dark:border-border/70">

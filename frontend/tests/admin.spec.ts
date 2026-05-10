@@ -208,7 +208,9 @@ test.describe('Admin page access control', () => {
 
     await page.goto('/admin/analytics')
 
-    await expect(page.getByRole('heading', { name: 'Guest funnel' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Guest funnel' }),
+    ).toBeVisible()
     await expect(page.getByText('Last 30 days').first()).toBeVisible()
   })
 })

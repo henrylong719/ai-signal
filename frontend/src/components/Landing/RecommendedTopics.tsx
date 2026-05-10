@@ -4,6 +4,7 @@ import type { category } from '@/client'
 import { trackGuestEvent } from '@/lib/analytics'
 import { capitalize } from '@/lib/utils'
 import { Badge } from '../ui/badge'
+import { Skeleton } from '../ui/skeleton'
 
 const PREVIEW_TOPICS = [
   'agents',
@@ -18,7 +19,33 @@ const PREVIEW_TOPICS = [
   'safety',
 ] satisfies category[]
 
-const RecommendedTopics = () => {
+// Widths chosen to approximate the rendered width of each capitalized topic label.
+const SKELETON_WIDTHS = [
+  'w-16', // Agents
+  'w-12', // Rag
+  'w-16', // Models
+  'w-20', // Research
+  'w-24', // Engineering
+  'w-28', // Infrastructure
+  'w-28', // Applications
+  'w-20', // Business
+  'w-16', // Policy
+  'w-16', // Safety
+] as const
+
+const RecommendedTopicsSkeleton = () => (
+  <div className="flex flex-wrap gap-2">
+    {SKELETON_WIDTHS.map((width, i) => (
+      <Skeleton
+        // biome-ignore lint/suspicious/noArrayIndexKey: static list, order never changes
+        key={i}
+        className={`h-8 rounded-full bg-slate-100 dark:bg-muted ${width}`}
+      />
+    ))}
+  </div>
+)
+
+const RecommendedTopics = ({ isLoading = false }: { isLoading?: boolean }) => {
   return (
     <div>
       <div className="mb-3 flex items-center gap-2.5">
@@ -29,26 +56,32 @@ const RecommendedTopics = () => {
           Recommended topics
         </span>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {PREVIEW_TOPICS.map((cat) => (
-          <Link
-            key={cat}
-            to="/category-feed/$cat"
-            params={{ cat }}
-            onClick={() =>
-              trackGuestEvent('guest_topic_click', { payload: { topic: cat } })
-            }
-            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-          >
-            <Badge
-              variant="secondary"
-              className="h-8 cursor-pointer border-slate-200/70 bg-white px-3 text-[0.8125rem] font-medium text-slate-700 shadow-[0_1px_1px_rgba(15,23,42,0.025)] transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent/70 dark:hover:text-foreground"
+      {isLoading ? (
+        <RecommendedTopicsSkeleton />
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {PREVIEW_TOPICS.map((cat) => (
+            <Link
+              key={cat}
+              to="/category-feed/$cat"
+              params={{ cat }}
+              onClick={() =>
+                trackGuestEvent('guest_topic_click', {
+                  payload: { topic: cat },
+                })
+              }
+              className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
             >
-              {capitalize(cat)}
-            </Badge>
-          </Link>
-        ))}
-      </div>
+              <Badge
+                variant="secondary"
+                className="h-8 cursor-pointer border-slate-200/70 bg-white px-3 text-[0.8125rem] font-medium text-slate-700 shadow-[0_1px_1px_rgba(15,23,42,0.025)] transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent/70 dark:hover:text-foreground"
+              >
+                {capitalize(cat)}
+              </Badge>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

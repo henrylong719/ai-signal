@@ -116,10 +116,9 @@ const UserInformation = () => {
           <div className="pt-2">
             <LoadingButton
               type="submit"
-              size="sm"
               loading={mutation.isPending}
               disabled={!form.formState.isDirty}
-              className="h-9 w-full rounded-full bg-slate-950 px-4 font-medium text-white shadow-sm hover:bg-slate-800 sm:w-auto dark:bg-foreground dark:text-background dark:hover:bg-foreground/92"
+              className="inline-flex h-10 w-full items-center rounded-full bg-slate-950 px-5 text-sm font-medium text-white shadow-sm hover:bg-slate-800 sm:w-auto dark:bg-foreground dark:text-background dark:hover:bg-foreground/92"
             >
               <CheckIcon className="h-4 w-4" />
               Save profile

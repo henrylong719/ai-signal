@@ -1,10 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router'
 import {
   LegalPageLayout,
   PolicySection,
-} from '@/components/Legal/LegalPageLayout';
-import { CONTACT_EMAIL } from '@/lib/legal';
-import { buildPageMeta } from '@/lib/meta';
+} from '@/components/Legal/LegalPageLayout'
+import { CONTACT_EMAIL } from '@/lib/legal'
+import { buildPageMeta } from '@/lib/meta'
 
 export const Route = createFileRoute('/_layout/data-deletion')({
   component: DataDeletionPage,
@@ -15,7 +15,7 @@ export const Route = createFileRoute('/_layout/data-deletion')({
         'How to request deletion of your AI Signal account and personal data.',
       path: '/data-deletion',
     }),
-});
+})
 
 function DataDeletionPage() {
   return (
@@ -47,5 +47,5 @@ function DataDeletionPage() {
         </p>
       </PolicySection>
     </LegalPageLayout>
-  );
+  )
 }

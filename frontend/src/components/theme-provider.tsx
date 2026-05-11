@@ -67,6 +67,18 @@ export function ThemeProvider({
     root.style.colorScheme = resolved
   }, [])
 
+  // Suppresses color-transition crossfade for one paint. Used by every
+  // code path that flips the theme — manual toggle and OS-level change.
+  const suppressTransitions = useCallback(() => {
+    const root = document.documentElement
+    root.classList.add('no-transitions')
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        root.classList.remove('no-transitions')
+      })
+    })
+  }, [])
+
   useLayoutEffect(() => {
     updateTheme(theme)
     setResolvedTheme(getResolvedTheme(theme))
@@ -77,6 +89,7 @@ export function ThemeProvider({
 
     const handleChange = () => {
       if (theme === 'system') {
+        suppressTransitions()
         updateTheme('system')
         setResolvedTheme(getResolvedTheme('system'))
       }
@@ -87,7 +100,7 @@ export function ThemeProvider({
     return () => {
       mediaQuery.removeEventListener('change', handleChange)
     }
-  }, [theme, updateTheme, getResolvedTheme])
+  }, [theme, updateTheme, getResolvedTheme, suppressTransitions])
 
   const value = {
     theme,
@@ -95,20 +108,11 @@ export function ThemeProvider({
     setTheme: (newTheme: Theme) => {
       localStorage.setItem(storageKey, newTheme)
 
-      // Suppress transitions so theme switch is instant, not a crossfade
-      const root = document.documentElement
-      root.classList.add('no-transitions')
+      suppressTransitions()
 
       // Apply DOM class immediately (don't wait for React re-render)
       updateTheme(newTheme)
       setResolvedTheme(getResolvedTheme(newTheme))
-
-      // Re-enable transitions after the browser has repainted
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          root.classList.remove('no-transitions')
-        })
-      })
 
       setTheme(newTheme)
     },

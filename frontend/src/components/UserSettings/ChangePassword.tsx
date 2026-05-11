@@ -143,7 +143,7 @@ const ChangePassword = () => {
             type="submit"
             loading={mutation.isPending}
             size="sm"
-            className="h-9 w-full border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-950 sm:w-auto dark:border-border dark:bg-transparent dark:text-foreground/86 dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground"
+            className="h-9 w-full rounded-full bg-slate-950 px-4 font-medium text-white shadow-sm hover:bg-slate-800 sm:w-auto dark:bg-foreground dark:text-background dark:hover:bg-foreground/92"
           >
             <KeyRoundIcon className="h-4 w-4" />
             Update password

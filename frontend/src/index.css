@@ -148,13 +148,17 @@
   [role="button"] {
     cursor: pointer;
   }
-  /* Suppress all transitions during theme switch to prevent color crossfade */
-  .no-transitions,
-  .no-transitions *,
-  .no-transitions *::before,
-  .no-transitions *::after {
-    transition-duration: 0s;
-  }
+}
+
+/* Suppress all transitions during theme switch to prevent color crossfade.
+   Lives outside @layer base so it has unlayered (higher) cascade priority
+   than Tailwind's transition utilities — without that, classes like
+   `transition-colors` would beat the rule and colors would still crossfade. */
+.no-transitions,
+.no-transitions *,
+.no-transitions *::before,
+.no-transitions *::after {
+  transition-duration: 0s;
 }
 
 /* Honor users who request reduced motion. Lives outside @layer base so

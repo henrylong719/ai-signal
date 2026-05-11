@@ -82,4 +82,23 @@ if settings.all_cors_origins:
         allow_headers=["*"],
     )
 
+
+@app.middleware("http")
+async def no_store_api_responses(request: Request, call_next):  # type: ignore[no-untyped-def]
+    """Forbid edge caching of API responses.
+
+    Defense in depth against Vercel's edge caching proxied /api/* responses
+    keyed only by URL. The frontend already sets ``Cache-Control: no-store``
+    on /api/(.*) via vercel.json, but that file is one edit away from being
+    wrong. Setting the header upstream means even if vercel.json drops the
+    rule, Vercel still sees no-store and won't cache. Uses setdefault so
+    individual handlers can still opt into caching by setting their own
+    Cache-Control before returning.
+    """
+    response = await call_next(request)
+    if request.url.path.startswith(settings.API_V1_STR):
+        response.headers.setdefault("Cache-Control", "no-store")
+    return response
+
+
 app.include_router(api_router, prefix=settings.API_V1_STR)

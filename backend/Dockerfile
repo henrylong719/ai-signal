@@ -30,6 +30,8 @@ COPY backend/alembic.ini ./alembic.ini
 # Install the backend project itself
 RUN uv sync --frozen
 
-# Railway provides PORT dynamically.
-# Use sh -c so ${PORT:-8000} is expanded correctly.
-CMD ["sh", "-c", "fastapi run --host 0.0.0.0 --port ${PORT:-8000} app/main.py"]
+# Railway provides PORT dynamically. fastapi-cli's --port option reads
+# from the PORT env var automatically (defaulting to 8000), so we don't
+# pass --port here — that avoids relying on shell expansion, which
+# breaks if a platform overrides CMD with a non-shell exec form.
+CMD ["fastapi", "run", "--host", "0.0.0.0", "app/main.py"]

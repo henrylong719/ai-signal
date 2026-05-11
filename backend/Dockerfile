@@ -34,4 +34,4 @@ RUN uv sync --frozen
 # from the PORT env var automatically (defaulting to 8000), so we don't
 # pass --port here — that avoids relying on shell expansion, which
 # breaks if a platform overrides CMD with a non-shell exec form.
-CMD ["fastapi", "run", "--host", "0.0.0.0", "app/main.py"]
+CMD ["fastapi", "run", "--host", "0.0.0.0", "--proxy-headers", "--forwarded-allow-ips=*", "app/main.py"]

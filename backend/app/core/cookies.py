@@ -14,13 +14,13 @@ endpoints. Three cookies are managed:
                         access cookie does.
 
 Cookie security choices:
-  - ``SameSite`` is environment-dependent. Local dev runs the frontend and
-    backend on the same host (``localhost``) so ``Lax`` is enough and avoids
-    requiring HTTPS. Deployed environments host the frontend and backend on
-    different registrable domains (Vercel ↔ Railway), which makes every
-    API call cross-site — those need ``SameSite=None`` or the browser will
-    refuse to send the cookies. ``None`` requires ``Secure``, which we set
-    in the same branch.
+   - ``SameSite=Lax`` on all three. Blocks cross-site POST CSRF (the classic
+    attack) while still allowing top-level link navigations from external
+    sites, which we want for OAuth callbacks and emailed links. We also
+    don't have any state-changing GETs, which is the one remaining surface
+    SameSite=Lax doesn't cover.
+
+
   - ``Secure`` flag only in non-local environments. Browsers refuse to send
     Secure cookies over plain HTTP, which would break local dev where the
     backend runs on ``http://localhost``.
@@ -28,7 +28,7 @@ Cookie security choices:
     correct here — we don't need cross-subdomain sharing.
 """
 
-from typing import Final, Literal
+from typing import Final
 
 from fastapi import Response
 
@@ -51,14 +51,6 @@ def _is_secure() -> bool:
     return settings.ENVIRONMENT != "local"
 
 
-def _samesite() -> Literal["lax", "none"]:
-    """SameSite attribute. ``none`` for deployed envs where the frontend
-    and backend live on different registrable domains and every API call
-    is cross-site; ``lax`` for local dev where they share ``localhost``.
-    """
-    return "none" if settings.ENVIRONMENT != "local" else "lax"
-
-
 def set_access_cookie(response: Response, token: str, max_age_seconds: int) -> None:
     """Set the short-lived access cookie used by every authenticated request."""
     response.set_cookie(
@@ -68,7 +60,7 @@ def set_access_cookie(response: Response, token: str, max_age_seconds: int) -> N
         path=_DEFAULT_COOKIE_PATH,
         secure=_is_secure(),
         httponly=True,
-        samesite=_samesite(),
+        samesite="lax",
     )
 
 
@@ -81,14 +73,14 @@ def set_refresh_cookie(response: Response, token: str, max_age_seconds: int) -> 
         path=_REFRESH_COOKIE_PATH,
         secure=_is_secure(),
         httponly=True,
-        samesite=_samesite(),
+        samesite="lax",
     )
     response.delete_cookie(
         key=REFRESH_COOKIE_NAME,
         path=_LEGACY_REFRESH_COOKIE_PATH,
         secure=_is_secure(),
         httponly=True,
-        samesite=_samesite(),
+        samesite="lax",
     )
 
 
@@ -107,7 +99,7 @@ def set_logged_in_marker(response: Response, max_age_seconds: int) -> None:
         path=_DEFAULT_COOKIE_PATH,
         secure=_is_secure(),
         httponly=False,
-        samesite=_samesite(),
+        samesite="lax",
     )
 
 
@@ -123,26 +115,26 @@ def clear_auth_cookies(response: Response) -> None:
         path=_DEFAULT_COOKIE_PATH,
         secure=_is_secure(),
         httponly=True,
-        samesite=_samesite(),
+        samesite="lax",
     )
     response.delete_cookie(
         key=REFRESH_COOKIE_NAME,
         path=_REFRESH_COOKIE_PATH,
         secure=_is_secure(),
         httponly=True,
-        samesite=_samesite(),
+        samesite="lax",
     )
     response.delete_cookie(
         key=REFRESH_COOKIE_NAME,
         path=_LEGACY_REFRESH_COOKIE_PATH,
         secure=_is_secure(),
         httponly=True,
-        samesite=_samesite(),
+        samesite="lax",
     )
     response.delete_cookie(
         key=LOGGED_IN_MARKER_NAME,
         path=_DEFAULT_COOKIE_PATH,
         secure=_is_secure(),
         httponly=False,
-        samesite=_samesite(),
+        samesite="lax",
     )

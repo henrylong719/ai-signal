@@ -247,16 +247,6 @@ def _provider_config(provider: str) -> OAuthProviderConfig:
 
 
 def _callback_url(request: Request, provider: str) -> str:
-    # When the API is reached through a frontend proxy (e.g. a Vercel
-    # rewrite from www.aisignal.now/api/* to the Railway backend), the
-    # request's Host header reflects the platform's internal hostname,
-    # so ``request.url_for`` would hand back the wrong callback URL.
-    # ``BACKEND_PUBLIC_URL`` overrides that with the public origin the
-    # browser actually sees, which is also what's registered with the
-    # OAuth provider.
-    if settings.BACKEND_PUBLIC_URL:
-        base = settings.BACKEND_PUBLIC_URL.rstrip("/")
-        return f"{base}{settings.API_V1_STR}/login/{provider}/callback"
     return str(request.url_for("oauth_callback", provider=provider))
 
 

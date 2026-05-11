@@ -9,14 +9,14 @@ import { PageContainer } from '@/components/Layout/Page'
 import { useTodayDigest } from '@/hooks/useTodayDigest'
 import { buildPageMeta } from '@/lib/meta'
 
-export const Route = createFileRoute('/_layout/today-digest')({
+export const Route = createFileRoute('/_layout/digest')({
   component: TodayDigest,
   head: () =>
     buildPageMeta({
       title: "Today's digest",
       description:
         'A daily snapshot of the most important AI updates, grouped by signal area — research, engineering, models, infrastructure, agents, and more.',
-      path: '/today-digest',
+      path: '/digest',
     }),
 })
 

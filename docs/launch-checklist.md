@@ -11,7 +11,7 @@ The production domain is **`https://aisignal.now`**. Anywhere this checklist ref
 - [ ] `frontend/public/robots.txt` allows the public surface and disallows `/admin*`, `/settings*`, `/personalization`, `/saved-articles`, and the auth routes. `Sitemap:` line points at the production domain.
 - [ ] `frontend/public/sitemap.xml` references `https://aisignal.now` and lists every public route (home, about, sources directory, sources policy, privacy, terms, cookies, accessibility, contact). Authenticated-only routes are absent.
 - [ ] JSON-LD `WebSite` + `Organization` in `index.html` references the production URL (already wired — verify the SearchAction `urlTemplate` matches `https://aisignal.now/search-feed/{search_term_string}`).
-- [ ] Per-page OG / canonical tags are emitted (helper in `frontend/src/lib/meta.ts`). Spot-check by sharing `/about`, `/today-digest`, and `/all-article-sources` URLs and confirming the previews are page-specific, not the home fallback.
+- [ ] Per-page OG / canonical tags are emitted (helper in `frontend/src/lib/meta.ts`). Spot-check by sharing `/about`, `/digest`, and `/all-article-sources` URLs and confirming the previews are page-specific, not the home fallback.
 - [ ] Test share preview at https://www.opengraph.xyz/ or with the WhatsApp / Slack link unfurl.
 
 ## 2. Legal, contact, and brand mailbox
@@ -100,7 +100,7 @@ The digest scheduler short-circuits if credentials are missing, so missing confi
 - [ ] Generated API client is current — run `bash ./scripts/generate-client.sh` and confirm the diff is clean. Specifically, `UsersService.completeOnboarding` and `UsersService.updateDigestPreferences` exist on the SDK.
 - [ ] Auth flows (sign up, sign in, refresh, sign out, password reset) work end-to-end against the production origin.
 - [ ] OAuth providers (Google, GitHub, Facebook) — for each enabled provider: redirect URI in the provider console matches `https://aisignal.now/api/v1/login/<provider>/callback`, and a test sign-in completes.
-- [ ] Public-route smoke: `/`, `/about`, `/all-article-sources`, `/article-sources/<source>`, `/category-feed/<cat>`, `/search-feed/<q>`, `/today-digest` all render content (or the appropriate empty state) without console errors.
+- [ ] Public-route smoke: `/`, `/about`, `/all-article-sources`, `/article-sources/<source>`, `/category-feed/<cat>`, `/search-feed/<q>`, `/digest` all render content (or the appropriate empty state) without console errors.
 - [ ] Authed-route smoke: `/settings`, `/personalization`, `/saved-articles`, For You + Following tabs all work.
 
 ## 11. Day-zero monitoring

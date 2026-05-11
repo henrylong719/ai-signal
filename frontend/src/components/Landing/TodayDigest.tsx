@@ -106,7 +106,7 @@ const TodayDigest = () => {
       </div>
 
       <Link
-        to="/today-digest"
+        to="/digest"
         className="mt-3 inline-flex items-center rounded-sm text-xs font-semibold text-slate-500 transition-colors hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:text-muted-foreground dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
       >
         Read all daily digests

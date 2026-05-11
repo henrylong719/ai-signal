@@ -82,37 +82,38 @@
 }
 
 .dark {
-  /* ── Surfaces: neutral charcoal-slate (hue 225, low chroma) ─────────── */
-  --background: oklch(0.13 0.006 225); /* ~#111418  page canvas         */
-  --foreground: oklch(0.93 0.012 80); /* warm cream — editorial text   */
+  /* ── Surfaces: warm charcoal (hue ~95, very low chroma) ─────────────── */
+  /* Lifted from near-black so the page reads as editorial, not dashboard. */
+  --background: oklch(0.175 0.004 95); /* warm charcoal page canvas     */
+  --foreground: oklch(0.945 0.013 85); /* warm cream — editorial text   */
 
-  --card: oklch(0.17 0.006 225); /* ~#17191f  card surface        */
-  --card-foreground: oklch(0.92 0.012 80);
+  --card: oklch(0.21 0.005 95); /* +0.035 step — clearly layered card  */
+  --card-foreground: oklch(0.945 0.013 85);
 
-  --popover: oklch(0.2 0.007 225); /* ~#1c1e24  dropdowns / sheets  */
-  --popover-foreground: oklch(0.92 0.012 80);
+  --popover: oklch(0.245 0.006 95); /* dropdowns / sheets / nested     */
+  --popover-foreground: oklch(0.945 0.013 85);
 
   /* ── Brand accent: restrained warm cream/gold ───────────────────────── */
-  --primary: oklch(0.875 0.024 80); /* soft cream-gold — used sparingly */
-  --primary-foreground: oklch(0.13 0.006 225);
+  --primary: oklch(0.89 0.025 85); /* cream-gold CTA — used sparingly  */
+  --primary-foreground: oklch(0.175 0.004 95);
 
   /* ── Interactive surfaces ────────────────────────────────────────────── */
-  --secondary: oklch(0.23 0.006 225);
-  --secondary-foreground: oklch(0.9 0.01 80);
+  --secondary: oklch(0.26 0.006 95);
+  --secondary-foreground: oklch(0.93 0.012 85);
 
-  --muted: oklch(0.21 0.006 225); /* inputs, tags, subtle fills    */
-  --muted-foreground: oklch(0.6 0.005 225); /* cool neutral — no warm grey   */
+  --muted: oklch(0.235 0.005 95); /* inputs, tags, subtle fills         */
+  --muted-foreground: oklch(0.71 0.009 90); /* warm gray — legible meta */
 
-  --accent: oklch(0.25 0.007 225); /* hover / selection highlight   */
-  --accent-foreground: oklch(0.93 0.012 80);
+  --accent: oklch(0.28 0.008 95); /* hover / selection highlight        */
+  --accent-foreground: oklch(0.945 0.013 85);
 
   /* ── Semantic ────────────────────────────────────────────────────────── */
   --destructive: oklch(0.65 0.18 28);
 
   /* ── Borders & focus ────────────────────────────────────────────────── */
-  --border: oklch(0.93 0.012 80 / 11%); /* subtle separator              */
-  --input: oklch(0.93 0.012 80 / 13%); /* input border, slightly bolder */
-  --ring: oklch(0.72 0.028 80); /* warm focus ring               */
+  --border: oklch(0.95 0.013 85 / 14%); /* soft but visible separator   */
+  --input: oklch(0.95 0.013 85 / 17%); /* input border, slightly bolder */
+  --ring: oklch(0.78 0.03 80); /* warm focus ring                       */
 
   /* ── Charts ─────────────────────────────────────────────────────────── */
   --chart-1: oklch(0.72 0.11 58);
@@ -121,15 +122,15 @@
   --chart-4: oklch(0.7 0.07 305);
   --chart-5: oklch(0.69 0.11 25);
 
-  /* ── Sidebar: one step darker than background ───────────────────────── */
-  --sidebar: oklch(0.11 0.005 225);
-  --sidebar-foreground: oklch(0.9 0.01 80);
-  --sidebar-primary: oklch(0.875 0.024 80);
-  --sidebar-primary-foreground: oklch(0.13 0.006 225);
-  --sidebar-accent: oklch(0.23 0.006 225);
-  --sidebar-accent-foreground: oklch(0.9 0.01 80);
-  --sidebar-border: oklch(0.93 0.012 80 / 9%);
-  --sidebar-ring: oklch(0.72 0.028 80);
+  /* ── Sidebar: one step deeper than background ───────────────────────── */
+  --sidebar: oklch(0.155 0.004 95);
+  --sidebar-foreground: oklch(0.93 0.012 85);
+  --sidebar-primary: oklch(0.89 0.025 85);
+  --sidebar-primary-foreground: oklch(0.175 0.004 95);
+  --sidebar-accent: oklch(0.26 0.006 95);
+  --sidebar-accent-foreground: oklch(0.93 0.012 85);
+  --sidebar-border: oklch(0.95 0.013 85 / 12%);
+  --sidebar-ring: oklch(0.78 0.03 80);
 }
 
 @layer base {

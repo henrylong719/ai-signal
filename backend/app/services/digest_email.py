@@ -505,7 +505,7 @@ def _digest_email_urls(user: User) -> tuple[str, str, str]:
     token = make_unsubscribe_token(user.id)
     unsubscribe_url = _backend_url("/digest/unsubscribe", {"token": token})
     settings_url = _frontend_url("/settings")
-    home_url = _frontend_url("/today-digest")
+    home_url = _frontend_url("/digest")
     return unsubscribe_url, settings_url, home_url
 
 

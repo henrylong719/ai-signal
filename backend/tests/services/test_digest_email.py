@@ -268,7 +268,7 @@ def test_send_digest_email_sends_when_articles_exist(
     assert "OpenAI" in captured["html"]
     assert "Models" in captured["html"]
     assert "Read article" in captured["html"]
-    assert "https://app.example.com/today-digest" in captured["html"]
+    assert "https://app.example.com/digest" in captured["html"]
     assert "/api/v1/articles/" in captured["html"]
     # Token-bearing unsubscribe link surfaces in both HTML and the
     # List-Unsubscribe header.
@@ -280,7 +280,7 @@ def test_send_digest_email_sends_when_articles_exist(
     assert "Today’s Signal" in captured["text"]
     assert "OpenAI releases new model updates" in captured["text"]
     assert "OpenAI" in captured["text"]
-    assert "Open AI Signal: https://app.example.com/today-digest" in captured["text"]
+    assert "Open AI Signal: https://app.example.com/digest" in captured["text"]
     assert "<html" in captured["html"].lower()
 
 
@@ -626,7 +626,7 @@ def test_render_digest_email_html_omits_unsubscribe_when_url_missing(
         full_name=user.full_name,
         unsubscribe_url="",
         settings_url="https://app.example.com/settings",
-        home_url="https://app.example.com/today-digest",
+        home_url="https://app.example.com/digest",
         empty_message="Nothing today.",
     )
     assert "Unsubscribe" not in html_body

@@ -15,13 +15,13 @@ import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
-import { Route as LayoutTodayDigestRouteImport } from './routes/_layout/today-digest'
 import { Route as LayoutTermsRouteImport } from './routes/_layout/terms'
 import { Route as LayoutSourcesPolicyRouteImport } from './routes/_layout/sources-policy'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutSavedArticlesRouteImport } from './routes/_layout/saved-articles'
 import { Route as LayoutPrivacyRouteImport } from './routes/_layout/privacy'
 import { Route as LayoutPersonalizationRouteImport } from './routes/_layout/personalization'
+import { Route as LayoutDigestRouteImport } from './routes/_layout/digest'
 import { Route as LayoutDataDeletionRouteImport } from './routes/_layout/data-deletion'
 import { Route as LayoutCookiesRouteImport } from './routes/_layout/cookies'
 import { Route as LayoutContactRouteImport } from './routes/_layout/contact'
@@ -66,11 +66,6 @@ const LayoutIndexRoute = LayoutIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutTodayDigestRoute = LayoutTodayDigestRouteImport.update({
-  id: '/today-digest',
-  path: '/today-digest',
-  getParentRoute: () => LayoutRoute,
-} as any)
 const LayoutTermsRoute = LayoutTermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -99,6 +94,11 @@ const LayoutPrivacyRoute = LayoutPrivacyRouteImport.update({
 const LayoutPersonalizationRoute = LayoutPersonalizationRouteImport.update({
   id: '/personalization',
   path: '/personalization',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutDigestRoute = LayoutDigestRouteImport.update({
+  id: '/digest',
+  path: '/digest',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutDataDeletionRoute = LayoutDataDeletionRouteImport.update({
@@ -185,13 +185,13 @@ export interface FileRoutesByFullPath {
   '/contact': typeof LayoutContactRoute
   '/cookies': typeof LayoutCookiesRoute
   '/data-deletion': typeof LayoutDataDeletionRoute
+  '/digest': typeof LayoutDigestRoute
   '/personalization': typeof LayoutPersonalizationRoute
   '/privacy': typeof LayoutPrivacyRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
   '/sources-policy': typeof LayoutSourcesPolicyRoute
   '/terms': typeof LayoutTermsRoute
-  '/today-digest': typeof LayoutTodayDigestRoute
   '/admin/analytics': typeof LayoutAdminAnalyticsRoute
   '/admin/articles': typeof LayoutAdminArticlesRoute
   '/admin/ingest-runs': typeof LayoutAdminIngestRunsRoute
@@ -211,13 +211,13 @@ export interface FileRoutesByTo {
   '/contact': typeof LayoutContactRoute
   '/cookies': typeof LayoutCookiesRoute
   '/data-deletion': typeof LayoutDataDeletionRoute
+  '/digest': typeof LayoutDigestRoute
   '/personalization': typeof LayoutPersonalizationRoute
   '/privacy': typeof LayoutPrivacyRoute
   '/saved-articles': typeof LayoutSavedArticlesRoute
   '/settings': typeof LayoutSettingsRoute
   '/sources-policy': typeof LayoutSourcesPolicyRoute
   '/terms': typeof LayoutTermsRoute
-  '/today-digest': typeof LayoutTodayDigestRoute
   '/': typeof LayoutIndexRoute
   '/admin/analytics': typeof LayoutAdminAnalyticsRoute
   '/admin/articles': typeof LayoutAdminArticlesRoute
@@ -241,13 +241,13 @@ export interface FileRoutesById {
   '/_layout/contact': typeof LayoutContactRoute
   '/_layout/cookies': typeof LayoutCookiesRoute
   '/_layout/data-deletion': typeof LayoutDataDeletionRoute
+  '/_layout/digest': typeof LayoutDigestRoute
   '/_layout/personalization': typeof LayoutPersonalizationRoute
   '/_layout/privacy': typeof LayoutPrivacyRoute
   '/_layout/saved-articles': typeof LayoutSavedArticlesRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/sources-policy': typeof LayoutSourcesPolicyRoute
   '/_layout/terms': typeof LayoutTermsRoute
-  '/_layout/today-digest': typeof LayoutTodayDigestRoute
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/admin/analytics': typeof LayoutAdminAnalyticsRoute
   '/_layout/admin/articles': typeof LayoutAdminArticlesRoute
@@ -272,13 +272,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/cookies'
     | '/data-deletion'
+    | '/digest'
     | '/personalization'
     | '/privacy'
     | '/saved-articles'
     | '/settings'
     | '/sources-policy'
     | '/terms'
-    | '/today-digest'
     | '/admin/analytics'
     | '/admin/articles'
     | '/admin/ingest-runs'
@@ -298,13 +298,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/cookies'
     | '/data-deletion'
+    | '/digest'
     | '/personalization'
     | '/privacy'
     | '/saved-articles'
     | '/settings'
     | '/sources-policy'
     | '/terms'
-    | '/today-digest'
     | '/'
     | '/admin/analytics'
     | '/admin/articles'
@@ -327,13 +327,13 @@ export interface FileRouteTypes {
     | '/_layout/contact'
     | '/_layout/cookies'
     | '/_layout/data-deletion'
+    | '/_layout/digest'
     | '/_layout/personalization'
     | '/_layout/privacy'
     | '/_layout/saved-articles'
     | '/_layout/settings'
     | '/_layout/sources-policy'
     | '/_layout/terms'
-    | '/_layout/today-digest'
     | '/_layout/'
     | '/_layout/admin/analytics'
     | '/_layout/admin/articles'
@@ -396,13 +396,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/today-digest': {
-      id: '/_layout/today-digest'
-      path: '/today-digest'
-      fullPath: '/today-digest'
-      preLoaderRoute: typeof LayoutTodayDigestRouteImport
-      parentRoute: typeof LayoutRoute
-    }
     '/_layout/terms': {
       id: '/_layout/terms'
       path: '/terms'
@@ -443,6 +436,13 @@ declare module '@tanstack/react-router' {
       path: '/personalization'
       fullPath: '/personalization'
       preLoaderRoute: typeof LayoutPersonalizationRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/digest': {
+      id: '/_layout/digest'
+      path: '/digest'
+      fullPath: '/digest'
+      preLoaderRoute: typeof LayoutDigestRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/data-deletion': {
@@ -572,13 +572,13 @@ interface LayoutRouteChildren {
   LayoutContactRoute: typeof LayoutContactRoute
   LayoutCookiesRoute: typeof LayoutCookiesRoute
   LayoutDataDeletionRoute: typeof LayoutDataDeletionRoute
+  LayoutDigestRoute: typeof LayoutDigestRoute
   LayoutPersonalizationRoute: typeof LayoutPersonalizationRoute
   LayoutPrivacyRoute: typeof LayoutPrivacyRoute
   LayoutSavedArticlesRoute: typeof LayoutSavedArticlesRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutSourcesPolicyRoute: typeof LayoutSourcesPolicyRoute
   LayoutTermsRoute: typeof LayoutTermsRoute
-  LayoutTodayDigestRoute: typeof LayoutTodayDigestRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
   LayoutArticleSourcesSRoute: typeof LayoutArticleSourcesSRoute
   LayoutCategoryFeedCatRoute: typeof LayoutCategoryFeedCatRoute
@@ -593,13 +593,13 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutContactRoute: LayoutContactRoute,
   LayoutCookiesRoute: LayoutCookiesRoute,
   LayoutDataDeletionRoute: LayoutDataDeletionRoute,
+  LayoutDigestRoute: LayoutDigestRoute,
   LayoutPersonalizationRoute: LayoutPersonalizationRoute,
   LayoutPrivacyRoute: LayoutPrivacyRoute,
   LayoutSavedArticlesRoute: LayoutSavedArticlesRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutSourcesPolicyRoute: LayoutSourcesPolicyRoute,
   LayoutTermsRoute: LayoutTermsRoute,
-  LayoutTodayDigestRoute: LayoutTodayDigestRoute,
   LayoutIndexRoute: LayoutIndexRoute,
   LayoutArticleSourcesSRoute: LayoutArticleSourcesSRoute,
   LayoutCategoryFeedCatRoute: LayoutCategoryFeedCatRoute,

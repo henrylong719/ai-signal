@@ -1,6 +1,6 @@
 import { MailIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { FaFacebook, FaGithub } from 'react-icons/fa'
+import { FaGithub } from 'react-icons/fa'
 import { FcGoogle } from 'react-icons/fc'
 import { ProviderButton } from './AuthShared'
 
@@ -19,12 +19,12 @@ const socialProviders = [
     icon: <FaGithub className="size-5 text-[#24292f] dark:text-slate-100" />,
     emphasis: 'secondary',
   },
-  {
-    id: 'facebook',
-    label: 'Facebook',
-    icon: <FaFacebook className="size-5 text-[#1877f2]" />,
-    emphasis: 'secondary',
-  },
+  // {
+  //   id: 'facebook',
+  //   label: 'Facebook',
+  //   icon: <FaFacebook className="size-5 text-[#1877f2]" />,
+  //   emphasis: 'secondary',
+  // },
 ] satisfies {
   id: SocialAuthProvider
   label: string

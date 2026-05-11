@@ -58,7 +58,11 @@ _UNSUB_TOKEN_TTL = timedelta(days=30)
 _EMAIL_ARTICLE_LIMIT = 5
 # Hard cap on the per-article summary. RSS excerpts can carry full
 # article bodies; without a ceiling the email becomes an RSS dump.
+# Lead gets a slightly longer summary (~3 lines at 16px); normal rows
+# stay tight (~2 lines) so the list reads as a scannable briefing.
 _SUMMARY_MAX_CHARS = 280
+_LEAD_SUMMARY_MAX_CHARS = 200
+_ARTICLE_SUMMARY_MAX_CHARS = 140
 
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 _WHITESPACE_RE = re.compile(r"\s+")
@@ -237,24 +241,26 @@ def _render_article(article: Article) -> str:
     title = _escape(article.title)
     source = _escape(article.source)
     category = _escape(_format_category(article.category))
-    summary = _escape(_clean_summary(article.excerpt))
+    summary = _escape(
+        _clean_summary(article.excerpt, max_chars=_ARTICLE_SUMMARY_MAX_CHARS)
+    )
     meta = f"{source} · {category}" if category else source
     summary_block = (
-        f'<p style="margin:10px 0 0;color:#6F6A61;font-size:14px;'
-        f'line-height:22px;">{summary}</p>'
+        f'<p style="margin:10px 0 0;color:#5F625E;font-size:16px;'
+        f'line-height:26px;">{summary}</p>'
         if summary
         else ""
     )
     return (
-        '<tr><td style="padding:22px 0;border-bottom:1px solid #E6E0D8;">'
-        f'<div style="font-size:12px;color:#6F6A61;line-height:18px;'
-        f'margin-bottom:7px;">{meta}</div>'
-        f'<a href="{redirect}" style="color:#111111;text-decoration:none;'
-        "font-family:Georgia,'Iowan Old Style',serif;font-size:20px;"
-        f'font-weight:600;line-height:28px;">{title}</a>'
+        '<tr><td style="padding:24px 0;border-bottom:1px solid #ECEAE4;">'
+        f'<div style="font-size:12px;color:#8A8C88;line-height:18px;'
+        f'letter-spacing:0.04em;margin-bottom:8px;">{meta}</div>'
+        f'<a href="{redirect}" style="color:#111315;text-decoration:none;'
+        "font-family:Georgia,'Iowan Old Style',serif;font-size:22px;"
+        f'font-weight:500;line-height:30px;">{title}</a>'
         f"{summary_block}"
         f'<div style="margin-top:12px;"><a href="{redirect}" '
-        'style="color:#111111;text-decoration:none;font-size:14px;'
+        'style="color:#111315;text-decoration:none;font-size:14px;'
         'font-weight:600;">Read article &rarr;</a></div>'
         "</td></tr>"
     )
@@ -271,30 +277,32 @@ def _render_lead_article(article: Article) -> str:
     title = _escape(article.title)
     source = _escape(article.source)
     category = _escape(_format_category(article.category))
-    summary = _escape(_clean_summary(article.excerpt))
+    summary = _escape(
+        _clean_summary(article.excerpt, max_chars=_LEAD_SUMMARY_MAX_CHARS)
+    )
     meta = f"{source} · {category}" if category else source
     summary_block = (
-        f'<p style="margin:12px 0 0;color:#5C574E;font-size:14px;'
-        f'line-height:22px;">{summary}</p>'
+        f'<p style="margin:14px 0 0;color:#5F625E;font-size:16px;'
+        f'line-height:26px;">{summary}</p>'
         if summary
         else ""
     )
     return (
-        '<div style="background:#F8F1E1;border:1px solid #EADFC4;'
-        'border-radius:14px;padding:24px;margin:0 0 6px;">'
+        '<div style="background:#FBFAF6;border:1px solid #E8E5DE;'
+        'border-radius:14px;padding:26px;margin:0 0 6px;">'
         '<div style="font-size:11px;font-weight:700;letter-spacing:0.16em;'
-        'text-transform:uppercase;color:#A78340;margin-bottom:14px;">'
+        'text-transform:uppercase;color:#A88745;margin-bottom:14px;">'
         '<span style="display:inline-block;width:5px;height:5px;'
-        "border-radius:50%;background:#C9A66B;vertical-align:middle;"
+        "border-radius:50%;background:#C9A96A;vertical-align:middle;"
         'margin-right:8px;"></span>Lead signal</div>'
-        f'<div style="font-size:12px;color:#6F6A61;line-height:18px;'
-        f'margin-bottom:8px;">{meta}</div>'
-        f'<a href="{redirect}" style="color:#111111;text-decoration:none;'
-        "font-family:Georgia,'Iowan Old Style',serif;font-size:22px;"
-        f'font-weight:600;line-height:30px;">{title}</a>'
+        f'<div style="font-size:12px;color:#8A8C88;line-height:18px;'
+        f'letter-spacing:0.04em;margin-bottom:10px;">{meta}</div>'
+        f'<a href="{redirect}" style="color:#111315;text-decoration:none;'
+        "font-family:Georgia,'Iowan Old Style',serif;font-size:26px;"
+        f'font-weight:500;line-height:34px;">{title}</a>'
         f"{summary_block}"
         f'<div style="margin-top:14px;"><a href="{redirect}" '
-        'style="color:#111111;text-decoration:none;font-size:14px;'
+        'style="color:#111315;text-decoration:none;font-size:14px;'
         'font-weight:600;">Read article &rarr;</a></div>'
         "</div>"
     )
@@ -315,8 +323,8 @@ def _render_article_block(
         if empty_message:
             message = _escape(empty_message)
             return (
-                '<div style="padding:22px 0;color:#6F6A61;font-size:15px;'
-                f'line-height:23px;">{message}</div>'
+                '<div style="padding:24px 0;color:#5F625E;font-size:16px;'
+                f'line-height:26px;">{message}</div>'
             )
         return ""
     lead = _render_lead_article(articles[0])
@@ -356,7 +364,7 @@ def _render_html(
     else:
         subhead_text = f"{articles_count} updates worth your attention today"
     subhead_html = (
-        f'<p style="margin:10px 0 0;color:#111111;font-size:16px;'
+        f'<p style="margin:10px 0 0;color:#111315;font-size:16px;'
         f'line-height:24px;font-weight:500;">{subhead_text}</p>'
         if subhead_text
         else ""
@@ -364,7 +372,7 @@ def _render_html(
     total_articles = sum(len(section.articles) for section in digest.sections)
     hidden_count = max(total_articles - article_limit, 0)
     continue_note = (
-        f'<p style="margin:18px 0 0;color:#6F6A61;font-size:14px;'
+        f'<p style="margin:18px 0 0;color:#5F625E;font-size:14px;'
         f'line-height:22px;">{hidden_count} more signal'
         f"{'s are' if hidden_count != 1 else ' is'} waiting in AI Signal.</p>"
         if hidden_count
@@ -378,15 +386,15 @@ def _render_html(
     if unsubscribe_url:
         footer_links = (
             f'<a href="{_escape(settings_url)}" '
-            'style="color:#111111;text-decoration:underline;">Manage preferences</a>'
+            'style="color:#111315;text-decoration:underline;">Manage preferences</a>'
             "&nbsp;·&nbsp;"
             f'<a href="{_escape(unsubscribe_url)}" '
-            'style="color:#6F6A61;text-decoration:underline;">Unsubscribe</a>'
+            'style="color:#5F625E;text-decoration:underline;">Unsubscribe</a>'
         )
     else:
         footer_links = (
             f'<a href="{_escape(settings_url)}" '
-            'style="color:#111111;text-decoration:underline;">Manage preferences</a>'
+            'style="color:#111315;text-decoration:underline;">Manage preferences</a>'
         )
     return f"""<!doctype html>
 <html lang="en">
@@ -395,35 +403,35 @@ def _render_html(
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AI Signal — Today&rsquo;s Signal</title>
 </head>
-<body style="margin:0;padding:0;background:#FAFAF8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111111;">
+<body style="margin:0;padding:0;background:#FAFAF8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111315;">
   <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#FAFAF8;">
     <tr>
       <td align="center" style="padding:40px 16px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background:#FFFDF8;border-radius:16px;border:1px solid #E6E0D8;">
+        <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background:#FFFFFF;border-radius:16px;border:1px solid #E8E5DE;">
           <tr>
             <td style="padding:36px 36px 6px;">
-              <div style="font-size:13px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#111111;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#C9A66B;vertical-align:middle;margin-right:8px;"></span>AI Signal</div>
-              <h1 style="margin:14px 0 0;font-family:Georgia,'Iowan Old Style',serif;font-size:32px;line-height:38px;color:#111111;font-weight:500;">Today&rsquo;s Signal</h1>
+              <div style="font-size:13px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#111315;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#C9A96A;vertical-align:middle;margin-right:8px;"></span>AI Signal</div>
+              <h1 style="margin:14px 0 0;font-family:Georgia,'Iowan Old Style',serif;font-size:32px;line-height:38px;color:#111315;font-weight:500;">Today&rsquo;s Signal</h1>
               {subhead_html}
-              <p style="margin:8px 0 0;color:#8A8478;font-size:13px;line-height:20px;letter-spacing:0.04em;">{date_label}</p>
+              <p style="margin:8px 0 0;color:#8A8C88;font-size:13px;line-height:20px;letter-spacing:0.04em;">{date_label}</p>
             </td>
           </tr>
           <tr>
             <td style="padding:20px 36px 10px;">
-              <p style="margin:0;color:#6F6A61;font-size:15px;line-height:24px;">{intro}</p>
+              <p style="margin:0;color:#5F625E;font-size:16px;line-height:26px;">{intro}</p>
             </td>
           </tr>
           <tr><td style="padding:4px 36px 28px;">{article_block}{continue_note}</td></tr>
           <tr>
             <td align="center" style="padding:0 36px 38px;">
-              <p style="margin:0 0 12px;color:#6F6A61;font-size:13px;line-height:20px;">Want the full feed?</p>
-              <a href="{home_url}" style="display:inline-block;background:#111111;color:#FFFFFF;text-decoration:none;border-radius:999px;padding:13px 22px;font-size:14px;font-weight:700;">Open AI Signal</a>
+              <p style="margin:0 0 12px;color:#5F625E;font-size:13px;line-height:20px;">Want the full feed?</p>
+              <a href="{home_url}" style="display:inline-block;background:#0F1418;color:#FFFFFF;text-decoration:none;border-radius:999px;padding:13px 22px;font-size:14px;font-weight:700;">Open AI Signal</a>
             </td>
           </tr>
           <tr>
-            <td style="padding:26px 36px 34px;border-top:1px solid #E6E0D8;background:#FFFFFF;border-radius:0 0 16px 16px;">
-              <p style="margin:0 0 4px;font-size:14px;color:#111111;line-height:21px;font-weight:700;">AI Signal</p>
-              <p style="margin:0 0 14px;font-size:13px;color:#6F6A61;line-height:20px;">Find the signal in AI updates.</p>
+            <td style="padding:26px 36px 34px;border-top:1px solid #ECEAE4;background:#FFFFFF;border-radius:0 0 16px 16px;">
+              <p style="margin:0 0 4px;font-size:14px;color:#111315;line-height:21px;font-weight:700;">AI Signal</p>
+              <p style="margin:0 0 14px;font-size:13px;color:#5F625E;line-height:20px;">Find the signal in AI updates.</p>
               <p style="margin:0;font-size:12px;line-height:19px;">{footer_links}</p>
             </td>
           </tr>

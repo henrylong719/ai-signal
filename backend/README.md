@@ -100,7 +100,7 @@ When running tests, the suite forces a test database name via `TEST_POSTGRES_DB`
 
 ## Email And OAuth
 
-Password recovery email is enabled when both `SMTP_HOST` and `EMAILS_FROM_EMAIL` are set. Local Docker Compose uses Mailcatcher at `http://localhost:1080`.
+Password recovery email is enabled when both `RESEND_API_KEY` and `EMAILS_FROM_EMAIL` are set.
 
 OAuth providers use backend callback URLs:
 

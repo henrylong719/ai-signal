@@ -13,6 +13,7 @@ import useAuth from '@/hooks/useAuth'
 import { useFollowingFeed } from '@/hooks/useFollowingFeed'
 import { useForYouFeed } from '@/hooks/useForYouFeed'
 import { useInterests } from '@/hooks/useInterests'
+import { useSwipeTabs } from '@/hooks/useSwipeTabs'
 import { trackGuestEvent } from '@/lib/analytics'
 import { buildPageMeta } from '@/lib/meta'
 
@@ -166,6 +167,19 @@ function Dashboard() {
     })
   }
 
+  // Ordered tab values for swipe navigation. Mirrors the visible-tab
+  // order so the first/last entries match the rendered ends and the
+  // hook's no-wrap rule lines up with what the user sees.
+  const swipeTabValues = useMemo(
+    () => visibleTabs.map((tab) => tab.value),
+    [visibleTabs],
+  )
+  const swipeHandlers = useSwipeTabs<Tab>({
+    tabs: swipeTabValues,
+    activeTab: resolvedTab,
+    onChangeTab: handleTabChange,
+  })
+
   if (!isAuthed) {
     return (
       <PageContainer variant="default" spacing="none">
@@ -222,86 +236,92 @@ function Dashboard() {
           </div>
         </div>
 
-        {resolvedTab === 'for-you' && isAuthed && (
-          <>
-            {showActivationCard && <PersonalizationCard />}
-            {debugRequested && forYou.weights && (
-              <div className="mt-4 rounded border border-dashed border-amber-300/60 bg-amber-50/40 px-3 py-2 font-mono text-[11px] text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/15 dark:text-amber-200/85">
-                <span className="font-sans font-semibold uppercase tracking-wide">
-                  recommender weights
-                </span>{' '}
-                <span className="opacity-80">
-                  semantic={forYou.weights.semantic.toFixed(2)} explicit=
-                  {forYou.weights.explicit.toFixed(2)} source=
-                  {forYou.weights.source.toFixed(2)} recency=
-                  {forYou.weights.recency.toFixed(2)}
-                </span>
-              </div>
-            )}
+        <div
+          {...swipeHandlers}
+          key={resolvedTab}
+          className="animate-in fade-in duration-150"
+        >
+          {resolvedTab === 'for-you' && isAuthed && (
+            <>
+              {showActivationCard && <PersonalizationCard />}
+              {debugRequested && forYou.weights && (
+                <div className="mt-4 rounded border border-dashed border-amber-300/60 bg-amber-50/40 px-3 py-2 font-mono text-[11px] text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/15 dark:text-amber-200/85">
+                  <span className="font-sans font-semibold uppercase tracking-wide">
+                    recommender weights
+                  </span>{' '}
+                  <span className="opacity-80">
+                    semantic={forYou.weights.semantic.toFixed(2)} explicit=
+                    {forYou.weights.explicit.toFixed(2)} source=
+                    {forYou.weights.source.toFixed(2)} recency=
+                    {forYou.weights.recency.toFixed(2)}
+                  </span>
+                </div>
+              )}
+              <ArticleList
+                articles={forYou.articles}
+                feedStatus={forYou.feedStatus}
+                loadMoreRef={forYou.loadMoreRef}
+                isPending={forYou.isPending}
+                isError={forYou.isError}
+                showDismiss
+                reasons={forYouReasons}
+                debug={forYouDebug}
+                emptyTitle="No personalized signals yet"
+                emptyDescription="Save articles you care about or tune topics and sources — your For You feed learns from what you engage with."
+                emptyAction={
+                  <Link
+                    to="/personalization"
+                    className="inline-flex h-9 items-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-foreground dark:text-background dark:hover:bg-foreground/92 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                  >
+                    <SlidersHorizontalIcon className="h-4 w-4 stroke-[1.7]" />
+                    Tune your signal
+                  </Link>
+                }
+              />
+            </>
+          )}
+          {resolvedTab === 'following' && isAuthed && (
             <ArticleList
-              articles={forYou.articles}
-              feedStatus={forYou.feedStatus}
-              loadMoreRef={forYou.loadMoreRef}
-              isPending={forYou.isPending}
-              isError={forYou.isError}
-              showDismiss
-              reasons={forYouReasons}
-              debug={forYouDebug}
-              emptyTitle="No personalized signals yet"
-              emptyDescription="Save articles you care about or tune topics and sources — your For You feed learns from what you engage with."
+              {...following}
+              emptyTitle={
+                (interests?.preferred_sources?.length ?? 0) === 0
+                  ? 'Follow sources to build your trusted AI reading list'
+                  : 'No new articles from your followed sources yet'
+              }
+              emptyDescription={
+                (interests?.preferred_sources?.length ?? 0) === 0
+                  ? 'Choose the labs, newsletters, research feeds, and communities you care about most.'
+                  : 'New posts from your followed sources will appear here when they are ingested.'
+              }
               emptyAction={
-                <Link
-                  to="/personalization"
-                  className="inline-flex h-9 items-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-foreground dark:text-background dark:hover:bg-foreground/92 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-                >
-                  <SlidersHorizontalIcon className="h-4 w-4 stroke-[1.7]" />
-                  Tune your signal
-                </Link>
+                (interests?.preferred_sources?.length ?? 0) === 0 ? (
+                  <Link
+                    to="/all-article-sources"
+                    className="inline-flex h-9 items-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-foreground dark:text-background dark:hover:bg-foreground/92 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                  >
+                    <LibraryIcon className="h-4 w-4 stroke-[1.7]" />
+                    Browse sources
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange('latest')}
+                    className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-muted/45 dark:text-foreground/86 dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                  >
+                    Explore latest articles
+                  </button>
+                )
               }
             />
-          </>
-        )}
-        {resolvedTab === 'following' && isAuthed && (
-          <ArticleList
-            {...following}
-            emptyTitle={
-              (interests?.preferred_sources?.length ?? 0) === 0
-                ? 'Follow sources to build your trusted AI reading list'
-                : 'No new articles from your followed sources yet'
-            }
-            emptyDescription={
-              (interests?.preferred_sources?.length ?? 0) === 0
-                ? 'Choose the labs, newsletters, research feeds, and communities you care about most.'
-                : 'New posts from your followed sources will appear here when they are ingested.'
-            }
-            emptyAction={
-              (interests?.preferred_sources?.length ?? 0) === 0 ? (
-                <Link
-                  to="/all-article-sources"
-                  className="inline-flex h-9 items-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:bg-foreground dark:text-background dark:hover:bg-foreground/92 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-                >
-                  <LibraryIcon className="h-4 w-4 stroke-[1.7]" />
-                  Browse sources
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleTabChange('latest')}
-                  className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-muted/45 dark:text-foreground/86 dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-                >
-                  Explore latest articles
-                </button>
-              )
-            }
-          />
-        )}
-        {resolvedTab === 'latest' && (
-          <ArticleList
-            {...latest}
-            emptyTitle="Nothing in Latest yet"
-            emptyDescription="Fresh signals will land here as we ingest new posts from labs, research, engineering blogs, and newsletters."
-          />
-        )}
+          )}
+          {resolvedTab === 'latest' && (
+            <ArticleList
+              {...latest}
+              emptyTitle="Nothing in Latest yet"
+              emptyDescription="Fresh signals will land here as we ingest new posts from labs, research, engineering blogs, and newsletters."
+            />
+          )}
+        </div>
       </div>
       <Sidebar />
     </PageContainer>

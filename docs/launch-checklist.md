@@ -42,9 +42,9 @@ Pin every value below explicitly — relying on a default is fine locally, but i
 
 ## 5. Transactional email (password reset + new account)
 
-These flow through the existing SMTP path in `app/utils.py`, separate from the digest pipeline.
+These flow through Resend, the same provider used for digest delivery.
 
-- [ ] `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAILS_FROM_EMAIL`, `EMAILS_FROM_NAME` are populated.
+- [ ] `RESEND_API_KEY`, `EMAILS_FROM_EMAIL`, and `EMAILS_FROM_NAME` are populated.
 - [ ] Password reset flow tested end-to-end: request reset → email lands → click link → set new password.
 - [ ] Sender domain has SPF / DKIM aligned (so password resets aren't quarantined by recipient inbox providers).
 

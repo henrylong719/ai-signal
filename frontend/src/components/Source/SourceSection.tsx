@@ -1,26 +1,51 @@
-import { Link } from '@tanstack/react-router'
-import { CheckIcon, PlusIcon } from 'lucide-react'
-import type { SourcePublic } from '@/client'
-import { SOURCE_FILTER_LABELS, type source_types } from '@/lib/constants'
-import { cn } from '@/lib/utils'
-import AuthModal from '../Auth/AuthModal'
+import { Link } from '@tanstack/react-router';
+import { CheckIcon, PlusIcon } from 'lucide-react';
+import type { SourcePublic } from '@/client';
+import { SOURCE_FILTER_LABELS, type source_types } from '@/lib/constants';
+import { cn } from '@/lib/utils';
+import AuthModal from '../Auth/AuthModal';
 
-type SourceSectionType = Exclude<source_types, 'all'>
+type SourceSectionType = Exclude<source_types, 'all'>;
 
 interface SourceSectionProps {
-  type: SourceSectionType
-  items: SourcePublic[]
-  sourceFilter: source_types
-  preferredSources: string[]
-  updatingSource: string | null
-  isSaving: boolean
-  followDisabled: boolean
-  userIsLoggedIn: boolean
-  onTogglePreferredSource: (sourceName: string) => void
+  type: SourceSectionType;
+  items: SourcePublic[];
+  sourceFilter: source_types;
+  preferredSources: string[];
+  updatingSource: string | null;
+  isSaving: boolean;
+  followDisabled: boolean;
+  userIsLoggedIn: boolean;
+  onTogglePreferredSource: (sourceName: string) => void;
 }
 
 const getSourceCountLabel = (count: number) =>
-  `${count} ${count === 1 ? 'source' : 'sources'}`
+  `${count} ${count === 1 ? 'source' : 'sources'}`;
+
+type SourceDisplayData = SourcePublic & {
+  domain?: string;
+  url?: string;
+  website_url?: string;
+};
+
+const getSourceDomain = (source: SourcePublic) => {
+  const displaySource = source as SourceDisplayData;
+  const sourceDomain = displaySource.domain?.trim();
+
+  if (sourceDomain) {
+    return sourceDomain.replace(/^www\./, '');
+  }
+
+  const sourceUrl = displaySource.website_url ?? displaySource.url;
+
+  if (!sourceUrl) return null;
+
+  try {
+    return new URL(sourceUrl).hostname.replace(/^www\./, '');
+  } catch {
+    return null;
+  }
+};
 
 function SourceSection({
   type,
@@ -44,13 +69,13 @@ function SourceSection({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="space-y-3 md:space-y-0 md:divide-y md:divide-slate-200/65 dark:md:divide-border/70">
         {items.map((source) => {
-          const isPreferredSource = preferredSources.includes(source.name)
-          const isUpdatingSource = updatingSource === source.name && isSaving
+          const isPreferredSource = preferredSources.includes(source.name);
+          const isUpdatingSource = updatingSource === source.name && isSaving;
 
           return (
-            <SourceCard
+            <SourceDirectoryItem
               key={source.name}
               source={source}
               sourceFilter={sourceFilter}
@@ -60,24 +85,24 @@ function SourceSection({
               followDisabled={followDisabled}
               onTogglePreferredSource={onTogglePreferredSource}
             />
-          )
+          );
         })}
       </div>
     </section>
-  )
+  );
 }
 
-interface SourceCardProps {
-  source: SourcePublic
-  sourceFilter: source_types
-  userIsLoggedIn: boolean
-  isPreferredSource: boolean
-  isUpdatingSource: boolean
-  followDisabled: boolean
-  onTogglePreferredSource: (sourceName: string) => void
+interface SourceDirectoryItemProps {
+  source: SourcePublic;
+  sourceFilter: source_types;
+  userIsLoggedIn: boolean;
+  isPreferredSource: boolean;
+  isUpdatingSource: boolean;
+  followDisabled: boolean;
+  onTogglePreferredSource: (sourceName: string) => void;
 }
 
-function SourceCard({
+function SourceDirectoryItem({
   source,
   sourceFilter,
   userIsLoggedIn,
@@ -85,9 +110,11 @@ function SourceCard({
   isUpdatingSource,
   followDisabled,
   onTogglePreferredSource,
-}: SourceCardProps) {
+}: SourceDirectoryItemProps) {
+  const sourceDomain = getSourceDomain(source);
+
   return (
-    <article className="group relative min-h-45 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/60 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_34px_rgba(15,23,42,0.06)] dark:border-border dark:bg-card/35 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-card/65 dark:hover:shadow-none">
+    <article className="group relative overflow-hidden rounded-2xl border border-slate-200/75 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-colors hover:border-slate-300 hover:bg-slate-50/70 md:rounded-none md:border-0 md:bg-transparent md:px-0 md:py-3 md:shadow-none md:hover:bg-transparent dark:border-border dark:bg-card/35 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-card/60 md:dark:bg-transparent md:dark:hover:bg-transparent">
       <Link
         to="/article-sources/$s"
         params={{ s: source.name }}
@@ -97,77 +124,107 @@ function SourceCard({
           allArticleSourcesScrollY: window.scrollY,
         })}
         aria-label={`View ${source.name} source details`}
-        className="absolute inset-0 z-10 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+        className="absolute inset-0 z-10 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 md:rounded-lg dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
       />
 
-      <div className="pointer-events-none relative z-20 flex h-full min-h-32 flex-col">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1 pr-1">
-            <h3 className="truncate text-base font-semibold text-slate-950 transition-colors group-hover:text-slate-900 dark:text-foreground dark:group-hover:text-foreground">
-              {source.name}
-            </h3>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              <span className="inline-flex max-w-full items-center rounded-full border border-slate-200/90 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:border-border dark:bg-muted/30 dark:text-muted-foreground">
-                <span className="truncate">{source.topic}</span>
-              </span>
-            </div>
-          </div>
+      <div className="pointer-events-none relative z-20 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3 md:gap-4">
+        <div className="min-w-0 md:max-w-3xl">
+          <h3 className="truncate text-base font-semibold text-slate-950 transition-colors group-hover:text-slate-900 dark:text-foreground dark:group-hover:text-foreground">
+            {source.name}
+          </h3>
+          <p className="mt-1 truncate text-sm text-slate-500 dark:text-muted-foreground">
+            {source.topic} · {SOURCE_FILTER_LABELS[source.source_type]}
+          </p>
+          <p className="mt-2 line-clamp-2 wrap-break-word text-sm leading-6 text-slate-500 md:line-clamp-1 dark:text-muted-foreground">
+            {source.description}
+          </p>
 
-          <div className="pointer-events-auto relative z-30 flex shrink-0 items-start">
-            {userIsLoggedIn ? (
-              <button
-                type="button"
-                onClick={() => onTogglePreferredSource(source.name)}
-                disabled={followDisabled}
-                aria-pressed={isPreferredSource}
-                aria-label={
-                  isPreferredSource
-                    ? `Unfollow source ${source.name}`
-                    : `Follow source ${source.name}`
-                }
-                className={cn(
-                  'inline-flex h-10 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background',
-                  isPreferredSource
-                    ? 'border-slate-950 bg-slate-950 text-white shadow-sm dark:border-foreground dark:bg-foreground dark:text-background'
-                    : 'border-slate-200 bg-white/90 text-slate-500 shadow-sm shadow-slate-950/2 hover:border-slate-300 hover:bg-white hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground',
-                )}
-              >
-                {isPreferredSource ? (
-                  <CheckIcon className="h-3.5 w-3.5" />
-                ) : (
-                  <PlusIcon className="h-3.5 w-3.5" />
-                )}
-                {isUpdatingSource
-                  ? 'Saving'
-                  : isPreferredSource
-                    ? 'Following'
-                    : 'Follow'}
-              </button>
-            ) : (
-              <AuthModal
-                title={`Sign in to follow ${source.name}`}
-                description="Sign in to save articles, follow trusted sources, and tune your feed."
-                trigger={
-                  <button
-                    type="button"
-                    aria-label={`Follow source ${source.name}`}
-                    className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white/90 px-3 text-xs font-medium text-slate-500 shadow-sm shadow-slate-950/2 transition-all hover:border-slate-300 hover:bg-white hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-                  >
-                    <PlusIcon className="h-3.5 w-3.5" />
-                    Follow
-                  </button>
-                }
-              />
-            )}
-          </div>
+          {sourceDomain && (
+            <p className="mt-2 truncate text-xs font-medium text-slate-400 md:mt-1 dark:text-muted-foreground/80">
+              {sourceDomain}
+            </p>
+          )}
         </div>
 
-        <p className="mt-4 line-clamp-2 text-sm leading-6 text-slate-500 dark:text-muted-foreground">
-          {source.description}
-        </p>
+        <div className="pointer-events-auto relative z-30 shrink-0">
+          <SourceFollowButton
+            source={source}
+            userIsLoggedIn={userIsLoggedIn}
+            isPreferredSource={isPreferredSource}
+            isUpdatingSource={isUpdatingSource}
+            followDisabled={followDisabled}
+            onTogglePreferredSource={onTogglePreferredSource}
+          />
+        </div>
       </div>
     </article>
-  )
+  );
 }
 
-export default SourceSection
+interface SourceFollowButtonProps {
+  source: SourcePublic;
+  userIsLoggedIn: boolean;
+  isPreferredSource: boolean;
+  isUpdatingSource: boolean;
+  followDisabled: boolean;
+  onTogglePreferredSource: (sourceName: string) => void;
+}
+
+function SourceFollowButton({
+  source,
+  userIsLoggedIn,
+  isPreferredSource,
+  isUpdatingSource,
+  followDisabled,
+  onTogglePreferredSource,
+}: SourceFollowButtonProps) {
+  const buttonClassName = cn(
+    'inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60 md:h-9 md:px-2.5 dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background',
+    isPreferredSource
+      ? 'border-slate-950 bg-slate-950 text-white shadow-sm dark:border-foreground dark:bg-foreground dark:text-background'
+      : 'border-slate-200 bg-white/90 text-slate-500 shadow-sm shadow-slate-950/2 hover:border-slate-300 hover:bg-white hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground',
+  );
+
+  if (!userIsLoggedIn) {
+    return (
+      <AuthModal
+        title={`Sign in to follow ${source.name}`}
+        description="Sign in to save articles, follow trusted sources, and tune your feed."
+        trigger={
+          <button
+            type="button"
+            aria-label={`Follow source ${source.name}`}
+            className={buttonClassName}
+          >
+            <PlusIcon className="h-3.5 w-3.5" />
+            Follow
+          </button>
+        }
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onTogglePreferredSource(source.name)}
+      disabled={followDisabled}
+      aria-pressed={isPreferredSource}
+      aria-label={
+        isPreferredSource
+          ? `Unfollow source ${source.name}`
+          : `Follow source ${source.name}`
+      }
+      className={buttonClassName}
+    >
+      {isPreferredSource ? (
+        <CheckIcon className="h-3.5 w-3.5" />
+      ) : (
+        <PlusIcon className="h-3.5 w-3.5" />
+      )}
+      {isUpdatingSource ? 'Saving' : isPreferredSource ? 'Following' : 'Follow'}
+    </button>
+  );
+}
+
+export default SourceSection;

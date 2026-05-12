@@ -1,5 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Check, Library, Monitor, Moon, SearchIcon, Sun } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { type UseFormReturn, useForm } from 'react-hook-form'
 import {
   pageContainerGutters,
@@ -16,6 +17,13 @@ import useAuth from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import AuthModal from '../Auth/AuthModal'
 import { Form, FormControl, FormField, FormItem } from '../ui/form'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '../ui/sheet'
 import { HeaderActionsMenu } from './HeaderActionsMenu'
 
 interface SearchFormInputs {
@@ -32,6 +40,7 @@ interface HeaderSearchFormProps {
   form: UseFormReturn<SearchFormInputs>
   onSubmit: (data: SearchFormInputs) => void
   placeholder: string
+  focusOnMount?: boolean
   className?: string
   inputClassName?: string
 }
@@ -40,34 +49,67 @@ function HeaderSearchForm({
   form,
   onSubmit,
   placeholder,
+  focusOnMount = false,
   className,
   inputClassName = '',
 }: HeaderSearchFormProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    if (focusOnMount) {
+      inputRef.current?.focus()
+    }
+  }, [focusOnMount])
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className={className}>
         <FormField
           control={form.control}
           name="query"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <div className="group/search relative">
-                  <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/search:text-slate-500 dark:text-muted-foreground dark:group-focus-within/search:text-foreground/80" />
-                  <input
-                    type="text"
-                    aria-label="Search AI Signal"
-                    placeholder={placeholder}
-                    className={`h-11 w-full rounded-full border border-slate-200/70 bg-white pl-11 pr-4 text-sm text-slate-950 shadow-[0_1px_1px_rgba(15,23,42,0.025),inset_0_1px_0_rgba(255,255,255,0.9)] outline-none transition-all placeholder:text-slate-400 hover:border-slate-200 hover:shadow-[0_2px_8px_rgba(15,23,42,0.035)] focus:border-slate-300 focus:ring-4 focus:ring-stone-950/2.5 dark:border-border/80 dark:bg-muted/45 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:hover:border-foreground/16 dark:focus:border-ring/40 dark:focus:ring-ring/10 ${inputClassName}`}
-                    {...field}
-                  />
-                </div>
-              </FormControl>
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const { ref, ...inputProps } = field
+
+            return (
+              <FormItem>
+                <FormControl>
+                  <div className="group/search relative">
+                    <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within/search:text-slate-500 dark:text-muted-foreground dark:group-focus-within/search:text-foreground/80" />
+                    <input
+                      type="text"
+                      aria-label="Search AI Signal"
+                      placeholder={placeholder}
+                      className={`h-11 w-full rounded-full border border-slate-200/70 bg-white pl-11 pr-4 text-sm text-slate-950 shadow-[0_1px_1px_rgba(15,23,42,0.025),inset_0_1px_0_rgba(255,255,255,0.9)] outline-none transition-all placeholder:text-slate-400 hover:border-slate-200 hover:shadow-[0_2px_8px_rgba(15,23,42,0.035)] focus:border-slate-300 focus:ring-4 focus:ring-stone-950/2.5 dark:border-border/80 dark:bg-muted/45 dark:text-foreground dark:shadow-none dark:placeholder:text-muted-foreground dark:hover:border-foreground/16 dark:focus:border-ring/40 dark:focus:ring-ring/10 ${inputClassName}`}
+                      {...inputProps}
+                      ref={(element) => {
+                        ref(element)
+                        inputRef.current = element
+                      }}
+                    />
+                  </div>
+                </FormControl>
+              </FormItem>
+            )
+          }}
         />
       </form>
     </Form>
+  )
+}
+
+function HeaderSourcesLink({ showOnMobile }: { showOnMobile: boolean }) {
+  return (
+    <Link
+      to="/all-article-sources"
+      aria-label="Sources"
+      className={cn(
+        'h-10 w-10 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 md:inline-flex md:w-auto md:px-2.5 md:text-slate-600 lg:px-3.5 dark:border-border dark:bg-muted/45 dark:text-muted-foreground dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background md:dark:text-foreground/78',
+        showOnMobile ? 'inline-flex' : 'hidden',
+      )}
+    >
+      <Library className="h-5 w-5 stroke-[1.7] md:h-4 md:w-4" />
+      <span className="hidden lg:inline">Sources</span>
+    </Link>
   )
 }
 
@@ -99,7 +141,7 @@ function LoggedOutAppearanceMenu() {
             <DropdownMenuItem
               key={option.value}
               onClick={() => setTheme(option.value)}
-              className="h-10 rounded-md px-2.5 text-[0.925rem] font-medium text-slate-700 transition-colors focus:bg-slate-50 focus:text-slate-950 data-[highlighted]:bg-slate-50 dark:text-foreground/86 dark:focus:bg-accent dark:focus:text-foreground dark:data-[highlighted]:bg-accent [&_svg]:text-slate-400 dark:[&_svg]:text-muted-foreground"
+              className="h-10 rounded-md px-2.5 text-[0.925rem] font-medium text-slate-700 transition-colors focus:bg-slate-50 focus:text-slate-950 data-highlighted:bg-slate-50 dark:text-foreground/86 dark:focus:bg-accent dark:focus:text-foreground dark:data-highlighted:bg-accent [&_svg]:text-slate-400 dark:[&_svg]:text-muted-foreground"
             >
               {theme === option.value ? (
                 <Check className="h-4 w-4 stroke-[1.9]" />
@@ -119,6 +161,7 @@ const Header = () => {
   const navigate = useNavigate()
 
   const { user } = useAuth()
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
 
   const searchForm = useForm<SearchFormInputs>({
     defaultValues: {
@@ -126,9 +169,30 @@ const Header = () => {
     },
   })
 
+  const mobileSearchForm = useForm<SearchFormInputs>({
+    defaultValues: {
+      query: '',
+    },
+  })
+
+  const submitSearch = (data: SearchFormInputs) => {
+    const query = data.query.trim()
+
+    if (query) {
+      navigate({ to: '/search-feed/$q', params: { q: query } })
+      return true
+    }
+
+    return false
+  }
+
   const onSubmit = (data: SearchFormInputs) => {
-    if (data.query.trim()) {
-      navigate({ to: '/search-feed/$q', params: { q: data.query.trim() } })
+    submitSearch(data)
+  }
+
+  const onMobileSubmit = (data: SearchFormInputs) => {
+    if (submitSearch(data)) {
+      setMobileSearchOpen(false)
     }
   }
 
@@ -166,16 +230,37 @@ const Header = () => {
         </div>
 
         <div className="flex items-center justify-end gap-2 sm:gap-4">
-          <Link
-            to="/all-article-sources"
-            aria-label="Sources"
-            className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 md:w-auto md:px-2.5 md:text-slate-600 lg:px-3.5 dark:border-border dark:bg-muted/45 dark:text-muted-foreground dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background md:dark:text-foreground/78"
-          >
-            <Library className="h-5 w-5 stroke-[1.7] md:h-4 md:w-4" />
-            <span className="hidden lg:inline">Sources</span>
-          </Link>
           {user ? (
             <>
+              <Sheet open={mobileSearchOpen} onOpenChange={setMobileSearchOpen}>
+                <SheetTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Search"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 md:hidden dark:border-border dark:bg-muted/45 dark:text-muted-foreground dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+                  >
+                    <SearchIcon className="h-5 w-5 stroke-[1.7]" />
+                  </button>
+                </SheetTrigger>
+                <SheetContent
+                  side="top"
+                  className="border-b border-slate-200 bg-white px-4 pb-5 pt-4 shadow-[0_18px_45px_rgba(15,23,42,0.12)] dark:border-border dark:bg-background dark:shadow-[0_18px_45px_rgba(0,0,0,0.28)]"
+                >
+                  <SheetHeader className="px-0 pb-3 pt-0">
+                    <SheetTitle className="text-left font-display text-xl font-semibold text-slate-950 dark:text-foreground">
+                      Search AI Signal
+                    </SheetTitle>
+                  </SheetHeader>
+                  <HeaderSearchForm
+                    form={mobileSearchForm}
+                    onSubmit={onMobileSubmit}
+                    placeholder="Search articles, labs, topics..."
+                    focusOnMount
+                    inputClassName="h-12 text-base"
+                  />
+                </SheetContent>
+              </Sheet>
+              <HeaderSourcesLink showOnMobile />
               <span
                 aria-hidden="true"
                 className="hidden h-6 w-px bg-slate-200/80 sm:block dark:bg-border"
@@ -184,6 +269,7 @@ const Header = () => {
             </>
           ) : (
             <>
+              <HeaderSourcesLink showOnMobile={false} />
               <LoggedOutAppearanceMenu />
               <AuthModal trackLocation="header" />
             </>

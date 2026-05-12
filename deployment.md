@@ -33,7 +33,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 Common optional values:
 
-- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAILS_FROM_EMAIL` for password recovery email.
+- `RESEND_API_KEY`, `EMAILS_FROM_EMAIL`, `EMAILS_FROM_NAME`, and `DIGEST_FROM_EMAIL` for app email.
 - `SENTRY_DSN` for backend error reporting.
 - `RATE_LIMIT_STORAGE_URI` for shared rate-limit storage in multi-worker deployments.
 - `INGEST_SCHEDULER_ENABLED`, `INGEST_INTERVAL_MINUTES`, and `INGEST_INITIAL_DELAY_SECONDS` for scheduled ingestion.
@@ -74,10 +74,10 @@ The deployment workflows expect self-hosted runners labeled `staging` and `produ
 - `FIRST_SUPERUSER`
 - `FIRST_SUPERUSER_PASSWORD`
 - `POSTGRES_PASSWORD`
+- `RESEND_API_KEY`
 - `EMAILS_FROM_EMAIL`
-- `SMTP_HOST`
-- `SMTP_USER`
-- `SMTP_PASSWORD`
+- `EMAILS_FROM_NAME`
+- `DIGEST_FROM_EMAIL`
 - `SENTRY_DSN`
 
 ## Post-Deploy Smoke Test

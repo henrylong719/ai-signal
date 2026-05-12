@@ -1,38 +1,38 @@
-import { Skeleton } from '../ui/skeleton'
+import { Skeleton } from '../ui/skeleton';
 
-const SOURCE_SKELETON_GROUPS = ['official', 'research', 'media']
-const SOURCE_SKELETON_ITEMS = ['first', 'second', 'third', 'fourth']
+const SOURCE_SKELETON_GROUPS = ['official', 'research', 'media'];
+const SOURCE_SKELETON_ITEMS = ['first', 'second', 'third', 'fourth'];
 
 function SourceGroupSkeleton() {
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {SOURCE_SKELETON_GROUPS.map((group) => (
         <section key={group}>
           <div className="mb-4 flex items-center gap-2">
             <Skeleton className="h-5 w-28 rounded" />
             <Skeleton className="h-4 w-20 rounded" />
           </div>
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="space-y-3 md:space-y-0 md:divide-y md:divide-slate-200/65 dark:md:divide-border/70">
             {SOURCE_SKELETON_ITEMS.map((item) => (
               <div
                 key={`${group}-${item}`}
-                className="min-h-45 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-border dark:bg-card/35 dark:shadow-none"
+                className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] md:rounded-none md:border-0 md:bg-transparent md:px-0 md:py-3 md:shadow-none dark:border-border dark:bg-card/35 dark:shadow-none md:dark:bg-transparent"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <Skeleton className="mb-2 h-5 w-36 rounded" />
-                    <Skeleton className="h-5 w-28 rounded-full" />
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 md:gap-4">
+                  <div className="min-w-0 md:max-w-3xl">
+                    <Skeleton className="h-5 w-36 rounded" />
+                    <Skeleton className="mt-2 h-4 w-44 rounded" />
+                    <Skeleton className="mt-2 h-4 w-full max-w-md rounded" />
+                    <Skeleton className="mt-2 h-3 w-24 rounded" />
                   </div>
-                  <Skeleton className="h-8 w-24 shrink-0 rounded-full" />
+                  <Skeleton className="h-10 w-24 shrink-0 rounded-full md:h-9 md:w-22" />
                 </div>
-                <Skeleton className="mt-5 h-4 w-full max-w-md rounded" />
-                <Skeleton className="mt-3 h-4 w-3/4 rounded" />
               </div>
             ))}
           </div>
         </section>
       ))}
     </div>
-  )
+  );
 }
-export default SourceGroupSkeleton
+export default SourceGroupSkeleton;

@@ -31,7 +31,10 @@ export function AppShell({ children }: AppShellProps) {
         Skip to main content
       </a>
       <Header />
-      <main id={MAIN_CONTENT_ID} className={cn('flex-1', pageContainerGutters)}>
+      <main
+        id={MAIN_CONTENT_ID}
+        className={cn('flex-1 overflow-x-clip', pageContainerGutters)}
+      >
         <div className={cn('mx-auto w-full', pageContainerWidths.default)}>
           {children}
         </div>

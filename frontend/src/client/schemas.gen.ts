@@ -50,7 +50,7 @@ export const AdminArticlePublicSchema = {
         },
         category: {
             type: 'string',
-            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other'],
+            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'education', 'other'],
             title: 'Category'
         },
         tags: {
@@ -221,7 +221,7 @@ export const ArticlePublicSchema = {
         },
         category: {
             type: 'string',
-            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other'],
+            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'education', 'other'],
             title: 'Category'
         },
         tags: {
@@ -447,7 +447,7 @@ export const DigestArticlePublicSchema = {
         },
         category: {
             type: 'string',
-            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other'],
+            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'education', 'other'],
             title: 'Category'
         },
         tags: {
@@ -737,7 +737,7 @@ export const ForYouArticlePublicSchema = {
         },
         category: {
             type: 'string',
-            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other'],
+            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'education', 'other'],
             title: 'Category'
         },
         tags: {
@@ -1465,12 +1465,12 @@ export const SourcePublicSchema = {
         },
         default_category: {
             type: 'string',
-            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other'],
+            enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'education', 'other'],
             title: 'Default Category'
         },
         source_type: {
             type: 'string',
-            enum: ['official', 'independent', 'community', 'research', 'media', 'newsletter', 'analysis', 'policy', 'education', 'papers', 'podcast'],
+            enum: ['official', 'independent', 'community', 'research', 'media', 'newsletter', 'analysis', 'policy', 'education', 'papers', 'podcast', 'video'],
             title: 'Source Type'
         },
         topic: {
@@ -1729,7 +1729,7 @@ export const UserInterestPublicSchema = {
         categories: {
             items: {
                 type: 'string',
-                enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other']
+                enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'education', 'other']
             },
             type: 'array',
             title: 'Categories',
@@ -1778,10 +1778,10 @@ export const UserInterestUpdateSchema = {
         categories: {
             items: {
                 type: 'string',
-                enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'other']
+                enum: ['agents', 'rag', 'models', 'infrastructure', 'engineering', 'research', 'applications', 'business', 'policy', 'safety', 'education', 'other']
             },
             type: 'array',
-            maxItems: 11,
+            maxItems: 12,
             title: 'Categories'
         },
         tags: {
@@ -1797,7 +1797,7 @@ export const UserInterestUpdateSchema = {
                 type: 'string'
             },
             type: 'array',
-            maxItems: 88,
+            maxItems: 118,
             title: 'Preferred Sources'
         }
     },

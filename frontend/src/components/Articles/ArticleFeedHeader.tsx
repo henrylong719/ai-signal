@@ -15,6 +15,7 @@ const FILTER_TOPICS = [
   'business',
   'policy',
   'safety',
+  'education',
   'other',
 ] satisfies TopicFilter[]
 

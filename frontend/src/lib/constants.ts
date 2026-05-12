@@ -11,6 +11,7 @@ export const CATEGORIES: category[] = [
   'business',
   'policy',
   'safety',
+  'education',
   'other',
 ]
 
@@ -24,6 +25,7 @@ export const previewSourceTypes: SourcePublic['source_type'][] = [
   'media',
   'newsletter',
   'podcast',
+  'video',
   'independent',
   'community',
 ]
@@ -44,6 +46,7 @@ export const SOURCE_TYPES: source_types[] = [
   'media',
   'newsletter',
   'podcast',
+  'video',
   'independent',
   'community',
 ]
@@ -60,6 +63,7 @@ export const SOURCE_FILTER_LABELS: Record<source_types, string> = {
   media: 'Media',
   newsletter: 'Newsletter',
   podcast: 'Podcast',
+  video: 'Video',
   independent: 'Independent',
   community: 'Community',
 }

@@ -16,6 +16,7 @@ const CATEGORIES: { value: Category; label: string }[] = [
   { value: 'business', label: 'Business' },
   { value: 'policy', label: 'Policy' },
   { value: 'safety', label: 'Safety' },
+  { value: 'education', label: 'Education' },
   { value: 'other', label: 'Other' },
 ]
 

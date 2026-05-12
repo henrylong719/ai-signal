@@ -9,6 +9,7 @@ import {
   MegaphoneIcon,
   NewspaperIcon,
   UsersIcon,
+  VideoIcon,
 } from 'lucide-react'
 import { useMemo } from 'react'
 import type { SourcePublic } from '@/client'
@@ -30,6 +31,7 @@ const sourceTypeIcons: Record<SourcePublic['source_type'], LucideIcon> = {
   education: Library,
   papers: FlaskConicalIcon,
   podcast: MegaphoneIcon,
+  video: VideoIcon,
 }
 
 // Seeded PRNG (mulberry32). Same seed → same sequence, so the rail

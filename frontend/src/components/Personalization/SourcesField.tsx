@@ -25,6 +25,7 @@ const SOURCE_TYPE_LABELS: Record<SourcePublic['source_type'], string> = {
   community: 'Community',
   newsletter: 'Newsletters',
   podcast: 'Podcasts',
+  video: 'Video',
   media: 'Media',
 }
 
@@ -39,6 +40,7 @@ const SOURCE_TYPE_ORDER: SourcePublic['source_type'][] = [
   'papers',
   'newsletter',
   'podcast',
+  'video',
   'media',
   'independent',
   'community',

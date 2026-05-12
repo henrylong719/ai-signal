@@ -12,7 +12,7 @@ function SourceGroupSkeleton() {
             <Skeleton className="h-5 w-28 rounded" />
             <Skeleton className="h-4 w-20 rounded" />
           </div>
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             {SOURCE_SKELETON_ITEMS.map((item) => (
               <div
                 key={`${group}-${item}`}

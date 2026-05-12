@@ -1,6 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Check, Library, Monitor, Moon, SearchIcon, Sun } from 'lucide-react'
-import { useState } from 'react'
 import { type UseFormReturn, useForm } from 'react-hook-form'
 import {
   pageContainerGutters,
@@ -17,13 +16,6 @@ import useAuth from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import AuthModal from '../Auth/AuthModal'
 import { Form, FormControl, FormField, FormItem } from '../ui/form'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '../ui/sheet'
 import { HeaderActionsMenu } from './HeaderActionsMenu'
 
 interface SearchFormInputs {
@@ -125,7 +117,6 @@ function LoggedOutAppearanceMenu() {
 
 const Header = () => {
   const navigate = useNavigate()
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
 
   const { user } = useAuth()
 
@@ -134,16 +125,10 @@ const Header = () => {
       query: '',
     },
   })
-  const mobileSearchForm = useForm<SearchFormInputs>({
-    defaultValues: {
-      query: '',
-    },
-  })
 
   const onSubmit = (data: SearchFormInputs) => {
     if (data.query.trim()) {
       navigate({ to: '/search-feed/$q', params: { q: data.query.trim() } })
-      setMobileSearchOpen(false)
     }
   }
 
@@ -181,39 +166,12 @@ const Header = () => {
         </div>
 
         <div className="flex items-center justify-end gap-2 sm:gap-4">
-          <Sheet open={mobileSearchOpen} onOpenChange={setMobileSearchOpen}>
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                aria-label="Search"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 md:hidden dark:border-border dark:bg-muted/45 dark:text-muted-foreground dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
-              >
-                <SearchIcon className="h-5 w-5 stroke-[1.7]" />
-              </button>
-            </SheetTrigger>
-            <SheetContent
-              side="top"
-              className="border-b border-slate-200 bg-white px-4 pb-5 pt-4 shadow-[0_18px_45px_rgba(15,23,42,0.12)] dark:border-border dark:bg-background dark:shadow-[0_18px_45px_rgba(0,0,0,0.28)]"
-            >
-              <SheetHeader className="px-0 pb-3 pt-0">
-                <SheetTitle className="text-left font-display text-xl font-semibold text-slate-950 dark:text-foreground">
-                  Search AI Signal
-                </SheetTitle>
-              </SheetHeader>
-              <HeaderSearchForm
-                form={mobileSearchForm}
-                onSubmit={onSubmit}
-                placeholder="Search articles, labs, topics..."
-                inputClassName="h-12 text-base"
-              />
-            </SheetContent>
-          </Sheet>
           <Link
             to="/all-article-sources"
             aria-label="Sources"
-            className="hidden h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 md:inline-flex lg:px-3.5 dark:border-border dark:bg-muted/45 dark:text-foreground/78 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
+            className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 md:w-auto md:px-2.5 md:text-slate-600 lg:px-3.5 dark:border-border dark:bg-muted/45 dark:text-muted-foreground dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background md:dark:text-foreground/78"
           >
-            <Library className="h-4 w-4 stroke-[1.7]" />
+            <Library className="h-5 w-5 stroke-[1.7] md:h-4 md:w-4" />
             <span className="hidden lg:inline">Sources</span>
           </Link>
           {user ? (

@@ -1,21 +1,21 @@
-import { ArrowRightIcon, CalendarIcon, SparklesIcon } from 'lucide-react'
+import { ArrowRightIcon, CalendarIcon, SparklesIcon } from 'lucide-react';
 import {
   type CSSProperties,
   type ReactNode,
   useLayoutEffect,
   useRef,
   useState,
-} from 'react'
+} from 'react';
 
-import AuthModal from '@/components/Auth/AuthModal'
-import type { AuthMode } from '@/components/Auth/authTypes'
-import { SupportFooterLinks } from '@/components/Legal/SupportFooterLinks'
-import { useSources } from '@/hooks/useSources'
-import { useTodayDigest } from '@/hooks/useTodayDigest'
-import { trackGuestEvent } from '@/lib/analytics'
-import ArticleSource from './ArticleSource'
-import RecommendedTopics from './RecommendedTopics'
-import TodayDigest from './TodayDigest'
+import AuthModal from '@/components/Auth/AuthModal';
+import type { AuthMode } from '@/components/Auth/authTypes';
+import { SupportFooterLinks } from '@/components/Legal/SupportFooterLinks';
+import { useSources } from '@/hooks/useSources';
+import { useTodayDigest } from '@/hooks/useTodayDigest';
+import { trackGuestEvent } from '@/lib/analytics';
+import ArticleSource from './ArticleSource';
+import RecommendedTopics from './RecommendedTopics';
+import TodayDigest from './TodayDigest';
 
 /**
  * Logged-out home experience. The article feed stays central so guests can
@@ -24,11 +24,11 @@ import TodayDigest from './TodayDigest'
 export function GuestLanding({
   children,
 }: {
-  children: ReactNode
-  latestUpdatedAt?: number
+  children: ReactNode;
+  latestUpdatedAt?: number;
 }) {
-  const [authOpen, setAuthOpen] = useState(false)
-  const [authMode, setAuthMode] = useState<AuthMode>('sign-up')
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>('sign-up');
 
   // The hero hosts both auth CTAs. We tag every CTA click with its UI
   // location so the admin funnel can answer "which CTA performs?".
@@ -36,17 +36,17 @@ export function GuestLanding({
     trackGuestEvent(
       mode === 'sign-up' ? 'guest_signup_click' : 'guest_login_click',
       { payload: { metadata: { location } } },
-    )
-    setAuthMode(mode)
-    setAuthOpen(true)
-  }
+    );
+    setAuthMode(mode);
+    setAuthOpen(true);
+  };
 
   return (
     <>
       <div className="pb-14 pt-7 sm:pb-18 sm:pt-9">
         <section
           aria-labelledby="guest-intro-title"
-          className="border-b border-slate-200/80 pb-12 sm:pb-16 dark:border-border/80"
+          className="border-b border-slate-200/80 pb-3 sm:pb-15 dark:border-border/80"
         >
           <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(440px,1.05fr)] lg:gap-14 xl:gap-16">
             <div className="min-w-0">
@@ -82,12 +82,22 @@ export function GuestLanding({
                     aria-hidden="true"
                   />
                 </button>
-                <a
-                  href="#latest-signals"
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = document.getElementById('latest-signals');
+                    if (!target) return;
+                    const prefersReducedMotion = window.matchMedia(
+                      '(prefers-reduced-motion: reduce)',
+                    ).matches;
+                    target.scrollIntoView({
+                      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+                    });
+                  }}
                   className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 shadow-[0_1px_1px_rgba(15,23,42,0.025)] transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/15 focus-visible:ring-offset-2 dark:border-border dark:bg-muted/45 dark:text-foreground/86 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-accent dark:hover:text-foreground dark:focus-visible:ring-ring/35 dark:focus-visible:ring-offset-background"
                 >
                   Browse latest
-                </a>
+                </button>
                 <button
                   type="button"
                   onClick={() => openAuth('sign-in', 'hero')}
@@ -135,7 +145,7 @@ export function GuestLanding({
         trigger={null}
       />
     </>
-  )
+  );
 }
 
 const HERO_MOCKUP_CHIPS = [
@@ -144,7 +154,7 @@ const HERO_MOCKUP_CHIPS = [
   { name: 'Models' },
   { name: 'Engineering' },
   { name: 'Safety' },
-]
+];
 
 const HERO_MOCKUP_ARTICLES = [
   {
@@ -168,7 +178,7 @@ const HERO_MOCKUP_ARTICLES = [
     time: '1d',
     accent: 'bg-emerald-400',
   },
-]
+];
 
 function HeroProductMockup() {
   return (
@@ -275,7 +285,7 @@ function HeroProductMockup() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function MobileGuestBriefing() {
@@ -283,39 +293,39 @@ function MobileGuestBriefing() {
     <aside className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-[0_1px_1px_rgba(15,23,42,0.025)] lg:hidden dark:border-border/70 dark:bg-card/35 dark:shadow-none">
       <TodayDigest />
     </aside>
-  )
+  );
 }
 
 function GuestSidebar() {
-  const { isLoading: sourcesLoading } = useSources()
-  const { isLoading: digestLoading } = useTodayDigest()
-  const isLoading = sourcesLoading || digestLoading
+  const { isLoading: sourcesLoading } = useSources();
+  const { isLoading: digestLoading } = useTodayDigest();
+  const isLoading = sourcesLoading || digestLoading;
 
-  const sidebarRef = useRef<HTMLElement>(null)
-  const [sidebarHeight, setSidebarHeight] = useState(0)
+  const sidebarRef = useRef<HTMLElement>(null);
+  const [sidebarHeight, setSidebarHeight] = useState(0);
 
   useLayoutEffect(() => {
-    const sidebar = sidebarRef.current
+    const sidebar = sidebarRef.current;
 
     if (!sidebar) {
-      return
+      return;
     }
 
     const updateHeight = () => {
-      setSidebarHeight(Math.ceil(sidebar.getBoundingClientRect().height))
-    }
+      setSidebarHeight(Math.ceil(sidebar.getBoundingClientRect().height));
+    };
 
-    updateHeight()
+    updateHeight();
 
     if (typeof ResizeObserver === 'undefined') {
-      return
+      return;
     }
 
-    const observer = new ResizeObserver(updateHeight)
-    observer.observe(sidebar)
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(sidebar);
 
-    return () => observer.disconnect()
-  }, [])
+    return () => observer.disconnect();
+  }, []);
 
   // When the rail is taller than the viewport, let it scroll with the page
   // until its bottom edge reaches the viewport.
@@ -324,7 +334,7 @@ function GuestSidebar() {
       sidebarHeight > 0
         ? `min(6.5rem, calc(100vh - ${sidebarHeight}px - 2rem))`
         : '6.5rem',
-  }
+  };
 
   return (
     <aside
@@ -341,5 +351,5 @@ function GuestSidebar() {
         <SupportFooterLinks variant="wrap" withCopyright />
       </div>
     </aside>
-  )
+  );
 }

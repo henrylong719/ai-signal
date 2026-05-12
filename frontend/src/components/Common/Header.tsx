@@ -256,7 +256,11 @@ const Header = () => {
                     onSubmit={onMobileSubmit}
                     placeholder="Search articles, labs, topics..."
                     focusOnMount
-                    inputClassName="h-12 text-base"
+                    // text-base! — without `!`, the default text-sm wins
+                    // (Tailwind v4 emits .text-sm after .text-base). Inputs
+                    // under 16px trigger iOS Safari's focus auto-zoom, which
+                    // looks like the page suddenly widening.
+                    inputClassName="h-12 text-base!"
                   />
                 </SheetContent>
               </Sheet>

@@ -8,7 +8,7 @@ function SourceGroupSkeleton() {
     <div className="space-y-10">
       {SOURCE_SKELETON_GROUPS.map((group) => (
         <section key={group}>
-          <div className="mb-4 flex items-center gap-2 px-1">
+          <div className="mb-4 flex items-center gap-2">
             <Skeleton className="h-5 w-28 rounded" />
             <Skeleton className="h-4 w-20 rounded" />
           </div>

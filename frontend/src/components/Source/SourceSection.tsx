@@ -35,7 +35,7 @@ function SourceSection({
 }: SourceSectionProps) {
   return (
     <section className="scroll-mt-28">
-      <div className="mb-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 px-1">
+      <div className="mb-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <h2 className="text-base font-semibold text-slate-950 dark:text-foreground">
           {SOURCE_FILTER_LABELS[type]}
         </h2>

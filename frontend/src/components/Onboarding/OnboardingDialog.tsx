@@ -273,7 +273,7 @@ function WelcomeStep() {
         <Bullet
           icon={CalendarDaysIcon}
           title="Daily digest"
-          body="Optional 8 am email summary."
+          body="Optional 6 am email summary."
         />
       </ul>
     </div>
@@ -457,7 +457,7 @@ function PreviewStep({
               className="h-4 w-4 stroke-[1.8]"
               aria-hidden="true"
             />
-            Send me the daily digest at 8 am
+            Send me the daily digest at 6 am
           </span>
           <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-muted-foreground">
             One email per day, grouped by signal area, in your local time (

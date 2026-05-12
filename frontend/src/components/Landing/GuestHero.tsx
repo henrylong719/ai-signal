@@ -60,11 +60,11 @@ export function GuestLanding({
 
               <h1
                 id="guest-intro-title"
-                className="max-w-[640px] font-display text-[2.5rem] font-semibold leading-[1.05] tracking-tight text-slate-950 sm:text-[3.25rem] sm:leading-[1.03] dark:text-foreground"
+                className="max-w-160 font-display text-[2.5rem] font-semibold leading-[1.05] tracking-tight text-slate-950 sm:text-[3.25rem] sm:leading-[1.03] dark:text-foreground"
               >
                 Stay ahead of AI without the noise.
               </h1>
-              <p className="mt-6 max-w-[560px] text-base leading-7 text-slate-600 sm:text-lg sm:leading-8 dark:text-muted-foreground">
+              <p className="mt-6 max-w-140 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8 dark:text-muted-foreground">
                 AI Signal curates important updates from AI labs, research
                 papers, engineering blogs, newsletters, and trusted voices into
                 one calm reading feed.

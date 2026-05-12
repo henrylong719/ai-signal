@@ -51,7 +51,7 @@ const DigestPreferences = () => {
       queryClient.setQueryData(['currentUser'], data)
       showSuccessToast(
         data.daily_digest_enabled
-          ? 'Daily digest is on. See you at 8 am.'
+          ? 'Daily digest is on. See you at 6 am.'
           : 'Daily digest is off.',
       )
     },
@@ -107,7 +107,7 @@ const DigestPreferences = () => {
               className="h-4 w-4 stroke-[1.8]"
               aria-hidden="true"
             />
-            Daily digest at 8 am
+            Daily digest at 6 am
           </span>
           <span
             className={cn(

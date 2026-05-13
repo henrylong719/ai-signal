@@ -8,7 +8,11 @@ from sqlmodel import Session, col, select
 from app.models import RefreshSession
 from app.models.base import get_datetime_utc
 
-REFRESH_REUSE_GRACE_SECONDS = 30
+# Window during which a just-rotated refresh token is still accepted. Sized
+# to absorb realistic multi-tab races and mobile tab-resume latency, where
+# one tab may finish a refresh while another is still mid-flight with the
+# previous token. 30s was too tight in practice (slow cellular wake-ups).
+REFRESH_REUSE_GRACE_SECONDS = 120
 
 
 def hash_refresh_token_id(token_id: str) -> str:

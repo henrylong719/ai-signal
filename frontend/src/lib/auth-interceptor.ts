@@ -11,7 +11,7 @@ import { OpenAPI } from '@/client'
  * endpoint (which uses the long-lived refresh cookie to mint new
  * access cookies), and retries the original request.
  *
- * Three subtleties handled here:
+ * Four subtleties handled here:
  *
  * 1. Promise singleton. If ten parallel requests all 401 at once
  *    (typical when many React Query queries are in-flight), only one
@@ -24,21 +24,32 @@ import { OpenAPI } from '@/client'
  *    necessary to avoid refresh→401→refresh death spirals when the
  *    refresh token itself is invalid.
  *
- * 3. Refresh failure → user is logged out. If refresh returns non-2xx,
- *    we clear the marker cookie and redirect to login. The actual auth
- *    cookies have already been cleared server-side as part of the
- *    failure response (or were never valid to begin with).
+ * 3. Distinguish auth failure from transient failure. A 401/403 from
+ *    the refresh endpoint means the server rejected the refresh token
+ *    — log the user out. A network error, timeout, or 5xx means the
+ *    refresh never actually completed — retry once with backoff, and
+ *    if it's still transient, leave the user logged in so the next
+ *    request can try again. Conflating these two cases is what kicks
+ *    users off on flaky mobile networks.
+ *
+ * 4. Refresh failure → user is logged out. If refresh definitively
+ *    fails (server-rejected), we clear the marker cookie and redirect
+ *    to login. The actual auth cookies have already been cleared
+ *    server-side as part of the failure response.
  */
 
 const REFRESH_PATH = '/api/v1/login/refresh'
 const LOGIN_PATH = '/login'
+const TRANSIENT_RETRY_DELAY_MS = 800
+
+type RefreshResult = 'ok' | 'auth_failed' | 'transient'
 
 /**
  * In-flight refresh promise. While set, all 401-handlers await this
  * instead of starting a new refresh. Cleared when the refresh resolves
  * (success or failure) so the next 401 can start a fresh attempt.
  */
-let refreshInFlight: Promise<boolean> | null = null
+let refreshInFlight: Promise<RefreshResult> | null = null
 
 /**
  * Request configs that have already been retried once and shouldn't be
@@ -51,22 +62,42 @@ interface RetryableConfig extends AxiosRequestConfig {
   [RETRIED]?: boolean
 }
 
-const refreshSession = async (): Promise<boolean> => {
+const attemptRefresh = async (): Promise<RefreshResult> => {
   // Use a bare axios call rather than the SDK's LoginService.refreshSession.
   // The SDK call would itself go through this interceptor, which is fine,
   // but using bare axios keeps the interceptor logic obviously self-contained
   // and avoids any chance of an SDK-layer transformation interfering with
   // the cookie round-trip.
+  //
+  // ``validateStatus: () => true`` keeps axios from throwing on any HTTP
+  // status, so we can branch on the status code directly. Anything thrown
+  // here is therefore a network-level error (no response, timeout, DNS,
+  // CORS-preflight failure), which we treat as transient.
   try {
     const response = await axios.post(
       `${OpenAPI.BASE}${REFRESH_PATH}`,
       undefined,
-      { withCredentials: true },
+      { withCredentials: true, validateStatus: () => true },
     )
-    return response.status >= 200 && response.status < 300
+    if (response.status >= 200 && response.status < 300) return 'ok'
+    // 401/403 = server actively rejected the refresh token. Anything else
+    // (5xx, 502 from a Railway cold start, 404 from a misrouted proxy, etc.)
+    // is not an auth signal — don't log the user out for it.
+    if (response.status === 401 || response.status === 403) return 'auth_failed'
+    return 'transient'
   } catch {
-    return false
+    return 'transient'
   }
+}
+
+const refreshSession = async (): Promise<RefreshResult> => {
+  // Retry once on transient errors. Mobile networks often drop the first
+  // packet after a tab resumes from background; a single retry with a
+  // short backoff is the cheapest way to avoid kicking the user out.
+  const first = await attemptRefresh()
+  if (first !== 'transient') return first
+  await new Promise((resolve) => setTimeout(resolve, TRANSIENT_RETRY_DELAY_MS))
+  return attemptRefresh()
 }
 
 const onRefreshFailure = () => {
@@ -114,10 +145,17 @@ export const authInterceptor = async (
   refreshInFlight ??= refreshSession().finally(() => {
     refreshInFlight = null
   })
-  const refreshed = await refreshInFlight
+  const result = await refreshInFlight
 
-  if (!refreshed) {
+  if (result === 'auth_failed') {
     onRefreshFailure()
+    return response
+  }
+
+  if (result === 'transient') {
+    // Network/5xx during refresh — leave the user logged in. Return the
+    // original 401 so the caller sees the failure; the next API call
+    // will start another refresh attempt once the network recovers.
     return response
   }
 
@@ -128,5 +166,12 @@ export const authInterceptor = async (
   // — that's fine, a properly refreshed request shouldn't 401 again,
   // and even if it did, RETRIED prevents looping.
   config[RETRIED] = true
-  return await axios.request(config)
+  const retried = await axios.request(config)
+  // If the retried request still comes back 401 (e.g., user was
+  // deactivated between the refresh and the retry), treat that as a
+  // definitive auth failure here — otherwise nothing would redirect.
+  if (retried.status === 401) {
+    onRefreshFailure()
+  }
+  return retried
 }

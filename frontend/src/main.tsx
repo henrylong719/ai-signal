@@ -8,12 +8,11 @@ import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { Analytics } from '@vercel/analytics/react'
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
-import { ApiError, OpenAPI } from './client'
+import { OpenAPI } from './client'
 import { ThemeProvider, useTheme } from './components/theme-provider'
 import { Toaster } from './components/ui/sonner'
 import './index.css'
 import { authInterceptor } from './lib/auth-interceptor'
-import { clearLoginState } from './lib/auth-state'
 import { routeTree } from './routeTree.gen'
 
 OpenAPI.BASE = import.meta.env.VITE_API_URL
@@ -23,28 +22,15 @@ OpenAPI.BASE = import.meta.env.VITE_API_URL
 // on :8000 in dev).
 OpenAPI.WITH_CREDENTIALS = true
 
-// Response interceptor for the 401 → refresh → retry flow.
+// Response interceptor for the 401 → refresh → retry flow. The
+// interceptor owns *all* auth-driven redirects: a 401 that reaches
+// React Query past this point means the refresh attempt was transient
+// (network/5xx) and the user should stay logged in for the next try.
 OpenAPI.interceptors.response.use(authInterceptor)
 
-// Error handler for everything the auth interceptor doesn't catch.
-// 401s are *handled* by the interceptor (refresh + retry), so they don't
-// usually reach this point. If they do — meaning even after a refresh
-// attempt the server still says no — fall through to the same logged-out
-// flow as the interceptor's onRefreshFailure.
-const handleApiError = (error: Error) => {
-  if (error instanceof ApiError && error.status === 401) {
-    clearLoginState()
-    window.location.href = '/login'
-  }
-}
-
 const queryClient = new QueryClient({
-  queryCache: new QueryCache({
-    onError: handleApiError,
-  }),
-  mutationCache: new MutationCache({
-    onError: handleApiError,
-  }),
+  queryCache: new QueryCache(),
+  mutationCache: new MutationCache(),
 })
 
 const router = createRouter({ routeTree })

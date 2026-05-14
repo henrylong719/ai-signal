@@ -2,11 +2,48 @@ import type { ColumnDef } from '@tanstack/react-table'
 
 import type { UserPublic } from '@/client'
 import { Badge } from '@/components/ui/badge'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { UserActionsMenu } from './UserActionsMenu'
 
 export type UserTableData = UserPublic & {
   isCurrentUser: boolean
+}
+
+// Coarse "Last seen" label. Buckets are deliberately fuzzy because the
+// backend throttles writes to a 5-minute window — finer granularity
+// would imply a precision the data doesn't have.
+function formatRelativeLastSeen(iso: string): string {
+  const then = new Date(iso).getTime()
+  if (Number.isNaN(then)) return '—'
+  const diffSec = Math.max(0, Math.floor((Date.now() - then) / 1000))
+  if (diffSec < 60) return 'just now'
+  const diffMin = Math.floor(diffSec / 60)
+  if (diffMin < 60) return `${diffMin}m ago`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}h ago`
+  const diffDay = Math.floor(diffHr / 24)
+  if (diffDay < 30) return `${diffDay}d ago`
+  const diffMonth = Math.floor(diffDay / 30)
+  if (diffMonth < 12) return `${diffMonth}mo ago`
+  return `${Math.floor(diffMonth / 12)}y ago`
+}
+
+function formatExactTimestamp(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
 }
 
 export const columns: ColumnDef<UserTableData>[] = [
@@ -72,6 +109,26 @@ export const columns: ColumnDef<UserTableData>[] = [
         </span>
       </div>
     ),
+  },
+  {
+    accessorKey: 'last_seen_at',
+    header: 'Last seen',
+    cell: ({ row }) => {
+      const lastSeen = row.original.last_seen_at
+      if (!lastSeen) {
+        return <span className="text-muted-foreground">Never</span>
+      }
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="text-muted-foreground cursor-default">
+              {formatRelativeLastSeen(lastSeen)}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>{formatExactTimestamp(lastSeen)}</TooltipContent>
+        </Tooltip>
+      )
+    },
   },
   {
     id: 'actions',

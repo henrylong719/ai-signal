@@ -486,6 +486,7 @@ export type UserPublic = {
     timezone?: (string | null);
     daily_digest_enabled?: boolean;
     onboarded_at?: (string | null);
+    last_seen_at?: (string | null);
 };
 
 export type UserRegister = {

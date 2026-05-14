@@ -47,6 +47,9 @@ class UserPublic(UserBase):
     timezone: str | None = None
     daily_digest_enabled: bool = False
     onboarded_at: datetime | None = None
+    # Read by the admin user table to flag dormant accounts. NULL ⇒
+    # never seen since the column was introduced.
+    last_seen_at: datetime | None = None
 
 
 class OnboardingComplete(SQLModel):

@@ -43,3 +43,11 @@ class User(UserBase, table=True):
         default=None,
         sa_column=Column(DateTime(timezone=True), nullable=True),
     )
+    # Updated by get_current_user on each authenticated request, throttled
+    # to ~5 minutes to avoid writing on every API call. NULL means the
+    # user has never been seen since the column was added — admins read
+    # this to gauge who is still active.
+    last_seen_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )

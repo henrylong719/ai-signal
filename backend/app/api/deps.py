@@ -17,12 +17,15 @@ presented" — which is what the frontend's refresh interceptor watches for.
 (see ``get_current_active_superuser``).
 """
 
+import logging
 from collections.abc import Generator
+from datetime import timedelta
 from typing import Annotated
 
 import jwt
 from fastapi import Cookie, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session
 
 from app.core import security
@@ -30,6 +33,15 @@ from app.core.config import settings
 from app.core.cookies import ACCESS_COOKIE_NAME
 from app.core.db import engine
 from app.models import User
+from app.models.base import get_datetime_utc
+
+logger = logging.getLogger(__name__)
+
+# How stale ``user.last_seen_at`` must be before we write a fresh
+# timestamp on the next authenticated request. Bounded write rate is
+# ~12/hour per active user worst case — invisible to admins while
+# keeping the DB cost negligible.
+LAST_SEEN_REFRESH_INTERVAL = timedelta(minutes=5)
 
 # auto_error=False on both: we resolve the token manually (cookie OR header)
 # rather than letting OAuth2PasswordBearer raise on missing header. The
@@ -55,6 +67,27 @@ def _resolve_token(
 ) -> str | None:
     """Cookie wins over header. Either is acceptable; neither is fine too."""
     return cookie_token or header_token
+
+
+def _touch_last_seen(session: Session, user: User) -> None:
+    """Refresh ``user.last_seen_at`` if it is older than the throttle window.
+
+    Best-effort: a failed write must never block authentication, so any
+    DB error is swallowed and logged. The next request will retry.
+    """
+    now = get_datetime_utc()
+    if (
+        user.last_seen_at is not None
+        and now - user.last_seen_at < LAST_SEEN_REFRESH_INTERVAL
+    ):
+        return
+    user.last_seen_at = now
+    try:
+        session.add(user)
+        session.commit()
+    except SQLAlchemyError:
+        logger.exception("Failed to update last_seen_at for user %s", user.id)
+        session.rollback()
 
 
 def get_current_user(
@@ -89,6 +122,7 @@ def get_current_user(
         raise HTTPException(status_code=404, detail="User not found")
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+    _touch_last_seen(session, user)
     return user
 
 
@@ -117,6 +151,7 @@ def get_optional_user(
     user = session.get(User, subject)
     if not user or not user.is_active:
         return None
+    _touch_last_seen(session, user)
     return user
 
 

@@ -1890,6 +1890,18 @@ export const UserPublicSchema = {
                 }
             ],
             title: 'Onboarded At'
+        },
+        last_seen_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Last Seen At'
         }
     },
     type: 'object',

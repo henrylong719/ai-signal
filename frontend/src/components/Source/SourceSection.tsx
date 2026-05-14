@@ -114,7 +114,7 @@ function SourceDirectoryItem({
   const sourceDomain = getSourceDomain(source);
 
   return (
-    <article className="group relative overflow-hidden rounded-2xl border border-slate-200/75 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-colors hover:border-slate-300 hover:bg-slate-50/70 focus-within:border-slate-300 focus-within:bg-slate-50/70 md:-mx-4 md:rounded-lg md:border-0 md:bg-transparent md:px-4 md:py-3.5 md:shadow-none md:hover:bg-slate-50/75 md:focus-within:bg-slate-50/75 dark:border-border dark:bg-card/35 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-card/60 dark:focus-within:border-foreground/18 dark:focus-within:bg-card/60 md:dark:bg-transparent md:dark:hover:bg-accent/45 md:dark:focus-within:bg-accent/45">
+    <article className="group relative overflow-hidden rounded-2xl border border-slate-200/75 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-[background-color,border-color,box-shadow] hover:border-slate-300 hover:bg-slate-100/70 focus-within:border-slate-300 focus-within:bg-slate-100/70 md:-mx-4 md:rounded-lg md:border-0 md:bg-transparent md:px-4 md:py-3.5 md:shadow-none md:hover:bg-slate-100/80 md:hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.24)] md:focus-within:bg-slate-100/80 md:focus-within:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.24)] dark:border-border dark:bg-card/35 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-card/60 dark:focus-within:border-foreground/18 dark:focus-within:bg-card/60 md:dark:bg-transparent md:dark:hover:bg-accent/45 md:dark:hover:shadow-none md:dark:focus-within:bg-accent/45 md:dark:focus-within:shadow-none">
       <Link
         to="/article-sources/$s"
         params={{ s: source.name }}

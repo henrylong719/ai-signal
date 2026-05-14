@@ -87,8 +87,7 @@ function Dashboard() {
   const resolvedTab: Tab =
     !isAuthed && isAuthOnly(activeTab) ? 'latest' : activeTab
   const feedTopRef = useRef<HTMLDivElement>(null)
-  const latestQuery = useArticleFeed()
-  const { dataUpdatedAt: latestFeedUpdatedAt, ...latest } = latestQuery
+  const latest = useArticleFeed()
   const following = useFollowingFeed()
 
   // Debug mode is the AND of "URL asked for it" and "user is privileged".
@@ -183,7 +182,7 @@ function Dashboard() {
   if (!isAuthed) {
     return (
       <PageContainer variant="default" spacing="none">
-        <GuestLanding latestUpdatedAt={latestFeedUpdatedAt}>
+        <GuestLanding>
           <ArticleList
             {...latest}
             articleClassName="py-6 sm:py-7"

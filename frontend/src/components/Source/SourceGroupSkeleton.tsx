@@ -16,7 +16,7 @@ function SourceGroupSkeleton() {
             {SOURCE_SKELETON_ITEMS.map((item) => (
               <div
                 key={`${group}-${item}`}
-                className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] md:rounded-none md:border-0 md:bg-transparent md:px-0 md:py-3 md:shadow-none dark:border-border dark:bg-card/35 dark:shadow-none md:dark:bg-transparent"
+                className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] md:-mx-4 md:rounded-lg md:border-0 md:bg-transparent md:px-4 md:py-3.5 md:shadow-none dark:border-border dark:bg-card/35 dark:shadow-none md:dark:bg-transparent"
               >
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 md:gap-4">
                   <div className="min-w-0 md:max-w-3xl">

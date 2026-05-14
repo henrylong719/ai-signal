@@ -114,7 +114,7 @@ function SourceDirectoryItem({
   const sourceDomain = getSourceDomain(source);
 
   return (
-    <article className="group relative overflow-hidden rounded-2xl border border-slate-200/75 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-colors hover:border-slate-300 hover:bg-slate-50/70 md:rounded-none md:border-0 md:bg-transparent md:px-0 md:py-3 md:shadow-none md:hover:bg-transparent dark:border-border dark:bg-card/35 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-card/60 md:dark:bg-transparent md:dark:hover:bg-transparent">
+    <article className="group relative overflow-hidden rounded-2xl border border-slate-200/75 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-colors hover:border-slate-300 hover:bg-slate-50/70 focus-within:border-slate-300 focus-within:bg-slate-50/70 md:-mx-4 md:rounded-lg md:border-0 md:bg-transparent md:px-4 md:py-3.5 md:shadow-none md:hover:bg-slate-50/75 md:focus-within:bg-slate-50/75 dark:border-border dark:bg-card/35 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-card/60 dark:focus-within:border-foreground/18 dark:focus-within:bg-card/60 md:dark:bg-transparent md:dark:hover:bg-accent/45 md:dark:focus-within:bg-accent/45">
       <Link
         to="/article-sources/$s"
         params={{ s: source.name }}

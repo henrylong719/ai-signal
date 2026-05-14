@@ -1,51 +1,51 @@
-import { Link } from '@tanstack/react-router';
-import { CheckIcon, PlusIcon } from 'lucide-react';
-import type { SourcePublic } from '@/client';
-import { SOURCE_FILTER_LABELS, type source_types } from '@/lib/constants';
-import { cn } from '@/lib/utils';
-import AuthModal from '../Auth/AuthModal';
+import { Link } from '@tanstack/react-router'
+import { CheckIcon, PlusIcon } from 'lucide-react'
+import type { SourcePublic } from '@/client'
+import { SOURCE_FILTER_LABELS, type source_types } from '@/lib/constants'
+import { cn } from '@/lib/utils'
+import AuthModal from '../Auth/AuthModal'
 
-type SourceSectionType = Exclude<source_types, 'all'>;
+type SourceSectionType = Exclude<source_types, 'all'>
 
 interface SourceSectionProps {
-  type: SourceSectionType;
-  items: SourcePublic[];
-  sourceFilter: source_types;
-  preferredSources: string[];
-  updatingSource: string | null;
-  isSaving: boolean;
-  followDisabled: boolean;
-  userIsLoggedIn: boolean;
-  onTogglePreferredSource: (sourceName: string) => void;
+  type: SourceSectionType
+  items: SourcePublic[]
+  sourceFilter: source_types
+  preferredSources: string[]
+  updatingSource: string | null
+  isSaving: boolean
+  followDisabled: boolean
+  userIsLoggedIn: boolean
+  onTogglePreferredSource: (sourceName: string) => void
 }
 
 const getSourceCountLabel = (count: number) =>
-  `${count} ${count === 1 ? 'source' : 'sources'}`;
+  `${count} ${count === 1 ? 'source' : 'sources'}`
 
 type SourceDisplayData = SourcePublic & {
-  domain?: string;
-  url?: string;
-  website_url?: string;
-};
+  domain?: string
+  url?: string
+  website_url?: string
+}
 
 const getSourceDomain = (source: SourcePublic) => {
-  const displaySource = source as SourceDisplayData;
-  const sourceDomain = displaySource.domain?.trim();
+  const displaySource = source as SourceDisplayData
+  const sourceDomain = displaySource.domain?.trim()
 
   if (sourceDomain) {
-    return sourceDomain.replace(/^www\./, '');
+    return sourceDomain.replace(/^www\./, '')
   }
 
-  const sourceUrl = displaySource.website_url ?? displaySource.url;
+  const sourceUrl = displaySource.website_url ?? displaySource.url
 
-  if (!sourceUrl) return null;
+  if (!sourceUrl) return null
 
   try {
-    return new URL(sourceUrl).hostname.replace(/^www\./, '');
+    return new URL(sourceUrl).hostname.replace(/^www\./, '')
   } catch {
-    return null;
+    return null
   }
-};
+}
 
 function SourceSection({
   type,
@@ -71,8 +71,8 @@ function SourceSection({
 
       <div className="space-y-3 md:space-y-0 md:divide-y md:divide-slate-200/65 dark:md:divide-border/70">
         {items.map((source) => {
-          const isPreferredSource = preferredSources.includes(source.name);
-          const isUpdatingSource = updatingSource === source.name && isSaving;
+          const isPreferredSource = preferredSources.includes(source.name)
+          const isUpdatingSource = updatingSource === source.name && isSaving
 
           return (
             <SourceDirectoryItem
@@ -85,21 +85,21 @@ function SourceSection({
               followDisabled={followDisabled}
               onTogglePreferredSource={onTogglePreferredSource}
             />
-          );
+          )
         })}
       </div>
     </section>
-  );
+  )
 }
 
 interface SourceDirectoryItemProps {
-  source: SourcePublic;
-  sourceFilter: source_types;
-  userIsLoggedIn: boolean;
-  isPreferredSource: boolean;
-  isUpdatingSource: boolean;
-  followDisabled: boolean;
-  onTogglePreferredSource: (sourceName: string) => void;
+  source: SourcePublic
+  sourceFilter: source_types
+  userIsLoggedIn: boolean
+  isPreferredSource: boolean
+  isUpdatingSource: boolean
+  followDisabled: boolean
+  onTogglePreferredSource: (sourceName: string) => void
 }
 
 function SourceDirectoryItem({
@@ -111,7 +111,7 @@ function SourceDirectoryItem({
   followDisabled,
   onTogglePreferredSource,
 }: SourceDirectoryItemProps) {
-  const sourceDomain = getSourceDomain(source);
+  const sourceDomain = getSourceDomain(source)
 
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-slate-200/75 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-[background-color,border-color,box-shadow] hover:border-slate-300 hover:bg-slate-100/70 focus-within:border-slate-300 focus-within:bg-slate-100/70 md:-mx-4 md:rounded-lg md:border-0 md:bg-transparent md:px-4 md:py-3.5 md:shadow-none md:hover:bg-slate-100/80 md:hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.24)] md:focus-within:bg-slate-100/80 md:focus-within:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.24)] dark:border-border dark:bg-card/35 dark:shadow-none dark:hover:border-foreground/18 dark:hover:bg-card/60 dark:focus-within:border-foreground/18 dark:focus-within:bg-card/60 md:dark:bg-transparent md:dark:hover:bg-accent/45 md:dark:hover:shadow-none md:dark:focus-within:bg-accent/45 md:dark:focus-within:shadow-none">
@@ -158,16 +158,16 @@ function SourceDirectoryItem({
         </div>
       </div>
     </article>
-  );
+  )
 }
 
 interface SourceFollowButtonProps {
-  source: SourcePublic;
-  userIsLoggedIn: boolean;
-  isPreferredSource: boolean;
-  isUpdatingSource: boolean;
-  followDisabled: boolean;
-  onTogglePreferredSource: (sourceName: string) => void;
+  source: SourcePublic
+  userIsLoggedIn: boolean
+  isPreferredSource: boolean
+  isUpdatingSource: boolean
+  followDisabled: boolean
+  onTogglePreferredSource: (sourceName: string) => void
 }
 
 function SourceFollowButton({
@@ -183,7 +183,7 @@ function SourceFollowButton({
     isPreferredSource
       ? 'border-slate-950 bg-slate-950 text-white shadow-sm dark:border-foreground dark:bg-foreground dark:text-background'
       : 'border-slate-200 bg-white/90 text-slate-500 shadow-sm shadow-slate-950/2 hover:border-slate-300 hover:bg-white hover:text-slate-950 dark:border-border dark:bg-transparent dark:text-muted-foreground dark:shadow-none dark:hover:bg-accent dark:hover:text-foreground',
-  );
+  )
 
   if (!userIsLoggedIn) {
     return (
@@ -201,7 +201,7 @@ function SourceFollowButton({
           </button>
         }
       />
-    );
+    )
   }
 
   return (
@@ -224,7 +224,7 @@ function SourceFollowButton({
       )}
       {isUpdatingSource ? 'Saving' : isPreferredSource ? 'Following' : 'Follow'}
     </button>
-  );
+  )
 }
 
-export default SourceSection;
+export default SourceSection

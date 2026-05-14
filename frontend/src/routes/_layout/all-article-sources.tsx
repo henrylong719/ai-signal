@@ -49,7 +49,9 @@ const getSourceSearchText = (source: SourcePublic) => {
     source.default_category,
     source.source_type,
     source.topic,
-    SOURCE_FILTER_LABELS[source.source_type as keyof typeof SOURCE_FILTER_LABELS],
+    SOURCE_FILTER_LABELS[
+      source.source_type as keyof typeof SOURCE_FILTER_LABELS
+    ],
     searchableSource.category,
     searchableSource.domain,
     searchableSource.type,
@@ -77,7 +79,10 @@ const normalizeSourceSearchQuery = (raw: string) =>
  * - Otherwise, every whitespace-separated token must appear as a substring in the haystack
  *   (e.g. "deep learning" matches "DeepLearningAI" because both "deep" and "learning" appear).
  */
-const sourceMatchesSearchQuery = (source: SourcePublic, normalizedQuery: string) => {
+const sourceMatchesSearchQuery = (
+  source: SourcePublic,
+  normalizedQuery: string,
+) => {
   if (!normalizedQuery) return true
 
   const haystack = getSourceSearchText(source)

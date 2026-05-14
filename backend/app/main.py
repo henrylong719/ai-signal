@@ -12,6 +12,7 @@ from starlette.responses import Response
 from app.api.main import api_router
 from app.core.config import settings
 from app.core.rate_limit import limiter
+from app.middleware.response_size import ResponseSizeLogMiddleware
 from app.services.scheduler import shutdown_scheduler, start_scheduler
 
 
@@ -64,6 +65,12 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
 app.add_middleware(SlowAPIMiddleware)
+
+# Per-request response-size logging. Emits one ``access_size`` log line
+# per HTTP request (method, path, status, bytes, duration). Grep these
+# lines and aggregate by path to find which endpoints are driving
+# network egress — see app/middleware/response_size.py.
+app.add_middleware(ResponseSizeLogMiddleware)
 
 # CORS for credentialed (cookie-bearing) requests has two non-negotiable
 # requirements:

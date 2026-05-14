@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any, cast
 
+from sqlalchemy.orm import Load, defer
 from sqlmodel import Session, col, func, or_, select
 
 from app.models import Article
@@ -12,6 +13,14 @@ from app.schemas.source import Category
 from app.services.decay import SAVED_HALF_LIFE_DAYS, aggregate_weights_by_key
 
 ArticleWithSavedCount = tuple[Article, int]
+
+# The 384-dim embedding column is ~1.5 KB per row and is never read on
+# these listing paths (the For-You scorer and digest ranker do read it,
+# and those paths intentionally don't apply this option). Deferring it
+# at the SELECT level keeps Neon public-network egress down — without
+# this, every list response shipped the full vector just to discard it
+# during Pydantic serialization (the field has exclude=True).
+_DEFER_EMBEDDING = defer(cast(Any, Article).embedding)
 
 
 def count_articles(
@@ -81,7 +90,7 @@ def get_articles(
     sources: Sequence[str] | None = None,
     include_archived: bool = False,
 ) -> Sequence[Article]:
-    statement = select(Article)
+    statement = select(Article).options(_DEFER_EMBEDDING)
     if not include_archived:
         statement = statement.where(col(Article.archived_at).is_(None))
     if category is not None:
@@ -120,9 +129,13 @@ def get_semantic_search_articles(
 ) -> Sequence[Article]:
     embedding_column = cast(Any, Article.embedding)
     distance = embedding_column.cosine_distance(query_embedding)
-    statement = select(Article).where(
-        col(Article.embedding).is_not(None),
-        col(Article.archived_at).is_(None),
+    statement = (
+        select(Article)
+        .options(_DEFER_EMBEDDING)
+        .where(
+            col(Article.embedding).is_not(None),
+            col(Article.archived_at).is_(None),
+        )
     )
     if category is not None:
         statement = statement.where(Article.category == category)
@@ -159,6 +172,7 @@ def get_articles_with_saved_counts(
     """
     statement = (
         select(Article, func.count(col(SavedArticle.user_id)))
+        .options(Load(Article).defer(cast(Any, Article).embedding))
         .outerjoin(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
         .group_by(col(Article.id))
     )
@@ -194,12 +208,16 @@ def get_articles_by_ids(
 ) -> Sequence[Article]:
     if not article_ids:
         return []
-    statement = select(Article).where(col(Article.id).in_(article_ids))
+    statement = (
+        select(Article)
+        .options(_DEFER_EMBEDDING)
+        .where(col(Article.id).in_(article_ids))
+    )
     return session.exec(statement).all()
 
 
 def get_article_by_url(*, session: Session, url: str) -> Article | None:
-    statement = select(Article).where(Article.url == url)
+    statement = select(Article).options(_DEFER_EMBEDDING).where(Article.url == url)
     return session.exec(statement).first()
 
 
@@ -262,6 +280,7 @@ def get_saved_articles_with_articles(
     """
     statement = (
         select(Article)
+        .options(_DEFER_EMBEDDING)
         .join(SavedArticle, col(Article.id) == col(SavedArticle.article_id))
         .where(SavedArticle.user_id == user_id)
         .order_by(col(SavedArticle.saved_at).desc())

@@ -95,7 +95,7 @@ class Settings(BaseSettings):
     # local explicitly when you want to test the scheduled path.
     # Deployed environments default to enabled.
     INGEST_SCHEDULER_ENABLED: bool | None = None
-    INGEST_INTERVAL_MINUTES: int = 30
+    INGEST_INTERVAL_MINUTES: int = 60
     # Delay before the first run after process startup. Gives the DB,
     # the embedding model load, and any other startup work time to settle
     # before we hammer the configured RSS feeds and start writing rows.

@@ -1,9 +1,14 @@
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import type { PaginationState } from '@tanstack/react-table'
 import { ArrowLeft, RefreshCw } from 'lucide-react'
-import { Suspense, useState } from 'react'
+import { useState } from 'react'
 
-import { type AdminArticlePublic, AdminService } from '@/client'
+import { AdminService } from '@/client'
 import { articleColumns } from '@/components/Admin/articleColumns'
 import { DataTable } from '@/components/Common/DataTable'
 import { PageContainer, PageHeader } from '@/components/Layout/Page'
@@ -12,31 +17,16 @@ import { Button } from '@/components/ui/button'
 import useCustomToast from '@/hooks/useCustomToast'
 import { cn } from '@/lib/utils'
 
-async function readAllAdminArticles() {
-  const limit = 500
-  let skip = 0
-  let count = 0
-  const data: AdminArticlePublic[] = []
+const DEFAULT_PAGE_SIZE = 50
 
-  do {
-    const page = await AdminService.readAdminArticles({ skip, limit })
-    data.push(...page.data)
-    count = page.count
-    skip += page.data.length
-
-    if (page.data.length === 0) {
-      break
-    }
-  } while (data.length < count)
-
-  return { data, count }
-}
-
-function getAdminArticlesQueryOptions() {
-  return {
-    queryFn: readAllAdminArticles,
-    queryKey: ['admin-articles'],
-  }
+function adminArticlesQueryKey(pagination: PaginationState) {
+  return [
+    'admin-articles',
+    {
+      skip: pagination.pageIndex * pagination.pageSize,
+      limit: pagination.pageSize,
+    },
+  ] as const
 }
 
 export const Route = createFileRoute('/_layout/admin/articles')({
@@ -50,23 +40,24 @@ export const Route = createFileRoute('/_layout/admin/articles')({
   }),
 })
 
-function ArticlesTableContent() {
-  const { data } = useSuspenseQuery(getAdminArticlesQueryOptions())
-  return <DataTable columns={articleColumns} data={data.data} />
-}
-
-function ArticlesTable() {
-  return (
-    <Suspense fallback={<PendingArticles />}>
-      <ArticlesTableContent />
-    </Suspense>
-  )
-}
-
 function AdminArticlesPage() {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: DEFAULT_PAGE_SIZE,
+  })
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: adminArticlesQueryKey(pagination),
+    queryFn: () =>
+      AdminService.readAdminArticles({
+        skip: pagination.pageIndex * pagination.pageSize,
+        limit: pagination.pageSize,
+      }),
+    placeholderData: keepPreviousData,
+  })
 
   const handleRefresh = async () => {
     if (isRefreshing) {
@@ -84,6 +75,10 @@ function AdminArticlesPage() {
       setIsRefreshing(false)
     }
   }
+
+  const rows = data?.data ?? []
+  const total = data?.count ?? 0
+  const pageCount = Math.max(1, Math.ceil(total / pagination.pageSize))
 
   return (
     <PageContainer
@@ -123,7 +118,23 @@ function AdminArticlesPage() {
           </Button>
         }
       />
-      <ArticlesTable />
+      {isLoading && !data ? (
+        <PendingArticles />
+      ) : isError ? (
+        <p className="text-sm text-muted-foreground">
+          Could not load articles. Try refreshing.
+        </p>
+      ) : (
+        <DataTable
+          columns={articleColumns}
+          data={rows}
+          manualPagination
+          pageCount={pageCount}
+          rowCount={total}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+        />
+      )}
     </PageContainer>
   )
 }

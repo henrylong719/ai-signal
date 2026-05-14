@@ -3,6 +3,8 @@ import {
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
+  type OnChangeFn,
+  type PaginationState,
   useReactTable,
 } from '@tanstack/react-table'
 import {
@@ -32,17 +34,39 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  // Server-side pagination opt-in. When provided, the table renders the
+  // rows it's given verbatim and delegates page changes to the parent —
+  // each page navigation triggers a fresh fetch. Leave unset for the
+  // default client-side pagination behavior used elsewhere.
+  manualPagination?: boolean
+  pageCount?: number
+  rowCount?: number
+  pagination?: PaginationState
+  onPaginationChange?: OnChangeFn<PaginationState>
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  manualPagination,
+  pageCount,
+  rowCount,
+  pagination,
+  onPaginationChange,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    ...(manualPagination
+      ? {
+          manualPagination: true,
+          pageCount,
+          rowCount,
+          state: pagination ? { pagination } : undefined,
+          onPaginationChange,
+        }
+      : { getPaginationRowModel: getPaginationRowModel() }),
   })
 
   return (
@@ -94,19 +118,24 @@ export function DataTable<TData, TValue>({
         <div className="flex flex-col items-start justify-between gap-4 border-t bg-muted/20 p-4 sm:flex-row sm:items-center">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="text-sm text-muted-foreground">
-              Showing{' '}
-              {table.getState().pagination.pageIndex *
-                table.getState().pagination.pageSize +
-                1}{' '}
-              to{' '}
-              {Math.min(
-                (table.getState().pagination.pageIndex + 1) *
-                  table.getState().pagination.pageSize,
-                data.length,
-              )}{' '}
-              of{' '}
-              <span className="font-medium text-foreground">{data.length}</span>{' '}
-              entries
+              {(() => {
+                const { pageIndex, pageSize } = table.getState().pagination
+                const total = manualPagination
+                  ? (rowCount ?? data.length)
+                  : data.length
+                const startOffset = pageIndex * pageSize
+                const start = total === 0 ? 0 : startOffset + 1
+                const end = manualPagination
+                  ? startOffset + data.length
+                  : Math.min(startOffset + pageSize, total)
+                return (
+                  <>
+                    Showing {start} to {end} of{' '}
+                    <span className="font-medium text-foreground">{total}</span>{' '}
+                    entries
+                  </>
+                )
+              })()}
             </div>
             <div className="flex items-center gap-x-2">
               <p className="text-sm text-muted-foreground">Rows per page</p>

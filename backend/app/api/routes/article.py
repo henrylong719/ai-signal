@@ -369,7 +369,14 @@ def go_to_article(
                 user.id,
             )
 
-    return RedirectResponse(url=destination_url, status_code=302)
+    # noindex/nofollow tells search engines this is a tracking redirect,
+    # not a page. Without it Googlebot indexes these URLs and reports
+    # them as "Page with redirect" in Search Console.
+    return RedirectResponse(
+        url=destination_url,
+        status_code=302,
+        headers={"X-Robots-Tag": "noindex, nofollow"},
+    )
 
 
 @router.post("/{article_id}/dismiss", status_code=204)

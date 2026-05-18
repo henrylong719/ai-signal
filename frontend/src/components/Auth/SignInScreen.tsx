@@ -1,5 +1,5 @@
 import { Link as RouterLink } from '@tanstack/react-router'
-import { ArrowLeftIcon } from 'lucide-react'
+import { ArrowLeftIcon, CircleAlertIcon } from 'lucide-react'
 import type { UseFormReturn } from 'react-hook-form'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -112,9 +112,10 @@ export function SignInScreen({
           {errorMessage && (
             <Alert
               variant="destructive"
-              className="mt-4 rounded-[6px] px-3 py-2"
+              className="mt-4 rounded-[7px] border-red-200 bg-red-50 px-3.5 py-3 text-red-950 shadow-[0_1px_2px_rgba(127,29,29,0.06)] dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-100"
             >
-              <AlertDescription className="text-sm leading-relaxed">
+              <CircleAlertIcon className="mt-0.5 size-4.5 text-red-600 dark:text-red-300" />
+              <AlertDescription className="text-sm font-medium leading-relaxed text-red-800 dark:text-red-100/90">
                 {errorMessage}
               </AlertDescription>
             </Alert>

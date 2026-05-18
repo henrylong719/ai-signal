@@ -69,7 +69,6 @@ const useAuth = () => {
         navigate({ to: '/' })
       }
     },
-    onError: handleError.bind(showErrorToast),
   })
 
   // Backend issues a session on successful signup (sets all three auth

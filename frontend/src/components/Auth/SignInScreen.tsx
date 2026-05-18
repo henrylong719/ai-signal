@@ -1,6 +1,7 @@
 import { Link as RouterLink } from '@tanstack/react-router'
 import { ArrowLeftIcon } from 'lucide-react'
 import type { UseFormReturn } from 'react-hook-form'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Form,
   FormControl,
@@ -22,6 +23,7 @@ import {
 import type { LoginFormData } from './authSchemas'
 
 interface SignInScreenProps {
+  errorMessage?: string
   form: UseFormReturn<LoginFormData>
   loading: boolean
   onBackToProviders: () => void
@@ -30,6 +32,7 @@ interface SignInScreenProps {
 }
 
 export function SignInScreen({
+  errorMessage,
   form,
   loading,
   onBackToProviders,
@@ -105,6 +108,17 @@ export function SignInScreen({
               Forgot password?
             </RouterLink>
           </div>
+
+          {errorMessage && (
+            <Alert
+              variant="destructive"
+              className="mt-4 rounded-[6px] px-3 py-2"
+            >
+              <AlertDescription className="text-sm leading-relaxed">
+                {errorMessage}
+              </AlertDescription>
+            </Alert>
+          )}
 
           <LoadingButton
             type="submit"

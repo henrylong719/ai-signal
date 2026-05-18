@@ -6,6 +6,7 @@ import { OpenAPI } from '@/client'
 import useAuth from '@/hooks/useAuth'
 import useCustomToast from '@/hooks/useCustomToast'
 import { cn } from '@/lib/utils'
+import { extractErrorMessage } from '@/utils'
 import { AuthIntro } from './AuthIntro'
 import {
   type LoginFormData,
@@ -122,6 +123,11 @@ export function AuthFlow({
         </>
       ) : mode === 'sign-in' ? (
         <SignInScreen
+          errorMessage={
+            loginMutation.error
+              ? extractErrorMessage(loginMutation.error)
+              : undefined
+          }
           form={loginForm}
           loading={loginMutation.isPending}
           onBackToProviders={() => setAuthStep('providers')}

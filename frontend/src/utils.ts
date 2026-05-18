@@ -1,12 +1,16 @@
 import { AxiosError } from 'axios'
 import type { ApiError } from './client'
 
-function extractErrorMessage(err: ApiError): string {
+export function extractErrorMessage(err: unknown): string {
   if (err instanceof AxiosError) {
     return err.message
   }
 
-  const errDetail = (err.body as any)?.detail
+  if (err instanceof Error && !('body' in err)) {
+    return err.message
+  }
+
+  const errDetail = ((err as ApiError).body as any)?.detail
   if (Array.isArray(errDetail) && errDetail.length > 0) {
     return errDetail[0].msg
   }

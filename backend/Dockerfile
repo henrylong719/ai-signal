@@ -1,8 +1,14 @@
-FROM python:3.12
+FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
+
+# libgomp1 is torch's OpenMP runtime; the CPU-only torch wheel won't
+# import without it. Not bundled in python:*-slim images.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends libgomp1 \
+ && rm -rf /var/lib/apt/lists/*
 
 # Install uv
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#installing-uv

@@ -38,13 +38,6 @@ dependencies = [
     "slowapi>=0.1.9,<1.0.0",
 ]
 
-# torch is pulled in transitively by sentence-transformers. The default
-# install grabs the GPU-capable wheel (~2GB). For Docker images and CI,
-# pinning to CPU-only wheels (https://download.pytorch.org/whl/cpu) cuts
-# this to ~200MB. Configure via the `tool.uv.sources` table when you're
-# ready to optimize image size — it's a deployment concern, not a code
-# correctness one.
-
 [dependency-groups]
 dev = [
     "pytest<8.0.0,>=7.4.3",
@@ -58,6 +51,21 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+# torch is pulled in transitively by sentence-transformers. The default
+# PyPI wheel is GPU-capable (~2GB); on Linux we route torch to the
+# CPU-only index (~200MB), which is what Railway/Docker actually need.
+# macOS keeps the default PyPI wheel so Intel and Apple Silicon dev
+# machines still resolve (the CPU index doesn't ship macOS wheels).
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", marker = "sys_platform == 'linux'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.mypy]
 strict = true

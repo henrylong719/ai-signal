@@ -50,10 +50,9 @@
     />
 
     <!-- Structured data: site-wide WebSite + Organization. Tells search
-         engines what AI Signal is, exposes the search action for sitelinks
-         search box, and links the brand to the social account. Lives in
-         index.html so it's picked up regardless of which SPA route is
-         crawled — the SPA does not rewrite this on navigation. -->
+         engines what AI Signal is and links the brand to the social
+         account. Lives in index.html so it's picked up regardless of
+         which SPA route is crawled. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -64,15 +63,7 @@
             "url": "https://aisignal.now/",
             "name": "AI Signal",
             "description": "Track the AI updates that matter — labs, research papers, engineering blogs, and trusted builders in one focused reading experience.",
-            "inLanguage": "en",
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": {
-                "@type": "EntryPoint",
-                "urlTemplate": "https://aisignal.now/search-feed/{search_term_string}"
-              },
-              "query-input": "required name=search_term_string"
-            }
+            "inLanguage": "en"
           },
           {
             "@type": "Organization",

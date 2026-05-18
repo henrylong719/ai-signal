@@ -99,6 +99,7 @@ def update_interests(
     Tag normalization (lowercase, trim, dedupe, length cap) happens in
     `body.normalized_tags()` before reaching the DB layer.
     """
+    previous = crud.get_interests(session=session, user_id=current_user.id)
     row = crud.set_interests(
         session=session,
         user_id=current_user.id,
@@ -106,11 +107,15 @@ def update_interests(
         tags=body.normalized_tags(),
         preferred_sources=list(body.preferred_sources),
     )
-    # Stated interests (categories + tags) are an input to the user vector
-    # — refresh now so the next /for-you request reflects the new
-    # preferences. Preferred sources don't flow into the embedding but the
-    # recompute is cheap and keeps the trigger semantics simple.
-    _refresh_user_vector(session, current_user.id)
+    # Only categories and tags flow into the user vector — recomputing on
+    # preferred_sources-only changes is wasted work that blocks the PUT
+    # response (the follow button stays in a "Saving" state until it
+    # returns). Skip the refresh unless the embedding-relevant inputs
+    # actually changed.
+    prev_categories = set(previous.categories) if previous else set()
+    prev_tags = set(previous.tags) if previous else set()
+    if prev_categories != set(row.categories) or prev_tags != set(row.tags):
+        _refresh_user_vector(session, current_user.id)
     return _to_public(
         categories=_stored_categories_to_public(row.categories),
         tags=row.tags,

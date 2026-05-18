@@ -540,9 +540,13 @@ def test_login_sets_three_cookies_with_correct_attributes(
     # the DB-backed refresh session.
     assert "HttpOnly" in refresh_cookie
     assert f"Path={REFRESH_COOKIE_PATH}" in refresh_cookie
-    assert any(
+    # The login response must NOT also emit a Max-Age=0 Set-Cookie at the
+    # legacy narrow path. iOS WebKit clobbers paired Set-Cookie headers that
+    # share a name in the same response, so the just-set refresh cookie
+    # would never be stored on iPhone. Legacy stragglers are cleaned up on
+    # the next logout instead — see clear_auth_cookies.
+    assert not any(
         f"Path={LEGACY_REFRESH_COOKIE_PATH}" in cookie_header
-        and "Max-Age=0" in cookie_header
         for cookie_header in _get_set_cookies_for(r, "refresh_token")
     )
 

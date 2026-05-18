@@ -65,19 +65,23 @@ def set_access_cookie(response: Response, token: str, max_age_seconds: int) -> N
 
 
 def set_refresh_cookie(response: Response, token: str, max_age_seconds: int) -> None:
-    """Set the long-lived refresh cookie, scoped to login auth endpoints."""
+    """Set the long-lived refresh cookie, scoped to login auth endpoints.
+
+    We deliberately do NOT also emit a Max-Age=0 Set-Cookie for the legacy
+    narrow path here. iOS WebKit (Safari, and every iOS third-party browser
+    since they all use WKWebView) has a bug where two ``Set-Cookie`` headers
+    sharing a name in the same response clobber each other by name alone,
+    ignoring the differing Path. The result is that the just-set refresh
+    cookie is never stored on iPhone. The legacy cookie is cleared on the
+    next logout instead (see ``clear_auth_cookies``); any straggler at the
+    old path is harmless because Starlette's cookie parser keeps the last
+    value when the request carries duplicates, which is the new token.
+    """
     response.set_cookie(
         key=REFRESH_COOKIE_NAME,
         value=token,
         max_age=max_age_seconds,
         path=_REFRESH_COOKIE_PATH,
-        secure=_is_secure(),
-        httponly=True,
-        samesite="lax",
-    )
-    response.delete_cookie(
-        key=REFRESH_COOKIE_NAME,
-        path=_LEGACY_REFRESH_COOKIE_PATH,
         secure=_is_secure(),
         httponly=True,
         samesite="lax",

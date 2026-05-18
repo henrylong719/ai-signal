@@ -49,7 +49,7 @@ class ResponseSizeLogMiddleware:
             await self.app(scope, receive, send_wrapper)
         finally:
             duration_ms = (time.perf_counter() - start) * 1000
-            logger.info(
+            logger.debug(
                 "access_size method=%s path=%s status=%d bytes=%d duration_ms=%.1f",
                 scope.get("method", "?"),
                 scope.get("path", "?"),

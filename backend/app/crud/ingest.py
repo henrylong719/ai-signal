@@ -78,16 +78,18 @@ async def _fetch_one(
         resp.raise_for_status()
         feed = feedparser.parse(resp.text)
         return source, list(feed.entries)
-    except Exception:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # One failed source must never break the whole ingest run, but we
         # still want to know *which* source failed and why — silent fetch
-        # failures hide chronically dead feeds. Log at warning since this
-        # is operational signal, not a correctness bug.
+        # failures hide chronically dead feeds. Log a one-line warning
+        # with the exception class so chronic timeouts are visible without
+        # dumping a ~40-line traceback per dead feed (which blows past
+        # Railway's 500 logs/sec rate limit during a wide outage).
         logger.warning(
-            "RSS fetch failed for source %s (%s); skipping this run",
+            "RSS fetch failed for source %s (%s): %s",
             source.name,
             source.rss_url,
-            exc_info=True,
+            type(exc).__name__,
         )
         return source, []
 

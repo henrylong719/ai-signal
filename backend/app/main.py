@@ -1,3 +1,5 @@
+import logging
+import os
 from contextlib import asynccontextmanager
 
 import sentry_sdk
@@ -14,6 +16,32 @@ from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.middleware.response_size import ResponseSizeLogMiddleware
 from app.services.scheduler import shutdown_scheduler, start_scheduler
+
+
+def _configure_logging() -> None:
+    """Tame log volume in production.
+
+    Uvicorn configures the root logger before our app code imports run,
+    so we don't touch root — we just raise/lower the *named* loggers we
+    care about. INFO from ``app.*`` stays visible (digest scheduler,
+    ingest summary, etc.) and the chatty third-party libs are muted to
+    WARNING so we stop tripping Railway's 500 logs/sec ceiling.
+    ``LOG_LEVEL`` env var overrides the app-logger level for ad-hoc
+    debugging without a code change.
+    """
+    app_level = os.getenv("LOG_LEVEL", "INFO").upper()
+    logging.getLogger("app").setLevel(app_level)
+    for noisy in (
+        "httpx",
+        "httpcore",
+        "apscheduler",
+        "sentence_transformers",
+        "urllib3",
+    ):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+
+
+_configure_logging()
 
 
 def _rate_limit_handler(request: Request, exc: Exception) -> Response:

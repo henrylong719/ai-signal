@@ -4,10 +4,18 @@ All cookie attribute decisions live here so they can't drift across
 endpoints. Three cookies are managed:
 
   - ``access_token``  : httpOnly JWT, sent to all /api/* requests, short TTL
-  - ``refresh_token`` : httpOnly JWT, scoped to /api/v1/login auth endpoints,
-                        long TTL. Path-scoping is defense in depth — the
-                        browser never sends the refresh cookie to non-login
-                        API endpoints, while logout can still revoke it.
+  - ``refresh_token`` : httpOnly JWT, sent on every request, long TTL.
+                        Earlier revisions path-scoped this to
+                        /api/v1/login as defense in depth, but iOS WebKit
+                        refuses to store cookies whose Path isn't ``/``
+                        when they're Set on a cross-site-initiated
+                        redirect (the OAuth callback's initiator is the
+                        provider, e.g. ``accounts.google.com``). The
+                        narrow-path cookie was silently dropped on
+                        iPhone. Security-wise we lose nothing: the JWT's
+                        ``type=refresh`` claim already prevents the
+                        refresh token from being usable as an access
+                        token (see ``app/core/security.py``).
   - ``is_logged_in``  : NON-httpOnly marker, readable by JS purely as a UI
                         hint. Has no security significance — the server
                         never trusts it for authorization, only the real
@@ -38,12 +46,16 @@ ACCESS_COOKIE_NAME: Final = "access_token"
 REFRESH_COOKIE_NAME: Final = "refresh_token"
 LOGGED_IN_MARKER_NAME: Final = "is_logged_in"
 
-# Refresh cookie is only sent to login auth endpoints. This lets /login/logout
-# revoke the exact DB-backed refresh session while still keeping the refresh
-# token away from the rest of the API surface.
-_REFRESH_COOKIE_PATH: Final = f"{settings.API_V1_STR}/login"
-_LEGACY_REFRESH_COOKIE_PATH: Final = f"{settings.API_V1_STR}/login/refresh"
 _DEFAULT_COOKIE_PATH: Final = "/"
+_REFRESH_COOKIE_PATH: Final = _DEFAULT_COOKIE_PATH
+
+# Paths the refresh cookie has lived at in previous deploys. Logout deletes
+# the cookie at each of these so users migrating across deploys don't end
+# up with stale cookies the new code never touches.
+_LEGACY_REFRESH_COOKIE_PATHS: Final = (
+    f"{settings.API_V1_STR}/login",
+    f"{settings.API_V1_STR}/login/refresh",
+)
 
 
 def _is_secure() -> bool:
@@ -65,17 +77,17 @@ def set_access_cookie(response: Response, token: str, max_age_seconds: int) -> N
 
 
 def set_refresh_cookie(response: Response, token: str, max_age_seconds: int) -> None:
-    """Set the long-lived refresh cookie, scoped to login auth endpoints.
+    """Set the long-lived refresh cookie at the root path.
 
-    We deliberately do NOT also emit a Max-Age=0 Set-Cookie for the legacy
-    narrow path here. iOS WebKit (Safari, and every iOS third-party browser
-    since they all use WKWebView) has a bug where two ``Set-Cookie`` headers
-    sharing a name in the same response clobber each other by name alone,
-    ignoring the differing Path. The result is that the just-set refresh
-    cookie is never stored on iPhone. The legacy cookie is cleared on the
-    next logout instead (see ``clear_auth_cookies``); any straggler at the
-    old path is harmless because Starlette's cookie parser keeps the last
-    value when the request carries duplicates, which is the new token.
+    We deliberately do NOT also emit Max-Age=0 Set-Cookie headers for the
+    legacy narrow paths here. iOS WebKit has a bug where two ``Set-Cookie``
+    headers sharing a name in the same response clobber each other by name
+    alone, ignoring the differing Path — emitting a paired delete would
+    drop the just-set refresh cookie on iPhone. Legacy stragglers are
+    cleared on the next logout instead (see ``clear_auth_cookies``); during
+    the overlap they're harmless because Starlette's cookie parser keeps
+    the last value when a request carries duplicates and the browser sends
+    longer-path cookies first, so the new root-path cookie wins.
     """
     response.set_cookie(
         key=REFRESH_COOKIE_NAME,
@@ -128,13 +140,14 @@ def clear_auth_cookies(response: Response) -> None:
         httponly=True,
         samesite="lax",
     )
-    response.delete_cookie(
-        key=REFRESH_COOKIE_NAME,
-        path=_LEGACY_REFRESH_COOKIE_PATH,
-        secure=_is_secure(),
-        httponly=True,
-        samesite="lax",
-    )
+    for legacy_path in _LEGACY_REFRESH_COOKIE_PATHS:
+        response.delete_cookie(
+            key=REFRESH_COOKIE_NAME,
+            path=legacy_path,
+            secure=_is_secure(),
+            httponly=True,
+            samesite="lax",
+        )
     response.delete_cookie(
         key=LOGGED_IN_MARKER_NAME,
         path=_DEFAULT_COOKIE_PATH,

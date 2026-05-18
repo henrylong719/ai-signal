@@ -18,8 +18,12 @@ from app.utils import generate_password_reset_token
 from tests.utils.user import user_authentication_headers
 from tests.utils.utils import random_email, random_lower_string
 
-REFRESH_COOKIE_PATH = f"{settings.API_V1_STR}/login"
-LEGACY_REFRESH_COOKIE_PATH = f"{settings.API_V1_STR}/login/refresh"
+REFRESH_COOKIE_PATH = "/"
+LEGACY_REFRESH_COOKIE_PATHS = (
+    f"{settings.API_V1_STR}/login",
+    f"{settings.API_V1_STR}/login/refresh",
+)
+OAUTH_STATE_COOKIE_PATH = f"{settings.API_V1_STR}/login"
 
 
 def _configure_google_oauth() -> Any:
@@ -100,7 +104,7 @@ def test_google_oauth_callback_creates_user_and_session(
     client.cookies.set(
         OAUTH_STATE_COOKIE_NAME,
         state,
-        path=REFRESH_COOKIE_PATH,
+        path=OAUTH_STATE_COOKIE_PATH,
     )
     identity = OAuthIdentity(
         provider="google",
@@ -162,7 +166,7 @@ def test_github_oauth_callback_links_existing_user_by_email(
     client.cookies.set(
         OAUTH_STATE_COOKIE_NAME,
         state,
-        path=REFRESH_COOKIE_PATH,
+        path=OAUTH_STATE_COOKIE_PATH,
     )
     identity = OAuthIdentity(
         provider="github",
@@ -205,7 +209,7 @@ def test_facebook_oauth_callback_creates_user_and_session(
     client.cookies.set(
         OAUTH_STATE_COOKIE_NAME,
         state,
-        path=REFRESH_COOKIE_PATH,
+        path=OAUTH_STATE_COOKIE_PATH,
     )
     identity = OAuthIdentity(
         provider="facebook",
@@ -535,20 +539,25 @@ def test_login_sets_three_cookies_with_correct_attributes(
     assert "Path=/" in access_cookie
     assert "samesite=lax" in access_cookie.lower()
 
-    # Refresh cookie — also httpOnly, but path-scoped to login auth endpoints.
-    # This keeps it away from the rest of the API while letting logout revoke
-    # the DB-backed refresh session.
+    # Refresh cookie — also httpOnly, set at the root path. Earlier deploys
+    # scoped it under /api/v1/login as defense in depth, but iOS WebKit
+    # refused to store narrow-path cookies on OAuth-callback responses, so
+    # the cookie now lives at /. The JWT type=refresh claim still prevents
+    # the token from being usable as an access token.
     assert "HttpOnly" in refresh_cookie
     assert f"Path={REFRESH_COOKIE_PATH}" in refresh_cookie
-    # The login response must NOT also emit a Max-Age=0 Set-Cookie at the
-    # legacy narrow path. iOS WebKit clobbers paired Set-Cookie headers that
-    # share a name in the same response, so the just-set refresh cookie
-    # would never be stored on iPhone. Legacy stragglers are cleaned up on
-    # the next logout instead — see clear_auth_cookies.
-    assert not any(
-        f"Path={LEGACY_REFRESH_COOKIE_PATH}" in cookie_header
+    # The login response must NOT emit paired Max-Age=0 Set-Cookies for the
+    # legacy paths. iOS WebKit clobbers paired Set-Cookie headers that share
+    # a name in the same response, dropping the just-set cookie. Legacy
+    # stragglers are cleaned up on the next logout instead.
+    legacy_set_cookies = [
+        cookie_header
         for cookie_header in _get_set_cookies_for(r, "refresh_token")
-    )
+        if any(
+            f"Path={legacy}" in cookie_header for legacy in LEGACY_REFRESH_COOKIE_PATHS
+        )
+    ]
+    assert legacy_set_cookies == []
 
     # Marker cookie — explicitly NOT httpOnly because the SPA reads it for
     # UI state. Has no security significance to the server.
@@ -724,11 +733,12 @@ def test_logout_clears_all_three_cookies(client: TestClient) -> None:
         assert f"Path={expected_path}" in cookie_header, (
             f"{name} cleared with wrong path"
         )
-    assert any(
-        f"Path={LEGACY_REFRESH_COOKIE_PATH}" in cookie_header
-        and "Max-Age=0" in cookie_header
-        for cookie_header in _get_set_cookies_for(r, "refresh_token")
-    )
+    refresh_set_cookies = _get_set_cookies_for(r, "refresh_token")
+    for legacy_path in LEGACY_REFRESH_COOKIE_PATHS:
+        assert any(
+            f"Path={legacy_path}" in cookie_header and "Max-Age=0" in cookie_header
+            for cookie_header in refresh_set_cookies
+        ), f"legacy refresh cookie at {legacy_path} not cleared on logout"
 
     # Subsequent protected request should now 401.
     r = fresh.post(f"{settings.API_V1_STR}/login/test-token")

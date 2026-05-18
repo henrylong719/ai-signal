@@ -1,6 +1,7 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios'
 
 import { OpenAPI } from '@/client'
+import { clearLoginState } from '@/lib/auth-state'
 
 /**
  * 401-on-API → refresh-and-retry interceptor.
@@ -34,8 +35,8 @@ import { OpenAPI } from '@/client'
  *
  * 4. Refresh failure → user is logged out. If refresh definitively
  *    fails (server-rejected), we clear the marker cookie and redirect
- *    to login. The actual auth cookies have already been cleared
- *    server-side as part of the failure response.
+ *    to login. The httpOnly cookies will expire naturally or be
+ *    overwritten by the next successful login.
  */
 
 const REFRESH_PATH = '/api/v1/login/refresh'
@@ -101,12 +102,10 @@ const refreshSession = async (): Promise<RefreshResult> => {
 }
 
 const onRefreshFailure = () => {
-  // Mark the user logged-out client-side. The backend already cleared the
-  // server cookies in its 401 response (or never set valid ones). The
-  // marker cookie is the SPA's UI-state hint; clearing it here keeps the
-  // sidebar from flashing "logged in" briefly after a hard refresh.
-  // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API lacks broad support for expiry; document.cookie is required here
-  document.cookie = 'is_logged_in=; Max-Age=0; Path=/; SameSite=Lax'
+  // Mark the user logged-out client-side. The marker cookie is the SPA's
+  // UI-state hint; clearing it here keeps the sidebar from flashing
+  // "logged in" briefly after a hard refresh.
+  clearLoginState()
   // Hard navigate so React Query caches, in-memory state, and any other
   // user-tied state are reset. A soft navigate via the router would
   // leave stale data behind.
@@ -166,7 +165,10 @@ export const authInterceptor = async (
   // — that's fine, a properly refreshed request shouldn't 401 again,
   // and even if it did, RETRIED prevents looping.
   config[RETRIED] = true
-  const retried = await axios.request(config)
+  const retried = await axios.request({
+    ...config,
+    validateStatus: () => true,
+  })
   // If the retried request still comes back 401 (e.g., user was
   // deactivated between the refresh and the retry), treat that as a
   // definitive auth failure here — otherwise nothing would redirect.

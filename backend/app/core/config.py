@@ -1,4 +1,3 @@
-import secrets
 import warnings
 from typing import Annotated, Any, Literal
 
@@ -31,7 +30,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
     API_V1_STR: str = "/api/v1"
-    SECRET_KEY: str = secrets.token_urlsafe(32)
+    SECRET_KEY: str = "changethis"
     # 15-minute access token, refreshed via the refresh cookie. Pre-cookie-auth
     # this was 8 days (60 * 24 * 8) because there was no refresh path — losing
     # the token meant logging back in. With refresh tokens, the access token

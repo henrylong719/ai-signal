@@ -33,6 +33,7 @@ import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode, urljoin
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import jwt
 from sqlmodel import Session
@@ -562,7 +563,14 @@ def send_digest_email(*, session: Session, user: User) -> ResendSendResult:
         )
         return ResendSendResult(ok=False, error="empty digest")
 
-    subject = f"Today’s Signal — {_format_date(digest.generated_at)}"
+    # Render the subject date in the recipient's local tz so Sydney users
+    # don't see "May 17" for their May 18 6 AM briefing. Falls back to UTC
+    # for users whose timezone is unset or unparseable.
+    try:
+        zone = ZoneInfo(user.timezone) if user.timezone else ZoneInfo("UTC")
+    except ZoneInfoNotFoundError:
+        zone = ZoneInfo("UTC")
+    subject = f"Today’s Signal — {_format_date(digest.generated_at.astimezone(zone))}"
     unsubscribe_url, settings_url, home_url = _digest_email_urls(user)
     html_body = _render_html(
         digest=digest,

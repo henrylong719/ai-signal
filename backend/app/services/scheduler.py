@@ -132,7 +132,11 @@ def start_scheduler() -> None:
         id=_DIGEST_JOB_ID,
         coalesce=True,
         max_instances=1,
-        misfire_grace_time=600,
+        # One full hour of slack so a process restart anywhere inside the
+        # hour still fires the tick. The local-hour gate in
+        # should_send_now caps useful latitude at 60 min anyway; the
+        # idempotency stamp prevents duplicate sends if a tick re-fires.
+        misfire_grace_time=3600,
     )
 
     # Daily article cleanup. Two-stage safe pipeline (archive →

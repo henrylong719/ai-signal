@@ -319,7 +319,7 @@ def unsave_article(
 # --- Behavioral events ---
 
 
-@router.get("/{article_id}/go")
+@router.api_route("/{article_id}/go", methods=["GET", "HEAD"])
 def go_to_article(
     session: SessionDep,
     user: OptionalCurrentUser,

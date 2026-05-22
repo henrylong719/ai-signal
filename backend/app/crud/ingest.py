@@ -125,8 +125,6 @@ async def _embed_inserted_articles(
     if not article_ids:
         return 0
 
-    # Local import keeps torch/sentence-transformers off the ingest
-    # module-load path, matching the pattern in services/embeddings.py.
     from app.services.embeddings import article_embedding_text, embed_texts
 
     # Re-fetch the just-inserted rows so we have the canonical text
@@ -140,9 +138,9 @@ async def _embed_inserted_articles(
         return 0
 
     texts = [article_embedding_text(a) for a in articles]
-    # Encode in a worker thread — torch is sync and CPU-bound. Without
-    # to_thread, encoding hundreds of articles would block the event
-    # loop and stall any concurrent ingestion of other sources.
+    # Run the sync httpx call off the event loop so concurrent ingest
+    # work (other feeds, DB writes) keeps progressing while we wait on
+    # the embedding provider.
     vectors = await asyncio.to_thread(embed_texts, texts)
 
     # Write the embeddings back. We use the same async session — the

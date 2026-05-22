@@ -87,6 +87,20 @@ class Settings(BaseSettings):
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_STORAGE_URI: str | None = None
 
+    # Embedding provider — see app/services/embeddings.py.
+    #
+    # Article and user-interest embeddings are computed by calling the
+    # OpenAI Embeddings API. We deliberately keep the on-disk vector
+    # dimension at 384 (Matryoshka truncation) so the existing pgvector
+    # column doesn't need a schema change. If you ever raise this number
+    # you must also widen the column and re-embed every article.
+    OPENAI_API_KEY: str | None = None
+    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
+    OPENAI_EMBEDDING_DIMENSIONS: int = 384
+    # Override only when proxying through a gateway (e.g. Vercel AI
+    # Gateway, an Azure deployment). The default points at OpenAI direct.
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+
     # Ingestion scheduler — see app/services/scheduler.py.
     #
     # Disabled by default in local because dev-mode auto-reloads would
@@ -95,9 +109,9 @@ class Settings(BaseSettings):
     # Deployed environments default to enabled.
     INGEST_SCHEDULER_ENABLED: bool | None = None
     INGEST_INTERVAL_MINUTES: int = 60
-    # Delay before the first run after process startup. Gives the DB,
-    # the embedding model load, and any other startup work time to settle
-    # before we hammer the configured RSS feeds and start writing rows.
+    # Delay before the first run after process startup. Gives the DB
+    # pool and any other startup work time to settle before we hammer
+    # the configured RSS feeds and start writing rows.
     INGEST_INITIAL_DELAY_SECONDS: int = 60
 
     @computed_field  # type: ignore[prop-decorator]

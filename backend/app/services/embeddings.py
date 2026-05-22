@@ -1,20 +1,19 @@
 """Embedding service for the recommender's semantic-similarity layer.
 
-Wraps sentence-transformers/all-MiniLM-L6-v2 with a thin, testable API.
-The module is import-light: ``sentence_transformers`` and ``torch`` are
-imported lazily inside ``_get_encoder`` so code paths that don't touch
-embeddings (most of the test suite, request handlers that don't need
-For-You) don't pay the multi-second import cost.
+Calls the OpenAI Embeddings API (``text-embedding-3-small`` by default)
+via an HTTP client. We previously ran ``sentence-transformers`` in-process,
+which pinned ~2 GB of resident memory on the API container 24/7. Moving
+to an external provider drops the API process to ~300-500 MB and the
+cold-start cost from seconds to milliseconds.
 
-The model is lazy-loaded once per process via ``_get_encoder``. With the
-default ``uvicorn --workers 1`` this means one load total, which is
-fine for our scale. Multi-worker production deployments would each load
-their own copy (~150MB RAM each) — at that scale the right move is a
-dedicated embedding worker behind a queue, but that's premature here.
+Vectors are kept at 384 dimensions (via the OpenAI ``dimensions``
+parameter) so the existing pgvector column doesn't need a schema change.
+The catch is that vectors from different models aren't comparable — any
+swap of ``OPENAI_EMBEDDING_MODEL`` requires re-embedding every article.
 
 For testing, ``set_encoder_for_testing`` lets you inject a fake encoder
-so tests don't have to download the real model. See the test suite for
-the pattern.
+so tests don't have to make real HTTP calls. See the test suite for the
+pattern.
 """
 
 from __future__ import annotations
@@ -26,13 +25,10 @@ import uuid
 from collections.abc import Iterable
 from typing import Any, Protocol
 
+import httpx
+
+from app.core.config import settings
 from app.models import Article
-
-# Canonical model identifier. Changing this requires updating
-# ``app.models.EMBEDDING_DIM`` and the migration that defines the
-# ``articles.embedding`` column dimension.
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
-
 
 # ---------------------------------------------------------------------------
 # Encoder loading and injection
@@ -40,10 +36,10 @@ MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
 
 class Encoder(Protocol):
-    """Minimal interface our code uses against sentence-transformers.
+    """Minimal interface our code uses against the embedding provider.
 
     Defining this as a Protocol means tests can swap in a tiny fake (one
-    method) without depending on the real library.
+    method) without depending on httpx or hitting the network.
     """
 
     def encode(
@@ -54,6 +50,62 @@ class Encoder(Protocol):
     ) -> Any: ...
 
 
+class _OpenAIEncoder:
+    """Thin httpx wrapper around the OpenAI embeddings endpoint.
+
+    The client is a long-lived ``httpx.Client`` — keeps the TLS
+    connection pool warm so successive calls don't re-handshake. Reads
+    its config from ``settings`` at construction so test fixtures that
+    override the env vars take effect.
+
+    The provider already returns L2-normalized vectors when ``dimensions``
+    is supplied (Matryoshka truncation), but we re-normalize defensively
+    so callers can rely on unit length regardless of provider quirks.
+    """
+
+    def __init__(self) -> None:
+        if not settings.OPENAI_API_KEY:
+            raise RuntimeError(
+                "OPENAI_API_KEY is not set; embeddings cannot be computed."
+            )
+        self._model = settings.OPENAI_EMBEDDING_MODEL
+        self._dimensions = settings.OPENAI_EMBEDDING_DIMENSIONS
+        self._client = httpx.Client(
+            base_url=settings.OPENAI_BASE_URL,
+            headers={"Authorization": f"Bearer {settings.OPENAI_API_KEY}"},
+            timeout=httpx.Timeout(30.0, connect=10.0),
+        )
+
+    def encode(
+        self,
+        sentences: list[str] | str,
+        *,
+        normalize_embeddings: bool = True,
+    ) -> list[float] | list[list[float]]:
+        single = isinstance(sentences, str)
+        inputs = [sentences] if single else list(sentences)
+
+        response = self._client.post(
+            "/embeddings",
+            json={
+                "model": self._model,
+                "input": inputs,
+                "dimensions": self._dimensions,
+            },
+        )
+        response.raise_for_status()
+        payload = response.json()
+
+        # OpenAI returns ``data`` in input order, but the documented
+        # contract is "use the index field"; we sort to be safe.
+        rows = sorted(payload["data"], key=lambda row: row["index"])
+        vectors: list[list[float]] = [list(row["embedding"]) for row in rows]
+        if normalize_embeddings:
+            vectors = [_l2_normalize(v) for v in vectors]
+
+        return vectors[0] if single else vectors
+
+
 # Module-level singleton. None until the first ``_get_encoder()`` call.
 # Test code calls ``set_encoder_for_testing(...)`` to bypass real loading.
 _encoder: Encoder | None = None
@@ -61,21 +113,17 @@ _encoder_lock = threading.Lock()
 
 
 def _get_encoder() -> Encoder:
-    """Lazy-load and cache the embedding model.
+    """Lazy-construct and cache the OpenAI encoder.
 
-    Importing ``sentence_transformers`` triggers a torch import, which
-    is heavy (~1s on cold start) and unnecessary for code paths that
-    don't actually embed anything. Local-import inside this function
-    keeps that cost off the module-load critical path.
+    Double-checked locking so concurrent first-callers share one client
+    rather than each spinning up their own pool. After construction the
+    encoder is reused for the lifetime of the process.
     """
     global _encoder
     if _encoder is None:
         with _encoder_lock:
             if _encoder is None:
-                # Local import — see module docstring.
-                from sentence_transformers import SentenceTransformer
-
-                _encoder = SentenceTransformer(MODEL_NAME)
+                _encoder = _OpenAIEncoder()
     return _encoder
 
 
@@ -94,13 +142,13 @@ def set_encoder_for_testing(encoder: Encoder | None) -> None:
 def article_embedding_text(article: Article) -> str:
     """Canonical text representation of an article for embedding.
 
-    Order matters: sentence-transformers truncates to 256 tokens, so we
-    put the most informative content first. Title is the headline signal,
+    Order matters: the provider truncates long inputs, so we put the
+    most informative content first. Title is the headline signal,
     excerpt adds detail, then metadata as a short tail.
 
-    Joining with periods rather than newlines because the transformer
-    was trained on prose-like input, not structured fields. Empty fields
-    are skipped to avoid leaving "Source: " floating in the input.
+    Joining with periods rather than newlines because the embedding
+    model was trained on prose-like input, not structured fields. Empty
+    fields are skipped to avoid leaving "Source: " floating in the input.
     """
     parts: list[str] = [article.title.strip()]
     if article.excerpt:
@@ -121,23 +169,22 @@ def embed_text(text: str) -> list[float]:
     """Encode a single string. Use ``embed_texts`` for batches — much faster."""
     encoder = _get_encoder()
     vec = encoder.encode(text, normalize_embeddings=True)
-    # SentenceTransformer returns numpy. .tolist() works for both numpy
-    # arrays and our test fakes that return plain lists.
+    # ``tolist()`` covers any numpy-returning fakes left in tests; the
+    # production OpenAI encoder already returns plain lists.
     return vec.tolist() if hasattr(vec, "tolist") else list(vec)
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
     """Batch-encode a list of strings.
 
-    Roughly 5-10x faster than calling embed_text in a loop because the
-    encoder can batch the GPU/CPU forward pass. Use this for backfill
-    and any request that embeds more than ~3 articles at once.
+    Materially faster than calling ``embed_text`` in a loop because
+    the whole batch goes in a single HTTP round-trip. Use this for
+    backfill and any request that embeds more than ~3 articles at once.
     """
     if not texts:
         return []
     encoder = _get_encoder()
     vecs = encoder.encode(texts, normalize_embeddings=True)
-    # Numpy arrays support iteration row-wise; list-of-list fakes work too.
     return [v.tolist() if hasattr(v, "tolist") else list(v) for v in vecs]
 
 

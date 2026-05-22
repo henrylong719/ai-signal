@@ -19,10 +19,10 @@ _archived_at_column = Column(DateTime(timezone=True), nullable=True)
 ArticleEventType = Literal["clicked", "dismissed"]
 ARTICLE_EVENT_TYPES: tuple[ArticleEventType, ...] = ("clicked", "dismissed")
 
-# Embedding dimension. Matches sentence-transformers/all-MiniLM-L6-v2 and
-# the migration in a5b6c7d8e9f0_add_pgvector_and_article_embedding.py.
-# If we ever swap embedding models, this constant + the migration are
-# the two places to change.
+# Embedding dimension. Matches ``OPENAI_EMBEDDING_DIMENSIONS`` and the
+# pgvector column added in a5b6c7d8e9f0_add_pgvector_and_article_embedding.py.
+# Changing this requires widening the column and re-embedding every
+# article — vectors of different lengths can't be cosine-compared.
 EMBEDDING_DIM = 384
 
 

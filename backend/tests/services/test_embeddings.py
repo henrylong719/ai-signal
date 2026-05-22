@@ -1,11 +1,10 @@
 """Tests for the embedding service.
 
-These tests deliberately don't load the real sentence-transformers model
-— that would slow the whole test suite from milliseconds to multiple
-seconds and require ~80MB of model files in CI. Instead a tiny fake
-encoder produces deterministic toy vectors that exercise the library
-code paths (text composition, weighted averaging, normalization, cosine)
-without involving real ML.
+These tests deliberately don't make real HTTP calls to the embeddings
+provider — that would slow the suite and require an API key in CI.
+Instead a tiny fake encoder produces deterministic toy vectors that
+exercise the library code paths (text composition, weighted averaging,
+normalization, cosine) without involving real network IO.
 
 The fake's behavior: the embedding for a string is a sparse vector with
 one component per unique character class. Same string → same vector;
@@ -16,10 +15,8 @@ enough to write meaningful semantic-similarity assertions.
 from __future__ import annotations
 
 import math
-import sys
 import threading
 import time
-import types
 import uuid
 from collections.abc import Iterator
 from datetime import datetime, timezone
@@ -182,17 +179,19 @@ def test_embed_texts_handles_empty_input() -> None:
 def test_get_encoder_loads_once_under_concurrent_calls(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Concurrent requests should share one lazy SentenceTransformer load."""
-    load_calls: list[str] = []
+    """Concurrent requests should share one lazy encoder construction."""
+    init_calls: list[None] = []
 
-    class FakeSentenceTransformer(FakeEncoder):
-        def __init__(self, model_name: str) -> None:
+    class FakeOpenAIEncoder(FakeEncoder):
+        def __init__(self) -> None:
             super().__init__()
-            load_calls.append(model_name)
+            init_calls.append(None)
+            # Sleep so concurrent callers actually race the lock; without
+            # it the first thread's construction finishes before the
+            # others reach the double-checked branch.
             time.sleep(0.02)
 
-    fake_module = types.SimpleNamespace(SentenceTransformer=FakeSentenceTransformer)
-    monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
+    monkeypatch.setattr(emb, "_OpenAIEncoder", FakeOpenAIEncoder)
     emb.set_encoder_for_testing(None)
 
     barrier = threading.Barrier(8)
@@ -208,7 +207,7 @@ def test_get_encoder_loads_once_under_concurrent_calls(
     for thread in threads:
         thread.join()
 
-    assert load_calls == [emb.MODEL_NAME]
+    assert len(init_calls) == 1
     assert len(results) == 8
     assert all(result is results[0] for result in results)
 

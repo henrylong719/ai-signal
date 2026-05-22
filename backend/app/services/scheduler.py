@@ -98,8 +98,8 @@ def start_scheduler() -> None:
 
     _scheduler = AsyncIOScheduler(timezone=timezone.utc)
 
-    # First run is delayed so DB, embedding model load, and other
-    # startup work settles before 44 RSS feeds get hit.
+    # First run is delayed so the DB pool and any other startup work
+    # settle before 44 RSS feeds get hit.
     next_run_time = datetime.now(timezone.utc) + timedelta(
         seconds=settings.INGEST_INITIAL_DELAY_SECONDS
     )

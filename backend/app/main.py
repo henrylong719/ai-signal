@@ -35,7 +35,6 @@ def _configure_logging() -> None:
         "httpx",
         "httpcore",
         "apscheduler",
-        "sentence_transformers",
         "urllib3",
     ):
         logging.getLogger(noisy).setLevel(logging.WARNING)

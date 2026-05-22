@@ -19,6 +19,7 @@ pattern.
 from __future__ import annotations
 
 import dataclasses
+import logging
 import math
 import threading
 import uuid
@@ -29,6 +30,8 @@ import httpx
 
 from app.core.config import settings
 from app.models import Article
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Encoder loading and injection
@@ -261,9 +264,21 @@ def build_user_interest_vector(
 
     interest_text = _interest_text(interest_categories, interest_tags)
     if interest_text is not None:
-        # Stated interests are a single text — embed and weight.
-        stated_vec = embed_text(interest_text)
-        components.append((_W_STATED, stated_vec))
+        # Stated interests are a single text — embed and weight. The
+        # embed call hits an external API, so it can fail (network blip,
+        # OpenAI quota exhausted). Drop this component on failure rather
+        # than letting a 500 surface to the user-action endpoint that
+        # called us — saved/clicked centroids are still a meaningful
+        # interest vector on their own, and the next successful tick
+        # will fold stated interests back in.
+        try:
+            stated_vec = embed_text(interest_text)
+            components.append((_W_STATED, stated_vec))
+        except Exception:  # noqa: BLE001
+            logger.exception(
+                "Embedding stated-interest text failed; "
+                "user vector will be built without it"
+            )
 
     if not components:
         return None

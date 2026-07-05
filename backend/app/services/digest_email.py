@@ -142,7 +142,7 @@ def _frontend_url(path: str, query: dict[str, str] | None = None) -> str:
 
 
 def _backend_url(path: str, query: dict[str, str] | None = None) -> str:
-    """Build an absolute URL into the backend (used by the unsubscribe link).
+    """Build an absolute URL into the backend for email-click API links.
 
     The unsubscribe endpoint lives in the API because it needs to mutate
     DB state directly from the email click without a SPA round-trip.

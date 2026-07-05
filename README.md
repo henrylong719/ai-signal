@@ -98,6 +98,7 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=changethis
 FRONTEND_HOST=http://localhost:5173
 BACKEND_CORS_ORIGINS=http://localhost,http://localhost:5173
+BACKEND_PUBLIC_URL=http://localhost:8000
 ```
 
 Frontend API URL:

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocation, useNavigate } from '@tanstack/react-router'
+import { useEffect } from 'react'
 
 import {
   type Body_login_login_access_token as AccessToken,
@@ -15,6 +16,15 @@ import useCustomToast from './useCustomToast'
 
 const CURRENT_USER_STALE_TIME_MS = 1000 * 60 * 5
 const CURRENT_USER_GC_TIME_MS = 1000 * 60 * 30
+const syncedTimezoneKeys = new Set<string>()
+
+function detectTimezone(): string | null {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || null
+  } catch {
+    return null
+  }
+}
 
 const useAuth = () => {
   const navigate = useNavigate()
@@ -35,6 +45,33 @@ const useAuth = () => {
     staleTime: CURRENT_USER_STALE_TIME_MS,
     gcTime: CURRENT_USER_GC_TIME_MS,
   })
+
+  useEffect(() => {
+    if (!user?.daily_digest_enabled) {
+      return
+    }
+
+    const detectedZone = detectTimezone()
+    if (!detectedZone || detectedZone === user.timezone) {
+      return
+    }
+
+    const syncKey = `${user.id}:${detectedZone}`
+    if (syncedTimezoneKeys.has(syncKey)) {
+      return
+    }
+    syncedTimezoneKeys.add(syncKey)
+
+    void UsersService.updateDigestPreferences({
+      requestBody: { timezone: detectedZone },
+    })
+      .then((updatedUser) => {
+        queryClient.setQueryData(['currentUser'], updatedUser)
+      })
+      .catch(() => {
+        syncedTimezoneKeys.delete(syncKey)
+      })
+  }, [queryClient, user])
 
   // Login no longer reads the response body — the access cookie is set
   // server-side via Set-Cookie headers. The SDK call still works because

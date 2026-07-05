@@ -39,8 +39,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     FRONTEND_HOST: str = "http://localhost:5173"
-    # Public origin of the FastAPI backend, used to build absolute URLs
-    # in emails (currently: the digest unsubscribe link). When unset we
+    # Public origin of the FastAPI backend, used to build absolute API URLs
+    # in emails (article click-throughs plus unsubscribe links). When unset we
     # fall back to ``FRONTEND_HOST + API_V1_STR``, which is correct only
     # when frontend and backend share an origin via a reverse proxy or
     # platform rewrite. Set this whenever the API lives on a distinct

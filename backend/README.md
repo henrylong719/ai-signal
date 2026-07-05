@@ -41,6 +41,7 @@ The backend reads `../.env`. Required local values include:
 - `POSTGRES_PASSWORD`
 - `FRONTEND_HOST`
 - `BACKEND_CORS_ORIGINS`
+- `BACKEND_PUBLIC_URL`
 
 Optional production or feature-specific values include SMTP settings, OAuth provider credentials, `SENTRY_DSN`, `RATE_LIMIT_STORAGE_URI`, and ingestion scheduler settings. See the root `.env.example` for the full list.
 

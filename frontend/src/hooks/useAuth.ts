@@ -68,8 +68,17 @@ const useAuth = () => {
       .then((updatedUser) => {
         queryClient.setQueryData(['currentUser'], updatedUser)
       })
-      .catch(() => {
-        syncedTimezoneKeys.delete(syncKey)
+      .catch((err: unknown) => {
+        // Only free the key for a retry on transient failures (network /
+        // 5xx). A 4xx means this timezone value will never be accepted, so
+        // keep the key marked as attempted — otherwise every subsequent
+        // re-render fires the same rejected PUT in a tight loop.
+        const status = (err as { status?: number })?.status
+        const isClientError =
+          typeof status === 'number' && status >= 400 && status < 500
+        if (!isClientError) {
+          syncedTimezoneKeys.delete(syncKey)
+        }
       })
   }, [queryClient, user])
 

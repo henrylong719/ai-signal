@@ -853,6 +853,10 @@ def recover_password_html_content(email: str, session: SessionDep) -> Any:
         full_name=user.full_name,
     )
 
+    # Header name must be a valid HTTP token — a colon (as in the old
+    # "subject:") is illegal and makes the response un-encodable under
+    # uvicorn/h11 (500). Expose the subject under a custom X- header.
     return HTMLResponse(
-        content=email_data.html_content, headers={"subject:": email_data.subject}
+        content=email_data.html_content,
+        headers={"X-Email-Subject": email_data.subject},
     )

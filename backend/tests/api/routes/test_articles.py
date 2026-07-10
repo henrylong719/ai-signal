@@ -218,6 +218,45 @@ def test_read_for_you_requires_auth(client: TestClient) -> None:
     assert response.status_code == 401
 
 
+def test_read_for_you_survives_article_deleted_mid_request(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """If a ranked candidate is deleted between the ranking pass and the
+    refetch-by-id, the endpoint must drop it and still 200 — not KeyError
+    into a 500."""
+    user, headers = _create_authenticated_user(client, db)
+    kept = _create_article(db, source="Lab A", title="Kept article")
+    vanished = _create_article(db, source="Lab B", title="Vanished article")
+    crud.set_interests(
+        session=db,
+        user_id=user.id,
+        categories=["models"],
+        tags=[],
+        preferred_sources=[],
+    )
+
+    real_get = crud.get_articles_by_ids
+
+    def dropping_get(*, session: Session, article_ids: list) -> list:
+        # Simulate the vanished row being gone by the time we refetch.
+        rows = real_get(session=session, article_ids=article_ids)
+        return [row for row in rows if row.id != vanished.id]
+
+    monkeypatch.setattr(article_routes.crud, "get_articles_by_ids", dropping_get)
+
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/for-you",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    returned_ids = {item["id"] for item in response.json()["data"]}
+    assert str(vanished.id) not in returned_ids
+    assert str(kept.id) in returned_ids
+
+
 def test_read_following_requires_auth(client: TestClient) -> None:
     response = client.get(f"{settings.API_V1_STR}/articles/following")
     assert response.status_code == 401

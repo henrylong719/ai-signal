@@ -61,6 +61,7 @@ from app.crud.oauth_account import (
 )
 from app.crud.refresh_session import (
     create_refresh_session,
+    delete_stale_refresh_sessions,
     get_refresh_session_for_update,
     hash_refresh_token_id,
     refresh_session_is_active,
@@ -132,6 +133,7 @@ __all__ = [
     "update_user",
     "upsert_user_embedding",
     "create_refresh_session",
+    "delete_stale_refresh_sessions",
     "hash_refresh_token_id",
     "refresh_session_is_active",
     "revoke_refresh_sessions_for_user",

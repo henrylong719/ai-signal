@@ -468,6 +468,24 @@ def test_recovery_password(
         assert isinstance(mock_send.call_args.kwargs["token"], str)
 
 
+def test_recover_password_html_content_returns_html_with_subject_header(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    """The superuser HTML-preview endpoint must return 200 with the email
+    subject in a *validly named* header. A colon in the header name makes
+    the response un-encodable (500)."""
+    email = settings.FIRST_SUPERUSER
+    r = client.post(
+        f"{settings.API_V1_STR}/password-recovery-html-content/{email}",
+        headers=superuser_token_headers,
+    )
+    assert r.status_code == 200
+    assert "AI Signal" in r.text
+    # A subject must be surfaced under a header whose name is a valid HTTP
+    # token (no colon).
+    assert r.headers.get("x-email-subject")
+
+
 def test_recovery_password_user_not_exits(
     client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:

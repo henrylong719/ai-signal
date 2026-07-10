@@ -1,9 +1,24 @@
 import uuid
 from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import EmailStr, field_validator
 from sqlmodel import Field, SQLModel
+
+
+def _validate_optional_timezone(value: Any) -> Any:
+    """Reject non-IANA timezone strings so we don't silently store a value
+    that falls back to UTC at digest-send time. ``None``/empty stays valid
+    (the sender treats unset as UTC by design)."""
+    if value is None or value == "":
+        return value
+    if isinstance(value, str):
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError):
+            raise ValueError(f"Unknown timezone: {value!r}")
+    return value
 
 
 def _lowercase_email(value: Any) -> Any:
@@ -84,6 +99,8 @@ class OnboardingComplete(SQLModel):
     timezone: str | None = Field(default=None, max_length=64)
     daily_digest_enabled: bool = False
 
+    _validate_timezone = field_validator("timezone")(_validate_optional_timezone)
+
 
 class DigestPreferencesUpdate(SQLModel):
     """Body for the settings-page digest toggle.
@@ -95,6 +112,8 @@ class DigestPreferencesUpdate(SQLModel):
 
     daily_digest_enabled: bool | None = None
     timezone: str | None = Field(default=None, max_length=64)
+
+    _validate_timezone = field_validator("timezone")(_validate_optional_timezone)
 
 
 class UsersPublic(SQLModel):

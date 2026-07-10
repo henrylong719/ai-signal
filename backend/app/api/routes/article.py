@@ -114,15 +114,19 @@ def read_for_you(
             session=session, article_ids=article_ids
         )
     }
+    # An article can be deleted (admin action / cleanup) between the
+    # ranking pass and this refetch, in which case it's absent from
+    # articles_by_id. Skip it rather than KeyError into a 500 — the feed
+    # is a best-effort snapshot, so a just-removed item simply doesn't
+    # appear.
     data = [
         ForYouArticlePublic(
-            **ArticlePublic.model_validate(
-                articles_by_id[item.scored.article.id]
-            ).model_dump(),
+            **ArticlePublic.model_validate(article).model_dump(),
             reason=item.reason,
             debug=build_debug_payload(item) if effective_debug else None,
         )
         for item in items
+        if (article := articles_by_id.get(item.scored.article.id)) is not None
     ]
 
     weights_public: ScoringWeightsPublic | None = None

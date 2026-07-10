@@ -663,8 +663,10 @@ def test_go_to_article_redirects_and_records_click_for_authenticated_user(
 
     assert anonymous.status_code == 302
     assert anonymous.headers["location"] == article.url
+    assert anonymous.headers["referrer-policy"] == "no-referrer"
     assert authenticated.status_code == 302
     assert authenticated.headers["location"] == article.url
+    assert authenticated.headers["referrer-policy"] == "no-referrer"
     events = crud.get_events(
         session=db,
         user_id=user.id,

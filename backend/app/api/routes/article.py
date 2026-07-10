@@ -375,7 +375,10 @@ def go_to_article(
     return RedirectResponse(
         url=destination_url,
         status_code=302,
-        headers={"X-Robots-Tag": "noindex, nofollow"},
+        headers={
+            "X-Robots-Tag": "noindex, nofollow",
+            "Referrer-Policy": "no-referrer",
+        },
     )
 
 

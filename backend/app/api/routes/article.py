@@ -275,7 +275,13 @@ def save_article(
     )
     if existing:
         raise HTTPException(status_code=409, detail="Article already saved")
-    crud.save_article(session=session, user_id=current_user.id, article_id=article_id)
+    saved = crud.save_article(
+        session=session, user_id=current_user.id, article_id=article_id
+    )
+    if saved is None:
+        # Lost a race with a concurrent save — same outcome as the
+        # pre-check catching it.
+        raise HTTPException(status_code=409, detail="Article already saved")
     # Saving an article is the strongest behavioral signal we have —
     # update the cached user vector so the next /for-you request
     # reflects this new interest immediately.

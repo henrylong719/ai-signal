@@ -57,6 +57,7 @@ from app.crud.oauth_account import (
     create_oauth_account,
     get_oauth_account,
     update_oauth_account_profile,
+    user_has_verified_oauth_email,
 )
 from app.crud.refresh_session import (
     create_refresh_session,
@@ -115,6 +116,7 @@ __all__ = [
     "update_article",
     "update_article_embeddings",
     "update_oauth_account_profile",
+    "user_has_verified_oauth_email",
     "update_user",
     "upsert_user_embedding",
     "create_refresh_session",

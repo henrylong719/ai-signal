@@ -1,6 +1,6 @@
 import uuid
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, func, select
 
 from app.models import OAuthAccount
 from app.models.base import get_datetime_utc
@@ -17,6 +17,25 @@ def get_oauth_account(
         OAuthAccount.provider_user_id == provider_user_id,
     )
     return session.exec(statement).first()
+
+
+def user_has_verified_oauth_email(
+    *,
+    session: Session,
+    user_id: uuid.UUID,
+    email: str,
+) -> bool:
+    """True iff the user already has a provider-*verified* OAuth link for
+    ``email``. This is what distinguishes an email a provider confirmed
+    from one merely parked on the account row via a profile edit — only
+    the former is safe to auto-link a new provider identity onto.
+    """
+    statement = select(OAuthAccount).where(
+        OAuthAccount.user_id == user_id,
+        func.lower(col(OAuthAccount.email)) == email.strip().lower(),
+        col(OAuthAccount.email_verified).is_(True),
+    )
+    return session.exec(statement).first() is not None
 
 
 def create_oauth_account(

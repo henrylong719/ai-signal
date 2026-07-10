@@ -1,8 +1,19 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
-from pydantic import EmailStr
+from pydantic import EmailStr, field_validator
 from sqlmodel import Field, SQLModel
+
+
+def _lowercase_email(value: Any) -> Any:
+    """Canonicalize inbound emails so the password and OAuth signup paths
+    can't create two accounts for one person differing only by case.
+    Applied on the *input* schemas only — stored values are returned as-is.
+    """
+    if isinstance(value, str):
+        return value.strip().lower()
+    return value
 
 
 class UserBase(SQLModel):
@@ -15,21 +26,29 @@ class UserBase(SQLModel):
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=128)
 
+    _normalize_email = field_validator("email", mode="before")(_lowercase_email)
+
 
 class UserRegister(SQLModel):
     email: EmailStr = Field(max_length=255)
     password: str = Field(min_length=8, max_length=128)
     full_name: str | None = Field(default=None, max_length=255)
 
+    _normalize_email = field_validator("email", mode="before")(_lowercase_email)
+
 
 class UserUpdate(UserBase):
     email: EmailStr | None = Field(default=None, max_length=255)  # type: ignore[assignment]
     password: str | None = Field(default=None, min_length=8, max_length=128)
 
+    _normalize_email = field_validator("email", mode="before")(_lowercase_email)
+
 
 class UserUpdateMe(SQLModel):
     full_name: str | None = Field(default=None, max_length=255)
     email: EmailStr | None = Field(default=None, max_length=255)
+
+    _normalize_email = field_validator("email", mode="before")(_lowercase_email)
 
 
 class UpdatePassword(SQLModel):

@@ -123,6 +123,7 @@ def search_articles(
         query_embedding = embed_text(query)
         count = crud.count_semantic_search_articles(
             session=session,
+            query_embedding=query_embedding,
             category=category,
             source=source,
         )

@@ -41,6 +41,7 @@ from app.core.db import engine
 from app.services.article_cleanup import run_article_cleanup
 from app.services.digest_scheduler import run_digest_send
 from app.services.ingest_runner import run_tracked_ingest
+from app.services.subscriber_digest import run_subscriber_digest_send
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,7 @@ _scheduler: AsyncIOScheduler | None = None
 
 _INGEST_JOB_ID = "ingest_all"
 _DIGEST_JOB_ID = "send_daily_digest"
+_SUBSCRIBER_DIGEST_JOB_ID = "send_subscriber_digest"
 _CLEANUP_JOB_ID = "article_cleanup"
 
 
@@ -136,6 +138,24 @@ def start_scheduler() -> None:
         # hour still fires the tick. The local-hour gate in
         # should_send_now caps useful latitude at 60 min anyway; the
         # idempotency stamp prevents duplicate sends if a tick re-fires.
+        misfire_grace_time=3600,
+    )
+
+    # Daily anonymous-subscriber digest. Fires once per UTC day at the
+    # configured hour and sends the generic digest to every active
+    # subscriber (deduped against digest-enabled users). Distinct from the
+    # per-user job above, which fires hourly to catch each user's local
+    # send hour; subscribers have no timezone, so one fixed UTC tick is
+    # enough. The job short-circuits internally when digest email is not
+    # configured, and its watermark makes a re-fired tick idempotent.
+    _scheduler.add_job(
+        run_subscriber_digest_send,
+        trigger="cron",
+        hour=settings.SUBSCRIBER_DIGEST_SEND_HOUR_UTC,
+        minute=0,
+        id=_SUBSCRIBER_DIGEST_JOB_ID,
+        coalesce=True,
+        max_instances=1,
         misfire_grace_time=3600,
     )
 

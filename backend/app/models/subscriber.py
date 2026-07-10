@@ -17,6 +17,13 @@ class DigestSubscriber(SQLModel, table=True):
         sa_column=Column(String(320), nullable=False, unique=True, index=True)
     )
     is_active: bool = Field(default=True, nullable=False)
+    # When the last digest send to this subscriber completed. Idempotency
+    # key for the daily scheduled job (same UTC calendar day → skip), same
+    # role as ``User.last_digest_sent_at``. NULL means never sent.
+    last_digest_sent_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
     created_at: datetime = Field(
         default_factory=get_datetime_utc,
         sa_column=Column(DateTime(timezone=True), nullable=False),

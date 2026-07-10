@@ -32,6 +32,20 @@ def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
     return db_user
 
 
+def get_active_digest_user_emails(*, session: Session) -> set[str]:
+    """Lowercased emails of active, digest-enabled users.
+
+    The subscriber send loop uses this to skip addresses that already
+    receive the personalized user digest — one morning email per person,
+    not two.
+    """
+    statement = select(User.email).where(
+        col(User.is_active).is_(True),
+        col(User.daily_digest_enabled).is_(True),
+    )
+    return {email.lower() for email in session.exec(statement).all()}
+
+
 def get_user_by_email(*, session: Session, email: str) -> User | None:
     # Case-insensitive: new rows are stored lowercase (schema validators),
     # but rows created before normalization — and login forms, where the

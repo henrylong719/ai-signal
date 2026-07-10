@@ -66,8 +66,20 @@ from app.crud.refresh_session import (
     refresh_session_is_active,
     revoke_refresh_sessions_for_user,
 )
-from app.crud.subscriber import get_subscriber_by_email, upsert_subscriber
-from app.crud.user import authenticate, create_user, get_user_by_email, update_user
+from app.crud.subscriber import (
+    get_sendable_subscribers,
+    get_subscriber_by_email,
+    mark_subscriber_digest_sent,
+    unsubscribe_subscriber,
+    upsert_subscriber,
+)
+from app.crud.user import (
+    authenticate,
+    create_user,
+    get_active_digest_user_emails,
+    get_user_by_email,
+    update_user,
+)
 from app.crud.user_embedding import (
     delete_user_embedding,
     get_user_embedding,
@@ -135,7 +147,11 @@ __all__ = [
     "get_top_clicked_articles",
     "get_top_clicked_sources",
     "get_top_clicked_topics",
+    "get_active_digest_user_emails",
+    "get_sendable_subscribers",
     "get_subscriber_by_email",
+    "mark_subscriber_digest_sent",
+    "unsubscribe_subscriber",
     "record_guest_event",
     "upsert_subscriber",
 ]

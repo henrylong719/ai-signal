@@ -1,6 +1,10 @@
 """CRUD for digest subscribers."""
 
-from sqlmodel import Session, select
+import uuid
+from collections.abc import Sequence
+from datetime import datetime
+
+from sqlmodel import Session, col, select
 
 from app.models.base import get_datetime_utc
 from app.models.subscriber import DigestSubscriber
@@ -39,3 +43,36 @@ def upsert_subscriber(*, session: Session, email: str) -> tuple[DigestSubscriber
     session.commit()
     session.refresh(existing)
     return existing, False
+
+
+def unsubscribe_subscriber(
+    *, session: Session, subscriber_id: uuid.UUID
+) -> DigestSubscriber | None:
+    """Deactivate a subscriber. Idempotent; returns None if the row is gone."""
+    subscriber = session.get(DigestSubscriber, subscriber_id)
+    if subscriber is None:
+        return None
+    if subscriber.is_active:
+        subscriber.is_active = False
+        subscriber.updated_at = get_datetime_utc()
+        session.add(subscriber)
+        session.commit()
+        session.refresh(subscriber)
+    return subscriber
+
+
+def get_sendable_subscribers(*, session: Session) -> Sequence[DigestSubscriber]:
+    """Active subscribers eligible for the digest (single opt-in)."""
+    statement = select(DigestSubscriber).where(
+        col(DigestSubscriber.is_active).is_(True)
+    )
+    return session.exec(statement).all()
+
+
+def mark_subscriber_digest_sent(
+    *, session: Session, subscriber: DigestSubscriber, now: datetime
+) -> None:
+    """Stamp the idempotency watermark after a successful send."""
+    subscriber.last_digest_sent_at = now
+    session.add(subscriber)
+    session.commit()

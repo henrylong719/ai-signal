@@ -217,6 +217,11 @@ class Settings(BaseSettings):
     # user's local clock; staying configurable lets us shift the
     # send window without a code change.
     DIGEST_SEND_LOCAL_HOUR: int = 6
+    # Hour of the day (0–23, UTC) the anonymous-subscriber digest is sent.
+    # Subscribers have no timezone, so unlike the per-user digest this is a
+    # single fixed UTC hour rather than a local-clock match. See
+    # ``services.subscriber_digest``.
+    SUBSCRIBER_DIGEST_SEND_HOUR_UTC: int = 6
 
     # --- SMTP (legacy / deprecated) ---------------------------------------
     #

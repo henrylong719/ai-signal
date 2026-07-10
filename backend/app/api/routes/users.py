@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlmodel import col, func, select
 
 from app import crud
@@ -12,6 +12,7 @@ from app.api.deps import (
 )
 from app.api.routes.login import issue_session
 from app.core.config import settings
+from app.core.rate_limit import limiter
 from app.core.security import get_password_hash, verify_password
 from app.models import OAuthAccount, User
 from app.models.base import get_datetime_utc
@@ -231,8 +232,12 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
 
 
 @router.post("/signup", response_model=UserPublic)
+@limiter.limit("10/minute")
 def register_user(
-    session: SessionDep, user_in: UserRegister, response: Response
+    request: Request,  # noqa: ARG001  # consumed by @limiter.limit
+    session: SessionDep,
+    user_in: UserRegister,
+    response: Response,
 ) -> Any:
     """
     Create new user without the need to be logged in.

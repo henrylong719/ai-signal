@@ -111,16 +111,28 @@ def test_read_articles_search_uses_semantic_similarity(
         source=source,
         title="A compact roundup about deployment metrics",
     )
-    far = _create_article(
+    related = _create_article(
+        db,
+        source=source,
+        title="A compact roundup about deployment tooling",
+    )
+    unrelated = _create_article(
         db,
         source=source,
         title="A compact roundup about hardware procurement",
     )
+    # Related vector sits at cosine similarity 0.8 to the query (well
+    # inside the relevance threshold); the unrelated one is orthogonal
+    # and must be filtered out entirely, not just ranked last.
+    related_vector = [0.0] * EMBEDDING_DIM
+    related_vector[0] = 0.8
+    related_vector[1] = 0.6
     crud.update_article_embeddings(
         session=db,
         embeddings={
             near.id: _embedding(0),
-            far.id: _embedding(1),
+            related.id: related_vector,
+            unrelated.id: _embedding(1),
         },
     )
     monkeypatch.setattr(article_search, "embed_text", lambda text: _embedding(0))
@@ -135,7 +147,7 @@ def test_read_articles_search_uses_semantic_similarity(
     assert content["count"] == 2
     assert [article["id"] for article in content["data"]] == [
         str(near.id),
-        str(far.id),
+        str(related.id),
     ]
 
 
@@ -204,6 +216,45 @@ def test_read_sources_by_source_type(client: TestClient) -> None:
 def test_read_for_you_requires_auth(client: TestClient) -> None:
     response = client.get(f"{settings.API_V1_STR}/articles/for-you")
     assert response.status_code == 401
+
+
+def test_read_for_you_survives_article_deleted_mid_request(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """If a ranked candidate is deleted between the ranking pass and the
+    refetch-by-id, the endpoint must drop it and still 200 — not KeyError
+    into a 500."""
+    user, headers = _create_authenticated_user(client, db)
+    kept = _create_article(db, source="Lab A", title="Kept article")
+    vanished = _create_article(db, source="Lab B", title="Vanished article")
+    crud.set_interests(
+        session=db,
+        user_id=user.id,
+        categories=["models"],
+        tags=[],
+        preferred_sources=[],
+    )
+
+    real_get = crud.get_articles_by_ids
+
+    def dropping_get(*, session: Session, article_ids: list) -> list:
+        # Simulate the vanished row being gone by the time we refetch.
+        rows = real_get(session=session, article_ids=article_ids)
+        return [row for row in rows if row.id != vanished.id]
+
+    monkeypatch.setattr(article_routes.crud, "get_articles_by_ids", dropping_get)
+
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/for-you",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    returned_ids = {item["id"] for item in response.json()["data"]}
+    assert str(vanished.id) not in returned_ids
+    assert str(kept.id) in returned_ids
 
 
 def test_read_following_requires_auth(client: TestClient) -> None:
@@ -587,6 +638,48 @@ def test_read_saved_articles_orders_by_saved_at_desc_end_to_end(
     assert [item["id"] for item in body["data"]] == [str(newer.id), str(older.id)]
 
 
+def test_save_article_crud_is_race_safe_on_duplicate(db: Session) -> None:
+    """Two inserts of the same (user, article) must not raise — the second
+    reports the duplicate by returning None. This is what protects the
+    route when two concurrent requests both pass the existence pre-check."""
+    email = random_email()
+    user = crud.create_user(
+        session=db,
+        user_create=UserCreate(email=email, password=random_lower_string()),
+    )
+    article = create_random_article(db)
+
+    first = crud.save_article(session=db, user_id=user.id, article_id=article.id)
+    assert first is not None
+
+    second = crud.save_article(session=db, user_id=user.id, article_id=article.id)
+    assert second is None
+
+    assert crud.count_saved_articles(session=db, user_id=user.id) == 1
+
+
+def test_save_article_race_returns_409_not_500(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Simulate the check-then-insert race: the row exists but the route's
+    pre-check misses it (as happens when two requests interleave). The
+    response must be the same 409 as the sequential duplicate case."""
+    user, headers = _create_authenticated_user(client, db)
+    article = create_random_article(db)
+    crud.save_article(session=db, user_id=user.id, article_id=article.id)
+
+    monkeypatch.setattr(crud, "get_saved_article", lambda **kwargs: None)
+
+    response = client.post(
+        f"{settings.API_V1_STR}/articles/{article.id}/save",
+        headers=headers,
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Article already saved"
+
+
 def test_save_article_returns_404_for_missing_article(
     client: TestClient,
     db: Session,
@@ -810,7 +903,8 @@ def test_rate_limit_returns_429_when_exceeded() -> None:
     Retry-After response) without depending on the production 60/min quota
     on /articles/, which would need 61 calls per test run.
     """
-    from fastapi import FastAPI, Request as RealRequest
+    from fastapi import FastAPI
+    from fastapi import Request as RealRequest
     from slowapi import _rate_limit_exceeded_handler
     from slowapi.errors import RateLimitExceeded
     from slowapi.middleware import SlowAPIMiddleware

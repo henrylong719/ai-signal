@@ -103,12 +103,46 @@ def test_onboarding_does_not_overwrite_completion_timestamp(
     assert second["daily_digest_enabled"] is True
 
 
+def test_onboarding_rejects_invalid_timezone(client: TestClient, db: Session) -> None:
+    """A bogus IANA tz would silently fall back to UTC at send time —
+    surfacing 422 tells the client to send a real zone (or omit it)."""
+    _, headers = _create_authenticated_user(client, db)
+    response = client.put(
+        f"{settings.API_V1_STR}/users/me/onboarding",
+        headers=headers,
+        json={"timezone": "Not/AZone", "daily_digest_enabled": True},
+    )
+    assert response.status_code == 422
+
+
+def test_onboarding_allows_null_timezone(client: TestClient, db: Session) -> None:
+    """Omitting the timezone stays valid — browsers in privacy mode may
+    not expose one, and the sender falls back to UTC by design."""
+    _, headers = _create_authenticated_user(client, db)
+    response = client.put(
+        f"{settings.API_V1_STR}/users/me/onboarding",
+        headers=headers,
+        json={"daily_digest_enabled": True},
+    )
+    assert response.status_code == 200
+
+
 # --- /users/me/digest-preferences ------------------------------------------
 
 
-def test_digest_preferences_partial_update(
+def test_digest_preferences_rejects_invalid_timezone(
     client: TestClient, db: Session
 ) -> None:
+    _, headers = _create_authenticated_user(client, db)
+    response = client.put(
+        f"{settings.API_V1_STR}/users/me/digest-preferences",
+        headers=headers,
+        json={"timezone": "Mars/Phobos"},
+    )
+    assert response.status_code == 422
+
+
+def test_digest_preferences_partial_update(client: TestClient, db: Session) -> None:
     user, headers = _create_authenticated_user(client, db)
     user.timezone = "America/New_York"
     user.daily_digest_enabled = True
@@ -153,9 +187,7 @@ def test_digest_preferences_disabling_resets_send_watermark(
 def test_unsubscribe_disables_digest(client: TestClient, db: Session) -> None:
     user = crud.create_user(
         session=db,
-        user_create=UserCreate(
-            email=random_email(), password=random_lower_string()
-        ),
+        user_create=UserCreate(email=random_email(), password=random_lower_string()),
     )
     user.daily_digest_enabled = True
     db.add(user)
@@ -188,9 +220,7 @@ def test_unsubscribe_one_click_post(client: TestClient, db: Session) -> None:
     """RFC 8058 one-click target also works."""
     user = crud.create_user(
         session=db,
-        user_create=UserCreate(
-            email=random_email(), password=random_lower_string()
-        ),
+        user_create=UserCreate(email=random_email(), password=random_lower_string()),
     )
     user.daily_digest_enabled = True
     db.add(user)
@@ -225,9 +255,7 @@ def test_unsubscribe_confirmation_includes_resubscribe_action(
     """The success page surfaces a POST form back to /digest/resubscribe."""
     user = crud.create_user(
         session=db,
-        user_create=UserCreate(
-            email=random_email(), password=random_lower_string()
-        ),
+        user_create=UserCreate(email=random_email(), password=random_lower_string()),
     )
     user.daily_digest_enabled = True
     db.add(user)
@@ -242,9 +270,7 @@ def test_unsubscribe_confirmation_includes_resubscribe_action(
     body = response.text
     assert "Resubscribe" in body
     assert 'method="post"' in body.lower()
-    assert (
-        f'action="{settings.API_V1_STR}/digest/resubscribe?token={token}"' in body
-    )
+    assert f'action="{settings.API_V1_STR}/digest/resubscribe?token={token}"' in body
 
 
 # --- /digest/resubscribe ----------------------------------------------------
@@ -255,9 +281,7 @@ def test_resubscribe_enables_digest_with_valid_token(
 ) -> None:
     user = crud.create_user(
         session=db,
-        user_create=UserCreate(
-            email=random_email(), password=random_lower_string()
-        ),
+        user_create=UserCreate(email=random_email(), password=random_lower_string()),
     )
     user.daily_digest_enabled = False
     db.add(user)
@@ -275,15 +299,11 @@ def test_resubscribe_enables_digest_with_valid_token(
     assert user.daily_digest_enabled is True
 
 
-def test_resubscribe_does_not_require_login(
-    client: TestClient, db: Session
-) -> None:
+def test_resubscribe_does_not_require_login(client: TestClient, db: Session) -> None:
     """No Authorization header is sent — the signed token is the only auth."""
     user = crud.create_user(
         session=db,
-        user_create=UserCreate(
-            email=random_email(), password=random_lower_string()
-        ),
+        user_create=UserCreate(email=random_email(), password=random_lower_string()),
     )
     user.daily_digest_enabled = False
     db.add(user)
@@ -303,9 +323,7 @@ def test_resubscribe_invalid_token_renders_friendly_page(
     """Garbage token must not flip any preference."""
     user = crud.create_user(
         session=db,
-        user_create=UserCreate(
-            email=random_email(), password=random_lower_string()
-        ),
+        user_create=UserCreate(email=random_email(), password=random_lower_string()),
     )
     user.daily_digest_enabled = False
     db.add(user)
@@ -329,9 +347,7 @@ def test_resubscribe_expired_token_renders_friendly_page(
     """Past-exp token must not flip any preference."""
     user = crud.create_user(
         session=db,
-        user_create=UserCreate(
-            email=random_email(), password=random_lower_string()
-        ),
+        user_create=UserCreate(email=random_email(), password=random_lower_string()),
     )
     user.daily_digest_enabled = False
     db.add(user)
@@ -352,9 +368,7 @@ def test_resubscribe_expired_token_renders_friendly_page(
 def test_resubscribe_is_idempotent(client: TestClient, db: Session) -> None:
     user = crud.create_user(
         session=db,
-        user_create=UserCreate(
-            email=random_email(), password=random_lower_string()
-        ),
+        user_create=UserCreate(email=random_email(), password=random_lower_string()),
     )
     user.daily_digest_enabled = False
     db.add(user)
@@ -407,9 +421,7 @@ def test_unsubscribe_then_resubscribe_round_trip(
     """End-to-end: the same token can unsubscribe then resubscribe."""
     user = crud.create_user(
         session=db,
-        user_create=UserCreate(
-            email=random_email(), password=random_lower_string()
-        ),
+        user_create=UserCreate(email=random_email(), password=random_lower_string()),
     )
     user.daily_digest_enabled = True
     db.add(user)
@@ -417,15 +429,11 @@ def test_unsubscribe_then_resubscribe_round_trip(
 
     token = make_unsubscribe_token(user.id)
 
-    client.get(
-        f"{settings.API_V1_STR}/digest/unsubscribe", params={"token": token}
-    )
+    client.get(f"{settings.API_V1_STR}/digest/unsubscribe", params={"token": token})
     db.refresh(user)
     assert user.daily_digest_enabled is False
 
-    client.post(
-        f"{settings.API_V1_STR}/digest/resubscribe", params={"token": token}
-    )
+    client.post(f"{settings.API_V1_STR}/digest/resubscribe", params={"token": token})
     db.refresh(user)
     assert user.daily_digest_enabled is True
 

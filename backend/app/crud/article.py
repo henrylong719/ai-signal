@@ -3,11 +3,13 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any, cast
 
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Load, defer
 from sqlmodel import Session, col, func, or_, select
 
 from app.models import Article
 from app.models.article import SavedArticle
+from app.models.base import get_datetime_utc
 from app.schemas import ArticleCreate, ArticleUpdate
 from app.schemas.source import Category
 from app.services.decay import SAVED_HALF_LIFE_DAYS, aggregate_weights_by_key
@@ -58,18 +60,30 @@ def count_articles(
     return session.exec(statement).one()
 
 
+# Maximum cosine distance for a semantic search hit. Anything farther is
+# noise: without a cutoff every embedded article "matches" every query and
+# the count reports the whole corpus. 0.75 (similarity >= 0.25) is a
+# conservative starting point for text-embedding-3-small at 384 dims —
+# tune against real query logs rather than guessing tighter.
+SEMANTIC_SEARCH_MAX_DISTANCE = 0.75
+
+
 def count_semantic_search_articles(
     *,
     session: Session,
+    query_embedding: list[float],
     category: Category | None = None,
     source: str | None = None,
 ) -> int:
+    embedding_column = cast(Any, Article.embedding)
+    distance = embedding_column.cosine_distance(query_embedding)
     statement = (
         select(func.count())
         .select_from(Article)
         .where(
             col(Article.embedding).is_not(None),
             col(Article.archived_at).is_(None),
+            distance < SEMANTIC_SEARCH_MAX_DISTANCE,
         )
     )
     if category is not None:
@@ -135,6 +149,7 @@ def get_semantic_search_articles(
         .where(
             col(Article.embedding).is_not(None),
             col(Article.archived_at).is_(None),
+            distance < SEMANTIC_SEARCH_MAX_DISTANCE,
         )
     )
     if category is not None:
@@ -311,12 +326,29 @@ def get_saved_article(
 
 def save_article(
     *, session: Session, user_id: uuid.UUID, article_id: uuid.UUID
-) -> SavedArticle:
-    saved = SavedArticle(user_id=user_id, article_id=article_id)
-    session.add(saved)
+) -> SavedArticle | None:
+    """Insert a saved-article row; returns None when it already existed.
+
+    Upsert-shaped (same pattern as ``crud.event.record_event``) so two
+    concurrent saves can't race the route's existence pre-check into an
+    IntegrityError — the loser of the race gets None and the route maps
+    that to the same 409 as the sequential duplicate case.
+    """
+    stmt = (
+        pg_insert(SavedArticle)
+        .values(
+            user_id=user_id,
+            article_id=article_id,
+            saved_at=get_datetime_utc(),
+        )
+        .on_conflict_do_nothing(index_elements=["user_id", "article_id"])
+        .returning(col(SavedArticle.user_id))
+    )
+    inserted = session.exec(stmt).first()
     session.commit()
-    session.refresh(saved)
-    return saved
+    if inserted is None:
+        return None
+    return get_saved_article(session=session, user_id=user_id, article_id=article_id)
 
 
 def unsave_article(*, session: Session, saved_article: SavedArticle) -> None:

@@ -89,6 +89,101 @@ def test_submit_feedback_rejects_unknown_category(
     assert response.status_code == 422
 
 
+def test_submit_feedback_rejects_oversized_context(
+    client: TestClient,
+    db: Session,
+) -> None:
+    """``context`` must be size-capped like guest-event metadata —
+    otherwise any account can grow the feedback table by megabytes per
+    request."""
+    _, headers = _create_authenticated_user(client, db)
+
+    response = client.post(
+        f"{settings.API_V1_STR}/users/me/feedback",
+        headers=headers,
+        json={
+            "category": "general",
+            "message": "Message long enough to pass validation.",
+            "context": {"blob": "x" * 5000},
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_submit_feedback_rejects_nested_context(
+    client: TestClient,
+    db: Session,
+) -> None:
+    _, headers = _create_authenticated_user(client, db)
+
+    response = client.post(
+        f"{settings.API_V1_STR}/users/me/feedback",
+        headers=headers,
+        json={
+            "category": "general",
+            "message": "Message long enough to pass validation.",
+            "context": {"nested": {"deep": {"deeper": "x"}}},
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_submit_feedback_rejects_too_many_context_keys(
+    client: TestClient,
+    db: Session,
+) -> None:
+    _, headers = _create_authenticated_user(client, db)
+
+    response = client.post(
+        f"{settings.API_V1_STR}/users/me/feedback",
+        headers=headers,
+        json={
+            "category": "general",
+            "message": "Message long enough to pass validation.",
+            "context": {f"key_{i}": i for i in range(21)},
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_feedback_endpoint_is_rate_limited(
+    client: TestClient,
+    db: Session,
+) -> None:
+    """Feedback writes to the DB per call; an account must not be able to
+    submit unbounded volumes."""
+    from app.core.rate_limit import limiter
+
+    _, headers = _create_authenticated_user(client, db)
+    payload = {
+        "category": "general",
+        "message": "Rate limit probe message with enough length.",
+    }
+    original_enabled = limiter.enabled
+    limiter.enabled = True
+    limiter.reset()
+    try:
+        for _ in range(10):
+            r = client.post(
+                f"{settings.API_V1_STR}/users/me/feedback",
+                headers=headers,
+                json=payload,
+            )
+            assert r.status_code == 201
+        blocked = client.post(
+            f"{settings.API_V1_STR}/users/me/feedback",
+            headers=headers,
+            json=payload,
+        )
+    finally:
+        limiter.enabled = original_enabled
+        limiter.reset()
+    assert blocked.status_code == 429
+
+
 def test_submit_feedback_rejects_short_message(
     client: TestClient,
     db: Session,

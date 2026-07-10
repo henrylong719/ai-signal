@@ -103,9 +103,7 @@ def test_create_user_new_email(
         # gates the send branch — flip RESEND_API_KEY/EMAILS_FROM_EMAIL
         # on for the duration of this test so the route attempts a send.
         patch("app.core.config.settings.RESEND_API_KEY", "test-key"),
-        patch(
-            "app.core.config.settings.EMAILS_FROM_EMAIL", "hello@aisignal.now"
-        ),
+        patch("app.core.config.settings.EMAILS_FROM_EMAIL", "hello@aisignal.now"),
         patch(
             "app.api.routes.users.send_new_account_email",
             return_value=ResendSendResult(ok=True, message_id="mid"),
@@ -628,3 +626,90 @@ def test_delete_user_without_privileges(
     )
     assert r.status_code == 403
     assert r.json()["detail"] == "The user doesn't have enough privileges"
+
+
+def test_signup_endpoint_is_rate_limited(client: TestClient) -> None:
+    """Unlimited anonymous signups mean unbounded account creation from
+    one host; the endpoint must 429 past its per-bucket quota."""
+    from app.core.rate_limit import limiter
+
+    fresh = TestClient(client.app)  # type: ignore[arg-type]
+    original_enabled = limiter.enabled
+    limiter.enabled = True
+    limiter.reset()
+    try:
+        for _ in range(10):
+            r = fresh.post(
+                f"{settings.API_V1_STR}/users/signup",
+                json={
+                    "email": random_email(),
+                    "password": random_lower_string(),
+                    "full_name": "Rate Limit Probe",
+                },
+            )
+            fresh.cookies.clear()
+            assert r.status_code == 200
+        blocked = fresh.post(
+            f"{settings.API_V1_STR}/users/signup",
+            json={
+                "email": random_email(),
+                "password": random_lower_string(),
+                "full_name": "Rate Limit Probe",
+            },
+        )
+    finally:
+        limiter.enabled = original_enabled
+        limiter.reset()
+    assert blocked.status_code == 429
+def test_signup_normalizes_email_to_lowercase(
+    client: TestClient, db: Session
+) -> None:
+    """Password signup must store the same canonical (lowercase) form the
+    OAuth path uses, or one person ends up with two accounts depending on
+    how they typed their email."""
+    local_part = random_lower_string()
+    mixed_case = f"{local_part.capitalize()}@EXAMPLE.com"
+
+    r = client.post(
+        f"{settings.API_V1_STR}/users/signup",
+        json={"email": mixed_case, "password": random_lower_string()},
+    )
+
+    assert r.status_code == 200
+    assert r.json()["email"] == mixed_case.lower()
+    stored = db.exec(
+        select(User).where(User.email == mixed_case.lower())
+    ).first()
+    assert stored is not None
+
+
+def test_login_accepts_any_email_casing(client: TestClient, db: Session) -> None:
+    email = random_email()
+    password = random_lower_string()
+    crud.create_user(
+        session=db, user_create=UserCreate(email=email, password=password)
+    )
+
+    r = client.post(
+        f"{settings.API_V1_STR}/login/access-token",
+        data={"username": email.upper(), "password": password},
+    )
+
+    assert r.status_code == 200
+
+
+def test_signup_rejects_same_email_with_different_case(
+    client: TestClient, db: Session
+) -> None:
+    email = random_email()
+    crud.create_user(
+        session=db,
+        user_create=UserCreate(email=email, password=random_lower_string()),
+    )
+
+    r = client.post(
+        f"{settings.API_V1_STR}/users/signup",
+        json={"email": email.upper(), "password": random_lower_string()},
+    )
+
+    assert r.status_code == 400

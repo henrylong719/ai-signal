@@ -67,7 +67,13 @@ def _entry_url(source: Source, entry: dict[str, Any]) -> str | None:
 
 async def _fetch_one(
     source: Source, client: httpx.AsyncClient
-) -> tuple[Source, list[dict[str, Any]]]:
+) -> tuple[Source, list[dict[str, Any]], str | None]:
+    """Fetch one feed. Returns ``(source, entries, error)``.
+
+    ``error`` is None on success and a one-line description on failure so
+    ``ingest_all`` can surface it in the run record — a run where feeds
+    died must not report as a clean success.
+    """
     try:
         resp = await client.get(
             source.rss_url,
@@ -77,7 +83,7 @@ async def _fetch_one(
         )
         resp.raise_for_status()
         feed = feedparser.parse(resp.text)
-        return source, list(feed.entries)
+        return source, list(feed.entries), None
     except Exception as exc:  # noqa: BLE001
         # One failed source must never break the whole ingest run, but we
         # still want to know *which* source failed and why — silent fetch
@@ -91,7 +97,7 @@ async def _fetch_one(
             source.rss_url,
             type(exc).__name__,
         )
-        return source, []
+        return source, [], f"{source.name}: fetch failed ({type(exc).__name__})"
 
 
 def _published_at(entry: dict[str, Any]) -> datetime | None:
@@ -164,24 +170,43 @@ async def ingest_all() -> IngestResult:
         results = await asyncio.gather(*[_fetch_one(s, client) for s in SOURCES])
 
     async with AsyncSession(async_engine) as session:
-        for source, entries in results:
+        for source, entries, fetch_error in results:
+            if fetch_error is not None:
+                errors.append(fetch_error)
             for entry in entries:
-                url = _entry_url(source, entry)
-                title = entry.get("title")
-                if not url or not title:
+                # Parse defensively: feeds hand us arbitrary data, and one
+                # malformed entry (broken date, mangled markup) must not
+                # abort the whole run — everything before the final commit
+                # would be lost for every source. Parse errors are skipped
+                # and reported; only DB errors still propagate.
+                try:
+                    url = _entry_url(source, entry)
+                    title = entry.get("title")
+                    if not url or not title:
+                        continue
+
+                    title = _clean_text(title)
+                    excerpt = normalize_excerpt(entry.get("summary")) or None
+                    image_url = extract_image_url(entry, feed_url=source.rss_url)
+                    author = (
+                        _clean_text(entry.get("author"))
+                        if entry.get("author")
+                        else None
+                    )
+                    published_at = _published_at(entry)
+
+                    category, tags = tag_article(
+                        title=title,
+                        excerpt=excerpt or "",
+                        fallback=source.default_category,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    message = (
+                        f"{source.name}: skipped malformed entry ({type(exc).__name__})"
+                    )
+                    logger.warning("%s: %s", message, exc)
+                    errors.append(message)
                     continue
-
-                title = _clean_text(title)
-                excerpt = normalize_excerpt(entry.get("summary")) or None
-                image_url = extract_image_url(entry, feed_url=source.rss_url)
-                author = (
-                    _clean_text(entry.get("author")) if entry.get("author") else None
-                )
-                published_at = _published_at(entry)
-
-                category, tags = tag_article(
-                    title=title, excerpt=excerpt or "", fallback=source.default_category
-                )
 
                 stmt = (
                     insert(article_table)

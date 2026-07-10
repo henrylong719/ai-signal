@@ -24,6 +24,7 @@ from app.core.cookies import (
     set_logged_in_marker,
     set_refresh_cookie,
 )
+from app.core.rate_limit import limiter
 from app.crud.refresh_session import (
     mark_refresh_session_used,
     refresh_token_matches_previous,
@@ -38,6 +39,7 @@ from app.services.email import send_password_reset_email
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
+    password_reset_token_matches_password,
     verify_password_reset_token,
 )
 
@@ -460,6 +462,32 @@ def _user_for_oauth_identity(*, session: Session, identity: OAuthIdentity) -> Us
         return user
 
     user = crud.get_user_by_email(session=session, email=identity.email)
+    if user is not None:
+        # Only auto-link to an existing account when that account already
+        # holds a provider-*verified* link for this email. A password
+        # account has none (local emails are never verified), and an
+        # OAuth-born account whose email was later parked on someone
+        # else's address via a profile edit has none for the parked
+        # address — both are pre-hijack vectors. Requiring a prior
+        # verified link is what makes cross-provider linking safe.
+        if not crud.user_has_verified_oauth_email(
+            session=session, user_id=user.id, email=identity.email
+        ):
+            raise ValueError(
+                "An account with this email already exists. "
+                "Sign in with your existing method instead."
+            )
+        crud.create_oauth_account(
+            session=session,
+            user_id=user.id,
+            provider=identity.provider,
+            provider_user_id=identity.provider_user_id,
+            email=identity.email,
+            email_verified=identity.email_verified,
+            display_name=identity.display_name,
+            avatar_url=identity.avatar_url,
+        )
+        return user
     if user is None:
         user = User(
             email=identity.email,
@@ -561,7 +589,9 @@ def oauth_callback(
 
 
 @router.post("/login/access-token")
+@limiter.limit("10/minute")
 def login_access_token(
+    request: Request,  # noqa: ARG001  # consumed by @limiter.limit
     response: Response,
     session: SessionDep,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -717,7 +747,12 @@ def test_token(current_user: CurrentUser) -> Any:
 
 
 @router.post("/password-recovery/{email}")
-def recover_password(email: str, session: SessionDep) -> Message:
+@limiter.limit("5/minute")
+def recover_password(
+    request: Request,  # noqa: ARG001  # consumed by @limiter.limit
+    email: str,
+    session: SessionDep,
+) -> Message:
     """Send a password-reset email via Resend.
 
     Always returns the same generic message — including when the
@@ -730,7 +765,9 @@ def recover_password(email: str, session: SessionDep) -> Message:
 
     if user:
         try:
-            password_reset_token = generate_password_reset_token(email=email)
+            password_reset_token = generate_password_reset_token(
+                email=email, hashed_password=user.hashed_password
+            )
             result = send_password_reset_email(
                 email_to=user.email,
                 token=password_reset_token,
@@ -754,7 +791,12 @@ def recover_password(email: str, session: SessionDep) -> Message:
 
 
 @router.post("/reset-password/")
-def reset_password(session: SessionDep, body: NewPassword) -> Message:
+@limiter.limit("10/minute")
+def reset_password(
+    request: Request,  # noqa: ARG001  # consumed by @limiter.limit
+    session: SessionDep,
+    body: NewPassword,
+) -> Message:
     """
     Reset password
     """
@@ -767,6 +809,13 @@ def reset_password(session: SessionDep, body: NewPassword) -> Message:
         raise HTTPException(status_code=400, detail="Invalid token")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+    if not password_reset_token_matches_password(
+        body.token, hashed_password=user.hashed_password
+    ):
+        # Token predates the user's current password — most commonly a
+        # replay of an already-used reset link. Same generic error as any
+        # other invalid token.
+        raise HTTPException(status_code=400, detail="Invalid token")
     user_in_update = UserUpdate(password=body.new_password)
     crud.update_user(
         session=session,
@@ -794,7 +843,9 @@ def recover_password_html_content(email: str, session: SessionDep) -> Any:
             status_code=404,
             detail="The user with this username does not exist in the system.",
         )
-    password_reset_token = generate_password_reset_token(email=email)
+    password_reset_token = generate_password_reset_token(
+        email=email, hashed_password=user.hashed_password
+    )
     email_data = generate_reset_password_email(
         email_to=user.email,
         email=email,
@@ -802,6 +853,10 @@ def recover_password_html_content(email: str, session: SessionDep) -> Any:
         full_name=user.full_name,
     )
 
+    # Header name must be a valid HTTP token — a colon (as in the old
+    # "subject:") is illegal and makes the response un-encodable under
+    # uvicorn/h11 (500). Expose the subject under a custom X- header.
     return HTMLResponse(
-        content=email_data.html_content, headers={"subject:": email_data.subject}
+        content=email_data.html_content,
+        headers={"X-Email-Subject": email_data.subject},
     )

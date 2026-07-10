@@ -1,6 +1,6 @@
 from typing import Any
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, func, select
 
 from app.core.security import get_password_hash, verify_password
 from app.models import User
@@ -32,8 +32,27 @@ def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
     return db_user
 
 
+def get_active_digest_user_emails(*, session: Session) -> set[str]:
+    """Lowercased emails of active, digest-enabled users.
+
+    The subscriber send loop uses this to skip addresses that already
+    receive the personalized user digest — one morning email per person,
+    not two.
+    """
+    statement = select(User.email).where(
+        col(User.is_active).is_(True),
+        col(User.daily_digest_enabled).is_(True),
+    )
+    return {email.lower() for email in session.exec(statement).all()}
+
+
 def get_user_by_email(*, session: Session, email: str) -> User | None:
-    statement = select(User).where(User.email == email)
+    # Case-insensitive: new rows are stored lowercase (schema validators),
+    # but rows created before normalization — and login forms, where the
+    # user types their email freehand — can carry any casing.
+    statement = select(User).where(
+        func.lower(col(User.email)) == email.strip().lower()
+    )
     session_user = session.exec(statement).first()
     return session_user
 

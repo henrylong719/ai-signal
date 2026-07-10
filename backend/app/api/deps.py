@@ -117,11 +117,16 @@ def get_current_user(
             detail="Could not validate credentials",
         )
 
+    # Deleted and deactivated users get the same 401 as any other auth
+    # failure: the SPA's refresh interceptor only reacts to 401, and a
+    # token holder shouldn't learn whether an account exists or is merely
+    # disabled. (The refresh endpoint already treats both as 401.)
     user = session.get(User, subject)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
     _touch_last_seen(session, user)
     return user
 

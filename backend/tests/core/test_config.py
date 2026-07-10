@@ -46,3 +46,14 @@ def test_production_accepts_explicit_secret_key(
     )
 
     assert settings.SECRET_KEY == "stable-production-secret"
+
+
+def test_subscriber_digest_send_hour_defaults_to_six(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _clear_settings_env(monkeypatch)
+    monkeypatch.delenv("SUBSCRIBER_DIGEST_SEND_HOUR_UTC", raising=False)
+
+    settings = Settings(_env_file=None, **_settings_kwargs())
+
+    assert settings.SUBSCRIBER_DIGEST_SEND_HOUR_UTC == 6

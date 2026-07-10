@@ -198,7 +198,9 @@ def test_send_password_reset_email_uses_frontend_host(
 
     monkeypatch.setattr(email_service, "send_email", fake_send)
 
-    token = generate_password_reset_token(email="user@example.com")
+    token = generate_password_reset_token(
+        email="user@example.com", hashed_password="render-only-hash"
+    )
     result = email_service.send_password_reset_email(
         email_to="user@example.com", token=token
     )
@@ -232,7 +234,9 @@ def test_send_password_reset_email_uses_first_name_greeting(
 
     monkeypatch.setattr(email_service, "send_email", fake_send)
 
-    token = generate_password_reset_token(email="user@example.com")
+    token = generate_password_reset_token(
+        email="user@example.com", hashed_password="render-only-hash"
+    )
     email_service.send_password_reset_email(
         email_to="user@example.com", token=token, full_name="HENRY LONG"
     )
@@ -259,10 +263,10 @@ def test_send_password_reset_email_strips_trailing_slash(
 
     monkeypatch.setattr(email_service, "send_email", fake_send)
 
-    token = generate_password_reset_token(email="user@example.com")
-    email_service.send_password_reset_email(
-        email_to="user@example.com", token=token
+    token = generate_password_reset_token(
+        email="user@example.com", hashed_password="render-only-hash"
     )
+    email_service.send_password_reset_email(email_to="user@example.com", token=token)
 
     assert "https://aisignal.now/reset-password?token=" in captured["html"]
     assert "https://aisignal.now//reset-password" not in captured["html"]
@@ -281,7 +285,9 @@ def test_send_password_reset_email_safe_without_api_key(
     )
 
     with patch("httpx.post") as mock_post:
-        token = generate_password_reset_token(email="user@example.com")
+        token = generate_password_reset_token(
+            email="user@example.com", hashed_password="render-only-hash"
+        )
         result = email_service.send_password_reset_email(
             email_to="user@example.com", token=token
         )

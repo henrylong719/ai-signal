@@ -2,7 +2,7 @@ import hashlib
 import uuid
 from datetime import datetime, timedelta
 
-from sqlalchemy import update
+from sqlalchemy import delete, or_, update
 from sqlmodel import Session, col, select
 
 from app.models import RefreshSession
@@ -13,6 +13,12 @@ from app.models.base import get_datetime_utc
 # one tab may finish a refresh while another is still mid-flight with the
 # previous token. 30s was too tight in practice (slow cellular wake-ups).
 REFRESH_REUSE_GRACE_SECONDS = 120
+
+# How long a permanently-dead refresh session (expired or revoked) is kept
+# before pruning. A dead row can never re-authenticate; the window just
+# leaves a short audit trail and covers clock skew. Matches the refresh
+# token TTL so anything this old is unambiguously done.
+REFRESH_SESSION_RETENTION_DAYS = 30
 
 
 def hash_refresh_token_id(token_id: str) -> str:
@@ -102,3 +108,31 @@ def revoke_refresh_sessions_for_user(
         .values(revoked_at=revoked_at)
     )
     session.exec(statement)
+
+
+def delete_stale_refresh_sessions(
+    *,
+    session: Session,
+    now: datetime | None = None,
+    retention_days: int = REFRESH_SESSION_RETENTION_DAYS,
+) -> int:
+    """Hard-delete refresh sessions that have been dead past the retention
+    window, returning the number removed.
+
+    A session is permanently unusable once it is revoked or expired, so
+    accumulating those rows only grows the table. We delete a row when the
+    moment it became dead — ``revoked_at`` if revoked, otherwise
+    ``expires_at`` — is older than ``now - retention_days``. Rows that are
+    still active, or dead only recently, are kept.
+    """
+    now = now or get_datetime_utc()
+    cutoff = now - timedelta(days=retention_days)
+    statement = delete(RefreshSession).where(
+        or_(
+            col(RefreshSession.revoked_at) < cutoff,
+            col(RefreshSession.expires_at) < cutoff,
+        )
+    )
+    result = session.exec(statement)
+    session.commit()
+    return int(result.rowcount or 0)

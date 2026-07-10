@@ -10,6 +10,7 @@ that delegates to the new service so any caller still importing
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -139,13 +140,32 @@ def generate_new_account_email(
     return EmailData(html_content=html_content, subject=subject)
 
 
-def generate_password_reset_token(email: str) -> str:
+# Distinct ``type`` claim so no other JWT this app signs (access, refresh,
+# digest-unsub) can be presented on the reset path, and vice versa.
+_PASSWORD_RESET_TOKEN_TYPE = "password-reset"
+
+
+def _password_reset_fingerprint(hashed_password: str) -> str:
+    """Short, non-reversible fingerprint of the credential a reset token
+    was issued against. Baked into the token so it self-invalidates the
+    moment the password changes — including by the reset itself, which
+    makes every token effectively single-use."""
+    return hashlib.sha256(hashed_password.encode("utf-8")).hexdigest()[:16]
+
+
+def generate_password_reset_token(email: str, *, hashed_password: str) -> str:
     delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
     now = datetime.now(timezone.utc)
     expires = now + delta
     exp = expires.timestamp()
     encoded_jwt = jwt.encode(
-        {"exp": exp, "nbf": now, "sub": email},
+        {
+            "exp": exp,
+            "nbf": now,
+            "sub": email,
+            "type": _PASSWORD_RESET_TOKEN_TYPE,
+            "pwd": _password_reset_fingerprint(hashed_password),
+        },
         settings.SECRET_KEY,
         algorithm=security.ALGORITHM,
     )
@@ -157,6 +177,21 @@ def verify_password_reset_token(token: str) -> str | None:
         decoded_token = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
         )
+        if decoded_token.get("type") != _PASSWORD_RESET_TOKEN_TYPE:
+            return None
         return str(decoded_token["sub"])
     except InvalidTokenError:
         return None
+
+
+def password_reset_token_matches_password(token: str, *, hashed_password: str) -> bool:
+    """True iff the token was issued against the user's *current* password
+    hash. False for used tokens (the reset re-hashed the password) and for
+    tokens minted before a routine password change."""
+    try:
+        decoded_token = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
+        )
+    except InvalidTokenError:
+        return False
+    return decoded_token.get("pwd") == _password_reset_fingerprint(hashed_password)

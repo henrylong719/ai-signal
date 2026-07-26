@@ -1470,4 +1470,28 @@ SOURCES: tuple[Source, ...] = (
         topic="Big Data and AI News",
         description="Industry news on big data platforms, analytics, and the infrastructure powering enterprise AI.",
     ),
+    Source(
+        "GitHub Trending (Daily)",
+        "https://mshibanami.github.io/GitHubTrendingRSS/daily/all.xml",
+        "other",
+        "community",
+        topic="Hot Open Source Projects",
+        description="Daily snapshot of GitHub's trending repositories across all languages, surfacing hot new and fast-rising open source projects.",
+    ),
+    Source(
+        "GitHub Trending (Weekly)",
+        "https://mshibanami.github.io/GitHubTrendingRSS/weekly/all.xml",
+        "other",
+        "community",
+        topic="Hot Open Source Projects",
+        description="Weekly rollup of GitHub's trending repositories across all languages, highlighting projects gaining sustained traction.",
+    ),
+    Source(
+        "GitHub Trending (Monthly)",
+        "https://mshibanami.github.io/GitHubTrendingRSS/monthly/all.xml",
+        "other",
+        "community",
+        topic="Hot Open Source Projects",
+        description="Monthly rollup of GitHub's trending repositories across all languages, capturing longer-running breakout open source projects.",
+    ),
 )

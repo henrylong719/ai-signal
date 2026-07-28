@@ -2,7 +2,7 @@
 
 Three lifecycle write paths plus a list query:
   - start_run: insert a row with status="running"
-  - finish_run: update row to "succeeded" with counts
+  - finish_run: update row to "succeeded" or "degraded" with counts
   - fail_run: update row to "failed" with the exception's message
   - list_runs: most-recent-first listing for the admin page
 
@@ -82,10 +82,9 @@ def finish_ingest_run(
     """Mark a run as completed and write its result counts.
 
     Returns None if the row vanished (would only happen if an admin
-    deleted it mid-run; not a state we expect). Status is set to
-    ``failed`` when the errors list is non-empty even though the run
-    didn't raise — partial source failures are still failures from
-    the operator's perspective.
+    deleted it mid-run; not a state we expect). Status is ``degraded``
+    when the ingest completed but reported source or embedding errors.
+    ``failed`` is reserved for an exception that aborted the run.
     """
     run = session.get(IngestRun, run_id)
     if run is None:
@@ -98,7 +97,7 @@ def finish_ingest_run(
     run.skipped = skipped
     run.embedded = embedded
     run.errors = list(errors)
-    run.status = "failed" if errors else "succeeded"
+    run.status = "degraded" if errors else "succeeded"
 
     session.add(run)
     session.commit()

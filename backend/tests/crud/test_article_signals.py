@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app import crud
 from app.models import Article, User
@@ -165,13 +165,16 @@ def test_saved_and_clicked_signal_aggregates_return_distinct_tags_and_sources(
 def test_get_recent_articles_excluding_filters_and_orders_candidates(
     db: Session,
 ) -> None:
+    # The suite intentionally shares one database session, so exclude rows
+    # created by earlier tests and make this ordering assertion self-contained.
+    preexisting_ids = set(db.exec(select(Article.id)).all())
     newest = _create_article(db, title="Newest", age_days=-30)
     excluded = _create_article(db, title="Excluded", age_days=-29)
     older = _create_article(db, title="Older", age_days=-28)
 
     result = crud.get_recent_articles_excluding(
         session=db,
-        excluded_ids={excluded.id},
+        excluded_ids=preexisting_ids | {excluded.id},
         limit=2,
     )
 
@@ -242,7 +245,9 @@ def test_embedding_backfill_helpers_update_pending_articles(db: Session) -> None
 
     pending_ids = {
         article.id
-        for article in crud.get_pending_embedding_articles(session=db, limit=20)
+        # Do not let pending rows from earlier tests crowd this article out of
+        # a small result page; pagination limits are covered elsewhere.
+        for article in crud.get_pending_embedding_articles(session=db, limit=10_000)
     }
 
     assert pending.id in pending_ids

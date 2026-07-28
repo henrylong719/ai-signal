@@ -1,14 +1,17 @@
 import asyncio
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import httpx
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import Session
 
 from app import crud
 from app.crud import ingest
+from app.models import Article
 from app.schemas.source import SOURCES, Source
+from app.services import embeddings
 
 
 def test_ingest_stores_article_image_url(
@@ -170,6 +173,9 @@ def test_ingest_records_fetch_error_for_failed_source(
     source = Source("Example", "https://example.com/feed.xml", "models")
 
     class FailingClient:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            pass
+
         async def __aenter__(self) -> "FailingClient":
             return self
 
@@ -181,6 +187,7 @@ def test_ingest_records_fetch_error_for_failed_source(
 
     monkeypatch.setattr(ingest, "SOURCES", (source,))
     monkeypatch.setattr(ingest.httpx, "AsyncClient", FailingClient)
+    monkeypatch.setattr(ingest, "RSS_FETCH_RETRY_BASE_DELAY_SECONDS", 0)
 
     result = asyncio.run(ingest.ingest_all())
 
@@ -259,14 +266,171 @@ def test_fetch_one_sends_rss_reader_headers() -> None:
 
     client = FakeClient()
 
-    _, entries, error = asyncio.run(ingest._fetch_one(source, client))  # type: ignore[arg-type]
+    _, entries, error = asyncio.run(
+        ingest._fetch_one(source, cast(httpx.AsyncClient, client))
+    )
 
     assert client.request_headers == ingest.RSS_REQUEST_HEADERS
     assert len(entries) == 1
     assert error is None
 
 
+def test_fetch_one_retries_transient_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = Source("Example", "https://example.com/feed.xml", "models")
+
+    class FlakyClient:
+        calls = 0
+
+        async def get(self, _url: str, **kwargs: Any) -> httpx.Response:
+            del kwargs
+            self.calls += 1
+            if self.calls < 3:
+                raise httpx.ConnectError("temporary outage")
+            request = httpx.Request("GET", source.rss_url)
+            return httpx.Response(
+                200,
+                request=request,
+                text="<rss><channel><item><title>Recovered</title></item></channel></rss>",
+            )
+
+    client = FlakyClient()
+    monkeypatch.setattr(ingest, "RSS_FETCH_RETRY_BASE_DELAY_SECONDS", 0)
+
+    _, entries, error = asyncio.run(
+        ingest._fetch_one(source, cast(httpx.AsyncClient, client))
+    )
+
+    assert client.calls == 3
+    assert len(entries) == 1
+    assert error is None
+
+
+def test_fetch_one_does_not_retry_permanent_http_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = Source("Example", "https://example.com/feed.xml", "models")
+
+    class MissingClient:
+        calls = 0
+
+        async def get(self, _url: str, **kwargs: Any) -> httpx.Response:
+            del kwargs
+            self.calls += 1
+            request = httpx.Request("GET", source.rss_url)
+            return httpx.Response(404, request=request)
+
+    client = MissingClient()
+    monkeypatch.setattr(ingest, "RSS_FETCH_RETRY_BASE_DELAY_SECONDS", 0)
+
+    _, entries, error = asyncio.run(
+        ingest._fetch_one(source, cast(httpx.AsyncClient, client))
+    )
+
+    assert client.calls == 1
+    assert entries == []
+    assert error == "Example: fetch failed (HTTPStatusError)"
+
+
+def test_ingest_bounds_source_fetch_concurrency(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    del db
+    active = 0
+    peak = 0
+    sources = tuple(
+        Source(f"Source {index}", f"https://example.com/{index}.xml", "models")
+        for index in range(12)
+    )
+
+    async def fake_fetch_one(
+        source: Source, client: object
+    ) -> tuple[Source, list[dict[str, Any]], str | None]:
+        nonlocal active, peak
+        del client
+        active += 1
+        peak = max(peak, active)
+        await asyncio.sleep(0.01)
+        active -= 1
+        return source, [], None
+
+    monkeypatch.setattr(ingest, "SOURCES", sources)
+    monkeypatch.setattr(ingest, "RSS_FETCH_CONCURRENCY", 3)
+    monkeypatch.setattr(ingest, "_fetch_one", fake_fetch_one)
+
+    result = asyncio.run(ingest.ingest_all())
+
+    assert result["errors"] == []
+    assert peak == 3
+
+
+def test_embed_inserted_articles_batches_and_reports_provider_errors(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    articles = [
+        Article(
+            url=f"https://example.com/embed-{uuid.uuid4()}",
+            title=f"Article {index}",
+            source="Example",
+            category="models",
+            tags=["models"],
+        )
+        for index in range(5)
+    ]
+    db.add_all(articles)
+    db.commit()
+    article_ids = [article.id for article in articles]
+    batch_sizes: list[int] = []
+
+    def fake_embed_texts(texts: list[str]) -> list[list[float]]:
+        batch_sizes.append(len(texts))
+        if len(batch_sizes) == 2:
+            raise httpx.ReadTimeout("provider timeout")
+        return [[1.0] + [0.0] * 383 for _ in texts]
+
+    monkeypatch.setattr(ingest, "EMBEDDING_BATCH_SIZE", 2)
+    monkeypatch.setattr(embeddings, "embed_texts", fake_embed_texts)
+
+    async def run_embedding() -> tuple[int, list[str]]:
+        async with AsyncSession(ingest.async_engine, expire_on_commit=False) as session:
+            return await ingest._embed_inserted_articles(session, article_ids)
+
+    try:
+        embedded, errors = asyncio.run(run_embedding())
+
+        assert batch_sizes == [2, 2, 1]
+        assert embedded == 3
+        assert errors == ["Embeddings batch 2/3: failed (ReadTimeout)"]
+    finally:
+        # This suite shares a session-scoped database. Remove these deliberately
+        # pending rows so they do not affect backfill or recency tests.
+        db.expire_all()
+        for article_id in article_ids:
+            article = db.get(Article, article_id)
+            if article is not None:
+                db.delete(article)
+        db.commit()
+
+
 def test_anthropic_source_uses_production_feed_url() -> None:
     source = next(source for source in SOURCES if source.name == "Anthropic")
 
     assert "rsshub.app" not in source.rss_url
+
+
+def test_sources_exclude_confirmed_dead_youtube_feeds() -> None:
+    removed = {
+        "3Blue1Brown",
+        "Two Minute Papers",
+        "Yannic Kilcher",
+        "Andrej Karpathy (YouTube)",
+        "DeepLearningAI",
+        "Computerphile",
+        "AI Coffee Break",
+        "sentdex",
+    }
+
+    assert removed.isdisjoint(source.name for source in SOURCES)

@@ -1,7 +1,7 @@
 """IngestRun: one row per ingestion run.
 
 The row is written at the *start* of a run with status="running" and
-updated at the end to "succeeded" or "failed". This shape lets the
+updated at the end to "succeeded", "degraded", or "failed". This shape lets the
 admin UI distinguish "currently running" from "never finished" — the
 latter being a process that died mid-run, which we don't auto-recover
 but do want to surface.
@@ -14,9 +14,8 @@ gets unwieldy; we don't ship a retention policy because at one row per
 
 Column choices worth noting:
   - status is a Postgres ENUM, matching the article_event_type pattern.
-    Three values (running, succeeded, failed) are enough — partial
-    success isn't a thing here because ingest_all already swallows
-    per-source failures and reports them in errors.
+    ``degraded`` distinguishes a completed ingest with per-source or
+    embedding errors from a catastrophic failure that aborted the run.
   - errors is JSONB, not Text. We store a list of error strings; if we
     later want structured per-source errors with stack traces, JSONB
     accommodates without a schema migration.
@@ -38,10 +37,11 @@ from app.models.base import get_datetime_utc
 
 # Allowed values for IngestRun.status. Kept in lockstep with the
 # Postgres ENUM created in the migration.
-IngestRunStatus = Literal["running", "succeeded", "failed"]
+IngestRunStatus = Literal["running", "succeeded", "degraded", "failed"]
 INGEST_RUN_STATUSES: tuple[IngestRunStatus, ...] = (
     "running",
     "succeeded",
+    "degraded",
     "failed",
 )
 
@@ -66,6 +66,7 @@ class IngestRun(SQLModel, table=True):
             ENUM(
                 "running",
                 "succeeded",
+                "degraded",
                 "failed",
                 name="ingest_run_status",
                 create_type=False,

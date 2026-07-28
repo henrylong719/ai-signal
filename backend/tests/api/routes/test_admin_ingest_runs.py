@@ -113,6 +113,35 @@ def test_read_ingest_runs_filters_by_status(
     assert body["data"][0]["id"] == str(succeeded.id)
 
 
+def test_read_ingest_runs_filters_degraded_status(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+) -> None:
+    db.exec(delete(IngestRun))
+    db.commit()
+    degraded = crud.start_ingest_run(session=db)
+    crud.finish_ingest_run(
+        session=db,
+        run_id=degraded.id,
+        inserted=5,
+        skipped=2,
+        embedded=3,
+        errors=["Example: fetch failed (ConnectTimeout)"],
+    )
+
+    response = client.get(
+        f"{settings.API_V1_STR}/admin/ingest-runs?status=degraded",
+        headers=superuser_token_headers,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["count"] == 1
+    assert body["data"][0]["id"] == str(degraded.id)
+    assert body["data"][0]["status"] == "degraded"
+
+
 def test_read_ingest_runs_respects_limit(
     client: TestClient,
     superuser_token_headers: dict[str, str],

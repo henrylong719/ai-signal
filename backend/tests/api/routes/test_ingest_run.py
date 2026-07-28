@@ -52,12 +52,11 @@ def test_finish_ingest_run_success_path(db: Session) -> None:
     assert finished.errors == []
 
 
-def test_finish_ingest_run_with_errors_marks_failed(db: Session) -> None:
-    """A finished run with non-empty errors is status="failed".
+def test_finish_ingest_run_with_errors_marks_degraded(db: Session) -> None:
+    """A finished run with non-empty errors is status="degraded".
 
-    This covers the partial-source-failure case: ingest_all returned
-    cleanly but reported per-source errors. From an operator's view
-    that's still a failed run.
+    This covers the partial-source-failure case: ingest_all completed
+    and recorded its counts, but one or more sources were unavailable.
     """
     run = crud.start_ingest_run(session=db)
 
@@ -71,7 +70,7 @@ def test_finish_ingest_run_with_errors_marks_failed(db: Session) -> None:
     )
 
     assert finished is not None
-    assert finished.status == "failed"
+    assert finished.status == "degraded"
     assert finished.errors == ["source-a: timeout", "source-b: 500"]
     # Counts are still recorded — we want to know the partial result.
     assert finished.inserted == 5
@@ -146,6 +145,16 @@ def test_list_ingest_runs_filters_by_status(db: Session) -> None:
     failed = crud.start_ingest_run(session=db)
     crud.fail_ingest_run(session=db, run_id=failed.id, error="boom")
 
+    degraded = crud.start_ingest_run(session=db)
+    crud.finish_ingest_run(
+        session=db,
+        run_id=degraded.id,
+        inserted=1,
+        skipped=0,
+        embedded=0,
+        errors=["source: timeout"],
+    )
+
     crud.start_ingest_run(session=db)  # leave one running
 
     succeeded_runs = crud.list_ingest_runs(session=db, status="succeeded")
@@ -155,6 +164,10 @@ def test_list_ingest_runs_filters_by_status(db: Session) -> None:
     failed_runs = crud.list_ingest_runs(session=db, status="failed")
     assert len(failed_runs) == 1
     assert failed_runs[0].id == failed.id
+
+    degraded_runs = crud.list_ingest_runs(session=db, status="degraded")
+    assert len(degraded_runs) == 1
+    assert degraded_runs[0].id == degraded.id
 
     running_runs = crud.list_ingest_runs(session=db, status="running")
     assert len(running_runs) == 1

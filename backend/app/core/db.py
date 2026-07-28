@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.pool import NullPool
 from sqlmodel import Session, create_engine, select
 
 from app import crud
@@ -6,8 +7,19 @@ from app.core.config import settings
 from app.models import User
 from app.schemas import UserCreate
 
-engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
-async_engine = create_async_engine(str(settings.SQLALCHEMY_DATABASE_URI))
+engine = create_engine(
+    str(settings.SQLALCHEMY_DATABASE_URI),
+    pool_pre_ping=True,
+    pool_recycle=300,
+)
+# Ingestion is the only async DB consumer and runs hours apart. Keeping its
+# connection pooled just gives managed Postgres providers time to close it
+# before the next run. A fresh connection per ingest is cheap and removes that
+# stale-connection failure mode entirely.
+async_engine = create_async_engine(
+    str(settings.SQLALCHEMY_DATABASE_URI),
+    poolclass=NullPool,
+)
 
 
 # make sure all SQLModel table models are imported (app.models) before initializing DB

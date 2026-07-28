@@ -29,6 +29,10 @@ RSS_REQUEST_HEADERS = {
     "User-Agent": "AI Signal RSS Reader/1.0",
     "Accept": "application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.5",
 }
+RSS_FETCH_CONCURRENCY = 12
+RSS_FETCH_MAX_ATTEMPTS = 3
+RSS_FETCH_RETRY_BASE_DELAY_SECONDS = 0.5
+EMBEDDING_BATCH_SIZE = 100
 _NO_PRIORS_DEAD_HOSTS = {"no-priors.com", "www.no-priors.com"}
 
 
@@ -74,30 +78,70 @@ async def _fetch_one(
     ``ingest_all`` can surface it in the run record — a run where feeds
     died must not report as a clean success.
     """
-    try:
-        resp = await client.get(
-            source.rss_url,
-            timeout=10.0,
-            follow_redirects=True,
-            headers=RSS_REQUEST_HEADERS,
-        )
-        resp.raise_for_status()
-        feed = feedparser.parse(resp.text)
-        return source, list(feed.entries), None
-    except Exception as exc:  # noqa: BLE001
-        # One failed source must never break the whole ingest run, but we
-        # still want to know *which* source failed and why — silent fetch
-        # failures hide chronically dead feeds. Log a one-line warning
-        # with the exception class so chronic timeouts are visible without
-        # dumping a ~40-line traceback per dead feed (which blows past
-        # Railway's 500 logs/sec rate limit during a wide outage).
-        logger.warning(
-            "RSS fetch failed for source %s (%s): %s",
-            source.name,
-            source.rss_url,
-            type(exc).__name__,
-        )
-        return source, [], f"{source.name}: fetch failed ({type(exc).__name__})"
+    for attempt in range(1, RSS_FETCH_MAX_ATTEMPTS + 1):
+        try:
+            resp = await client.get(
+                source.rss_url,
+                timeout=10.0,
+                follow_redirects=True,
+                headers=RSS_REQUEST_HEADERS,
+            )
+            resp.raise_for_status()
+            feed = feedparser.parse(resp.text)
+            return source, list(feed.entries), None
+        except Exception as exc:  # noqa: BLE001
+            if attempt < RSS_FETCH_MAX_ATTEMPTS and _is_retryable_fetch_error(exc):
+                delay = RSS_FETCH_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1))
+                logger.info(
+                    "Retrying RSS source %s after %s (attempt %d/%d)",
+                    source.name,
+                    type(exc).__name__,
+                    attempt + 1,
+                    RSS_FETCH_MAX_ATTEMPTS,
+                )
+                await asyncio.sleep(delay)
+                continue
+
+            # One failed source must never break the whole ingest run, but we
+            # still want to know *which* source failed and why — silent fetch
+            # failures hide chronically dead feeds. Log a one-line warning
+            # with the exception class so chronic failures stay visible.
+            logger.warning(
+                "RSS fetch failed for source %s (%s): %s",
+                source.name,
+                source.rss_url,
+                type(exc).__name__,
+            )
+            return (
+                source,
+                [],
+                f"{source.name}: fetch failed ({type(exc).__name__})",
+            )
+
+    raise AssertionError("RSS fetch retry loop exhausted without returning")
+
+
+def _is_retryable_fetch_error(exc: Exception) -> bool:
+    """Return whether another attempt could plausibly recover."""
+    if isinstance(exc, httpx.HTTPStatusError):
+        return exc.response.status_code == 429 or exc.response.status_code >= 500
+    return isinstance(
+        exc,
+        (
+            httpx.NetworkError,
+            httpx.TimeoutException,
+            httpx.RemoteProtocolError,
+        ),
+    )
+
+
+async def _fetch_one_limited(
+    source: Source,
+    client: httpx.AsyncClient,
+    semaphore: asyncio.Semaphore,
+) -> tuple[Source, list[dict[str, Any]], str | None]:
+    async with semaphore:
+        return await _fetch_one(source, client)
 
 
 def _published_at(entry: dict[str, Any]) -> datetime | None:
@@ -117,7 +161,7 @@ def _published_at(entry: dict[str, Any]) -> datetime | None:
 
 async def _embed_inserted_articles(
     session: AsyncSession, article_ids: list[uuid.UUID]
-) -> int:
+) -> tuple[int, list[str]]:
     """Encode the just-inserted articles inline. Best-effort.
 
     Bridges the async ingest path to the sync embedding service via
@@ -126,10 +170,11 @@ async def _embed_inserted_articles(
     will pick up any articles that didn't get embedded here, so an
     embedding failure must never block ingestion of fresh content.
 
-    Returns the count of articles that were successfully embedded.
+    Returns the count of articles that were successfully embedded and
+    operator-visible errors for any provider batches that failed.
     """
     if not article_ids:
-        return 0
+        return 0, []
 
     from app.services.embeddings import article_embedding_text, embed_texts
 
@@ -141,22 +186,45 @@ async def _embed_inserted_articles(
     articles = list(result.scalars().all())
 
     if not articles:
-        return 0
+        return 0, []
 
-    texts = [article_embedding_text(a) for a in articles]
-    # Run the sync httpx call off the event loop so concurrent ingest
-    # work (other feeds, DB writes) keeps progressing while we wait on
-    # the embedding provider.
-    vectors = await asyncio.to_thread(embed_texts, texts)
+    embedded = 0
+    errors: list[str] = []
+    total_batches = (len(articles) + EMBEDDING_BATCH_SIZE - 1) // EMBEDDING_BATCH_SIZE
 
-    # Write the embeddings back. We use the same async session — the
-    # per-row UPDATEs join the open transaction and commit together.
-    for article, vector in zip(articles, vectors, strict=True):
-        article.embedding = vector
-        session.add(article)
-    await session.commit()
+    for batch_index, start in enumerate(
+        range(0, len(articles), EMBEDDING_BATCH_SIZE),
+        start=1,
+    ):
+        batch = articles[start : start + EMBEDDING_BATCH_SIZE]
+        texts = [article_embedding_text(article) for article in batch]
+        try:
+            # Run the sync httpx call off the event loop so the API process
+            # stays responsive while the embedding provider is in flight.
+            vectors = await asyncio.to_thread(embed_texts, texts)
+        except Exception as exc:  # noqa: BLE001
+            message = (
+                f"Embeddings batch {batch_index}/{total_batches}: "
+                f"failed ({type(exc).__name__})"
+            )
+            logger.warning(
+                "%s for %d article(s): %s",
+                message,
+                len(batch),
+                exc,
+            )
+            errors.append(message)
+            continue
 
-    return len(articles)
+        for article, vector in zip(batch, vectors, strict=True):
+            article.embedding = vector
+            session.add(article)
+        # Bound both provider payload size and DB transaction size. A later
+        # failed batch does not undo embeddings already written.
+        await session.commit()
+        embedded += len(batch)
+
+    return embedded, errors
 
 
 async def ingest_all() -> IngestResult:
@@ -166,10 +234,21 @@ async def ingest_all() -> IngestResult:
     inserted_ids: list[uuid.UUID] = []
     article_table = Article.metadata.tables["articles"]
 
-    async with httpx.AsyncClient() as client:
-        results = await asyncio.gather(*[_fetch_one(s, client) for s in SOURCES])
+    fetch_semaphore = asyncio.Semaphore(RSS_FETCH_CONCURRENCY)
+    async with httpx.AsyncClient(
+        limits=httpx.Limits(
+            max_connections=RSS_FETCH_CONCURRENCY,
+            max_keepalive_connections=RSS_FETCH_CONCURRENCY,
+        )
+    ) as client:
+        results = await asyncio.gather(
+            *[_fetch_one_limited(source, client, fetch_semaphore) for source in SOURCES]
+        )
 
-    async with AsyncSession(async_engine) as session:
+    # Embeddings commit in bounded batches after loading the inserted rows.
+    # Keep those loaded objects usable across commits instead of allowing
+    # SQLAlchemy to expire them and attempt async lazy loads on the next batch.
+    async with AsyncSession(async_engine, expire_on_commit=False) as session:
         for source, entries, fetch_error in results:
             if fetch_error is not None:
                 errors.append(fetch_error)
@@ -242,13 +321,17 @@ async def ingest_all() -> IngestResult:
         # they just won't have embeddings until backfill picks them up.
         embedded = 0
         try:
-            embedded = await _embed_inserted_articles(session, inserted_ids)
-        except Exception:  # noqa: BLE001
+            embedded, embedding_errors = await _embed_inserted_articles(
+                session, inserted_ids
+            )
+            errors.extend(embedding_errors)
+        except Exception as exc:  # noqa: BLE001
             logger.exception(
                 "Inline embedding failed for %d article(s); they will be "
                 "embedded on the next backfill run",
                 len(inserted_ids),
             )
+            errors.append(f"Embeddings: failed ({type(exc).__name__})")
 
     return {
         "inserted": inserted,

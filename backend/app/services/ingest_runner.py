@@ -41,7 +41,7 @@ async def run_tracked_ingest() -> dict[str, Any]:
         and the exception's str() as the single error. The exception is
         re-raised so the caller (or scheduler) sees it.
       - ``ingest_all`` returns errors but doesn't raise: the run row is
-        finished with status="failed" and the errors list. No re-raise —
+        finished with status="degraded" and the errors list. No re-raise —
         partial source failures are an expected operational state, not
         an exception.
       - The run-tracking writes themselves fail: logged, swallowed. The

@@ -7,7 +7,7 @@ in the frontend.
 GET /admin/ingest-runs
   Optional query params:
     limit  (default 50, max 200) — number of runs to return
-    status (optional)            — filter to "running" / "succeeded" / "failed"
+    status (optional)            — filter by lifecycle status
   Returns: { data: list[IngestRunPublic], count: int }
 """
 

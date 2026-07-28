@@ -62,7 +62,7 @@ def test_run_tracked_ingest_success(monkeypatch, db: Session) -> None:  # type: 
 
 
 def test_run_tracked_ingest_partial_errors(monkeypatch, db: Session) -> None:  # type: ignore[no-untyped-def]
-    """ingest_all returned errors but didn't raise → status=failed,
+    """ingest_all returned errors but didn't raise → status=degraded,
     counts still recorded, no exception propagated."""
 
     async def fake_ingest_all() -> dict[str, object]:
@@ -80,7 +80,7 @@ def test_run_tracked_ingest_partial_errors(monkeypatch, db: Session) -> None:  #
 
     runs = list(db.exec(select(IngestRun)).all())
     assert len(runs) == 1
-    assert runs[0].status == "failed"
+    assert runs[0].status == "degraded"
     assert runs[0].inserted == 3
     assert runs[0].errors == ["source-a: timeout"]
 

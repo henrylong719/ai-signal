@@ -123,7 +123,7 @@ def start_scheduler() -> None:
     _scheduler = AsyncIOScheduler(timezone=timezone.utc)
 
     # First run is delayed so the DB pool and any other startup work
-    # settle before 44 RSS feeds get hit.
+    # settle before the configured RSS feeds get hit.
     next_run_time = datetime.now(timezone.utc) + timedelta(
         seconds=settings.INGEST_INITIAL_DELAY_SECONDS
     )

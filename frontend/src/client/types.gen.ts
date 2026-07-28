@@ -275,7 +275,7 @@ export type IngestRunPublic = {
     id: string;
     started_at: string;
     finished_at: (string | null);
-    status: 'running' | 'succeeded' | 'failed';
+    status: 'running' | 'succeeded' | 'degraded' | 'failed';
     inserted: number;
     skipped: number;
     embedded: number;
@@ -283,7 +283,7 @@ export type IngestRunPublic = {
     errors: Array<(string)>;
 };
 
-export type status = 'running' | 'succeeded' | 'failed';
+export type status = 'running' | 'succeeded' | 'degraded' | 'failed';
 
 /**
  * Paginated wrapper. ``count`` is the page size, not a total —
@@ -568,7 +568,7 @@ export type AdminPreviewDigestHtmlResponse = (string);
 export type AdminReadIngestRunsData = {
     accessToken?: (string | null);
     limit?: number;
-    status?: ('running' | 'succeeded' | 'failed' | null);
+    status?: ('running' | 'succeeded' | 'degraded' | 'failed' | null);
 };
 
 export type AdminReadIngestRunsResponse = (IngestRunsPublic);

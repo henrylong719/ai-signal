@@ -1223,14 +1223,6 @@ SOURCES: tuple[Source, ...] = (
         description="Emerj's research and analysis on enterprise AI adoption, ROI, and use cases across industries.",
     ),
     Source(
-        "Analytics Insight",
-        "https://www.analyticsinsight.net/feed/",
-        "education",
-        "media",
-        topic="Data Science News",
-        description="Accessible news and explainers on AI, data science, and emerging technology trends.",
-    ),
-    Source(
         "Hacker Noon AI",
         "https://hackernoon.com/tagged/ai/feed",
         "engineering",

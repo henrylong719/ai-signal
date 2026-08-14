@@ -1,12 +1,8 @@
 import { expect, type Page, test } from '@playwright/test'
-
+import { openEmailAuthForm } from './utils/auth-form'
 import { randomEmail, randomPassword } from './utils/random'
 
 test.use({ storageState: { cookies: [], origins: [] } })
-
-const openEmailForm = async (page: Page) => {
-  await page.getByRole('button', { name: 'Continue with email' }).click()
-}
 
 const fillForm = async (
   page: Page,
@@ -14,7 +10,7 @@ const fillForm = async (
   email: string,
   password: string,
 ) => {
-  await openEmailForm(page)
+  await openEmailAuthForm(page)
   await page.getByTestId('full-name-input').fill(full_name)
   await page.getByTestId('email-input').fill(email)
   await page.getByTestId('password-input').fill(password)
@@ -29,7 +25,7 @@ const verifyInput = async (page: Page, testId: string) => {
 
 test('Inputs are visible, empty and editable', async ({ page }) => {
   await page.goto('/signup')
-  await openEmailForm(page)
+  await openEmailAuthForm(page)
 
   await verifyInput(page, 'full-name-input')
   await verifyInput(page, 'email-input')
@@ -38,7 +34,7 @@ test('Inputs are visible, empty and editable', async ({ page }) => {
 
 test('Create Account button is visible', async ({ page }) => {
   await page.goto('/signup')
-  await openEmailForm(page)
+  await openEmailAuthForm(page)
 
   await expect(
     page.getByRole('button', { name: 'Create Account' }),
@@ -67,14 +63,14 @@ test('Signup method options are visible before email form', async ({
 
 test('Terms helper is visible on email signup form', async ({ page }) => {
   await page.goto('/signup')
-  await openEmailForm(page)
+  await openEmailAuthForm(page)
 
   await expect(page.getByText(/terms and privacy practices/)).toBeVisible()
 })
 
 test('Sign In button is visible', async ({ page }) => {
   await page.goto('/signup')
-  await openEmailForm(page)
+  await openEmailAuthForm(page)
 
   await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
 })

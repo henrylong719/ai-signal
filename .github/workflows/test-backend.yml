@@ -3,7 +3,7 @@ name: Test Backend
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     types:
       - opened
@@ -21,8 +21,37 @@ jobs:
           python-version: "3.10"
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      # compose.yml declares required vars as ${VAR?Variable not set}, and .env
+      # is gitignored, so every compose command fails on a fresh runner without
+      # this. The example values are the local-dev defaults — fine for CI, which
+      # only ever talks to throwaway containers.
+      - name: Create .env for Docker Compose
+        run: cp .env.example .env
       - run: docker compose down -v --remove-orphans
-      - run: docker compose up -d db mailcatcher
+      # --wait blocks on the db healthcheck so the database below can be
+      # created without racing Postgres startup.
+      - run: docker compose up -d --wait db mailcatcher
+      # scripts/tests-start.sh points the suite at "${POSTGRES_DB}_test", but
+      # the container only ever creates POSTGRES_DB itself, and nothing else
+      # created the test database — so the suite died with
+      # `database "app_test" does not exist`. conftest runs the migrations, so
+      # an empty database is all that is needed here. Derived from .env rather
+      # than hardcoded so it tracks whatever POSTGRES_DB is set to.
+      # Runs inside the db container, which already has POSTGRES_USER and
+      # POSTGRES_DB from its env_file. Do not source .env from the runner
+      # shell: it holds unquoted values with spaces (PROJECT_NAME=AI Signal),
+      # so `.` treats the second word as a command.
+      - name: Create the test database
+        run: |
+          docker compose exec -T db sh -eu -c '
+            test_db="${POSTGRES_DB}_test"
+            if psql -U "$POSTGRES_USER" -lqt | cut -d"|" -f1 | tr -d " " \
+                | grep -qx "$test_db"; then
+              echo "$test_db already exists"
+            else
+              createdb -U "$POSTGRES_USER" "$test_db"
+            fi
+          '
       - name: Migrate DB
         run: uv run bash scripts/prestart.sh
         working-directory: backend

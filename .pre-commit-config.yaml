@@ -40,16 +40,20 @@ repos:
         language: unsupported
         types: [python]
 
+      # --directory backend is load-bearing twice over: `uv run` from the repo
+      # root is not attached to any project (pyproject.toml lives in backend/),
+      # so it could not even spawn these — and running from the root would also
+      # miss the [tool.mypy] config that lives in backend/pyproject.toml.
       - id: local-mypy
         name: mypy check
-        entry: uv run mypy backend/app
+        entry: uv run --directory backend mypy app
         require_serial: true
         language: unsupported
         pass_filenames: false
 
       - id: local-ty
         name: ty check
-        entry: uv run ty check backend/app
+        entry: uv run --directory backend ty check app
         require_serial: true
         language: unsupported
         pass_filenames: false

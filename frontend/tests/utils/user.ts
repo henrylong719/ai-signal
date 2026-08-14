@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test'
+import { openEmailAuthForm } from './auth-form'
 
 export async function signUpNewUser(
   page: Page,
@@ -7,6 +8,7 @@ export async function signUpNewUser(
   password: string,
 ) {
   await page.goto('/signup')
+  await openEmailAuthForm(page)
 
   await page.getByTestId('full-name-input').fill(name)
   await page.getByTestId('email-input').fill(email)
@@ -18,6 +20,7 @@ export async function signUpNewUser(
 
 export async function logInUser(page: Page, email: string, password: string) {
   await page.goto('/login')
+  await openEmailAuthForm(page)
 
   await page.getByTestId('email-input').fill(email)
   await page.getByTestId('password-input').fill(password)

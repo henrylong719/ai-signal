@@ -50,7 +50,11 @@ jobs:
             pyproject.toml
             uv.lock
       - name: Install backend dependencies
-        run: uv sync --all-packages
+        # pyproject.toml lives in backend/, not at the repo root, so this has to
+        # run from there — matching playwright.yml. (--all-packages was a no-op:
+        # there is no uv workspace here.)
+        run: uv sync
+        working-directory: backend
       - name: Install frontend dependencies
         run: bun ci
       - name: Run prek - pre-commit

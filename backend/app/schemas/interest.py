@@ -1,5 +1,6 @@
 """Pydantic schemas for the user interests endpoints."""
 
+from collections.abc import Iterable
 from datetime import datetime
 
 from pydantic import Field, field_validator
@@ -22,6 +23,33 @@ _MAX_PREFERRED_SOURCES = len(SOURCES)
 _VALID_SOURCE_NAMES: frozenset[str] = frozenset(s.name for s in SOURCES)
 
 
+def known_source_names(names: Iterable[str]) -> list[str]:
+    """Strip, dedupe (first-seen order), and keep only names still in SOURCES.
+
+    Shared by the write path (validator below) and the read path
+    (`app.api.routes.interest.read_interests`) so both agree on what
+    counts as a live source.
+
+    Unknown names are dropped rather than rejected. Sources get retired
+    from SOURCES as curation changes, and a stored preference outlives the
+    source it points at: the client faithfully echoes back the list the
+    server gave it, so raising here would 422 the entire save and lock the
+    user out of changing *any* source until their row was hand-edited.
+    Dropping makes the round-trip self-healing — the stale name disappears
+    on the user's next save.
+    """
+    seen: set[str] = set()
+    out: list[str] = []
+    for raw in names:
+        name = raw.strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        if name in _VALID_SOURCE_NAMES:
+            out.append(name)
+    return out
+
+
 class UserInterestPublic(SQLModel):
     """Wire shape returned to the client.
 
@@ -42,7 +70,7 @@ class UserInterestUpdate(SQLModel):
     Validation:
       - categories must be drawn from the Category Literal (Pydantic enforces).
       - tags are length- and count-bounded; normalized in `normalized_tags`.
-      - preferred_sources must each be a known source name (validator below).
+      - preferred_sources are filtered to known source names (validator below).
     """
 
     categories: list[Category] = Field(default_factory=list, max_length=_MAX_CATEGORIES)
@@ -51,29 +79,38 @@ class UserInterestUpdate(SQLModel):
         default_factory=list, max_length=_MAX_PREFERRED_SOURCES
     )
 
-    @field_validator("preferred_sources")
+    @field_validator("preferred_sources", mode="before")
     @classmethod
-    def _validate_preferred_sources(cls, value: list[str]) -> list[str]:
-        """Strip, dedupe (preserving first-seen order), and validate against SOURCES.
+    def _validate_preferred_sources(cls, value: object) -> object:
+        """Strip, dedupe, and drop names no longer in SOURCES.
 
         Source names are case-sensitive matches against the canonical
-        SOURCES list — display name is the identifier, no slug layer.
-        Unknown names raise ValueError so FastAPI returns 422 with a
-        precise message about which name was rejected.
+        SOURCES list — display name is the identifier, no slug layer. See
+        `known_source_names` for why unknown names are dropped instead of
+        rejected.
+
+        Runs in "before" mode so the `max_length` cap applies to the
+        filtered list rather than the raw payload. In "after" mode, a user
+        following (nearly) every source who also carried a few retired
+        names would blow the cap on the raw list and get rejected before
+        the filter could drop the dead names — reintroducing the lockout
+        this filtering exists to prevent. The cap's job is to bound what
+        we *store*, and filtering already guarantees that ceiling.
+
+        Non-list input is passed through untouched so Pydantic's own type
+        error surfaces instead of a confusing one from here.
         """
-        seen: set[str] = set()
-        out: list[str] = []
-        for raw in value:
-            name = raw.strip()
-            if not name:
-                continue
-            if name in seen:
-                continue
-            if name not in _VALID_SOURCE_NAMES:
-                raise ValueError(f"Unknown source: {name!r}")
-            seen.add(name)
-            out.append(name)
-        return out
+        if not isinstance(value, list) or not all(
+            isinstance(item, str) for item in value
+        ):
+            # Intentional: hand malformed input straight back to Pydantic so
+            # it reports the real type error against the declared
+            # list[str]. Do not "fix" this into a raise or a coercion — a
+            # client sending {"preferred_sources": "OpenAI"} should be told
+            # it sent a string where a list belongs, not get a bespoke
+            # message from here or a silently wrapped value.
+            return value
+        return known_source_names(value)
 
     def normalized_tags(self) -> list[str]:
         """Lowercase, strip, drop empties, drop duplicates, enforce length."""

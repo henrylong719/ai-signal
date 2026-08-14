@@ -88,6 +88,34 @@ def test_build_user_profile_aggregates_all_recommendation_signals(
     )
 
 
+def test_build_user_profile_drops_retired_preferred_sources(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Retired names must not reach the ranker.
+
+    A retired source's articles outlive its removal from SOURCES, so an
+    unfiltered name here keeps boosting them and emits a "Because you
+    follow 3Blue1Brown" reason for a source the Sources UI no longer
+    shows as followed.
+    """
+    interests = SimpleNamespace(
+        categories=[],
+        tags=[],
+        preferred_sources=["3Blue1Brown", "OpenAI"],
+    )
+    monkeypatch.setattr(app_crud, "get_interests", lambda **kwargs: interests)
+    monkeypatch.setattr(app_crud, "get_saved_signals", lambda **kwargs: ({}, {}))
+    monkeypatch.setattr(app_crud, "get_clicked_signals", lambda **kwargs: ({}, {}))
+    monkeypatch.setattr(app_crud, "get_saved_article_ids", lambda **kwargs: [])
+    monkeypatch.setattr(app_crud, "get_event_article_ids", lambda **kwargs: [])
+
+    fake_session: Any = object()
+
+    profile = for_you.build_user_profile(session=fake_session, user_id=uuid4())
+
+    assert profile.preferred_sources == frozenset({"OpenAI"})
+
+
 def test_build_user_profile_treats_missing_interests_as_empty(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

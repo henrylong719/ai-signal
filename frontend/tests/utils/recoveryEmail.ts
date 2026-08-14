@@ -7,13 +7,11 @@ const apiBase = process.env.PLAYWRIGHT_API_URL ?? process.env.VITE_API_URL ?? ''
  * Fetch the password-recovery email HTML for a user, reset link included.
  *
  * Why not read the actual email? Transactional mail moved from SMTP to
- * Resend's HTTP API (see app/services/resend_email.py), so nothing is
- * delivered to the mailcatcher container any more and the old
- * findLastEmail() poll just times out. Resend has no local sandbox in
- * this stack and its endpoint is a module constant, so there is nothing
- * to point at a stub either.
+ * Resend's HTTP API (see app/services/resend_email.py), so there is no
+ * local mail sandbox left to poll. Resend's endpoint is a module
+ * constant, so there is nothing to point at a stub either.
  *
- * `POST /login/password-recovery-html-content/{email}` renders that exact
+ * `POST /password-recovery-html-content/{email}` renders that exact
  * email — same template, same freshly generated token — for superusers.
  * Sourcing the link from there keeps the meaningful half of the test (the
  * token actually works and the reset flow completes) and drops only the

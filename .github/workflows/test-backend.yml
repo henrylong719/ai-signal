@@ -30,7 +30,7 @@ jobs:
       - run: docker compose down -v --remove-orphans
       # --wait blocks on the db healthcheck so the database below can be
       # created without racing Postgres startup.
-      - run: docker compose up -d --wait db mailcatcher
+      - run: docker compose up -d --wait db
       # scripts/tests-start.sh points the suite at "${POSTGRES_DB}_test", but
       # the container only ever creates POSTGRES_DB itself, and nothing else
       # created the test database — so the suite died with

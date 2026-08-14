@@ -23,7 +23,6 @@ Local URLs:
 - ReDoc: <http://localhost:8000/redoc>
 - Adminer: <http://localhost:8080>
 - Traefik dashboard: <http://localhost:8090>
-- Mailcatcher: <http://localhost:1080>
 
 Useful logs:
 
@@ -64,9 +63,40 @@ bun run dev
 
 After changing environment values, restart the affected service.
 
-## Mailcatcher
+## Transactional Email
 
-Local Docker Compose configures the backend to send email to Mailcatcher. View captured messages at <http://localhost:1080>.
+Transactional mail (password recovery, the daily digest) goes out over the
+Resend HTTP API — see `backend/app/services/resend_email.py`. The `SMTP_*`
+settings are retained only so old `.env` files still parse; they drive
+nothing.
+
+**Nothing is delivered locally unless `RESEND_API_KEY` is set.** Sending is
+gated on `settings.emails_enabled`, a computed property in
+`backend/app/core/config.py` that is true only when both `RESEND_API_KEY` and
+`EMAILS_FROM_EMAIL` are present. There is no flag to flip — set the two
+environment variables in the root `.env` and it turns itself on. Without them,
+sends are skipped. The API still reports success either way — `POST /password-recovery/{email}`
+deliberately returns the same generic message whether the mail sent, failed, or
+was never attempted, so the response can't be used to enumerate accounts. The
+only signal is a warning in the backend log:
+
+```bash
+docker compose logs backend | grep -i resend
+```
+
+To get a working password-reset link locally without configuring Resend, render
+the email directly as a superuser:
+
+```
+POST /api/v1/password-recovery-html-content/{email}
+```
+
+It returns the same HTML, with a freshly generated token. That's how the
+Playwright suite obtains reset links (`frontend/tests/utils/recoveryEmail.ts`).
+
+There is no local mail sandbox. A Mailcatcher container used to run alongside
+the stack, but no mail has been sent to it since the move to Resend, so it was
+removed rather than left to look useful.
 
 ## Linting And Tests
 

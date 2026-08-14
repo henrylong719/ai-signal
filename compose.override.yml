@@ -86,12 +86,6 @@ services:
       # covered by the backend tests, which flip this flag themselves.
       RATE_LIMIT_ENABLED: "false"
 
-  mailcatcher:
-    image: philiplehmann/mailcatcher:latest
-    ports:
-      - "1080:1080"
-      - "1025:1025"
-
   frontend:
     restart: "no"
     ports:
@@ -119,8 +113,6 @@ services:
       # not serving yet.
       backend:
         condition: service_healthy
-      mailcatcher:
-        condition: service_started
     env_file:
       - .env
     environment:
@@ -134,7 +126,6 @@ services:
       # than through the browser. That code is not subject to the cookie
       # rules above, so it addresses the backend container directly.
       - PLAYWRIGHT_API_URL=http://backend:8000
-      - MAILCATCHER_HOST=http://mailcatcher:1080
       # For the reports when run locally
       - PLAYWRIGHT_HTML_HOST=0.0.0.0
       - CI=${CI:-}

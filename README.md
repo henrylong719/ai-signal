@@ -50,7 +50,6 @@ AI Signal’s goal is to help users find the signal in the noise: important AI u
 - Docker Compose
 - Traefik for local/prod-style routing
 - Adminer for database inspection
-- Mailcatcher for local email testing
 
 ## Project Structure
 
@@ -184,7 +183,6 @@ Useful local services:
 - Backend API: `http://localhost:8000`
 - API docs: `http://localhost:8000/docs`
 - Adminer: `http://localhost:8080`
-- Mailcatcher: `http://localhost:1080`
 - Traefik dashboard: `http://localhost:8090`
 
 To stop the stack:

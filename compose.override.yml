@@ -79,6 +79,12 @@ services:
       - ./backend/htmlcov:/app/backend/htmlcov
     environment:
       EMAILS_FROM_EMAIL: "noreply@example.com"
+      # The Playwright suite signs in far more than the 10-per-minute
+      # quota on /login/access-token, and every container shares one
+      # source IP, so the limiter starts returning 429 mid-run and the
+      # login helper hangs on waitForURL. The limiter's own behaviour is
+      # covered by the backend tests, which flip this flag themselves.
+      RATE_LIMIT_ENABLED: "false"
 
   mailcatcher:
     image: philiplehmann/mailcatcher:latest
@@ -102,7 +108,8 @@ services:
       context: .
       dockerfile: frontend/Dockerfile.playwright
       args:
-        - VITE_API_URL=http://backend:8000
+        # Empty on purpose — see the environment block below.
+        - VITE_API_URL=
         - NODE_ENV=production
     ipc: host
     depends_on:
@@ -117,7 +124,16 @@ services:
     env_file:
       - .env
     environment:
-      - VITE_API_URL=http://backend:8000
+      # The browser must reach the API on its *own* origin, otherwise the
+      # auth cookies are set on host `backend` and the app running on
+      # localhost:5173 cannot see them (cookies ignore ports, not hosts).
+      # Empty base => relative /api/... requests => vite proxies them.
+      - VITE_API_URL=
+      - VITE_API_PROXY_TARGET=http://backend:8000
+      # Node-side base, for test code that calls the API directly rather
+      # than through the browser. That code is not subject to the cookie
+      # rules above, so it addresses the backend container directly.
+      - PLAYWRIGHT_API_URL=http://backend:8000
       - MAILCATCHER_HOST=http://mailcatcher:1080
       # For the reports when run locally
       - PLAYWRIGHT_HTML_HOST=0.0.0.0

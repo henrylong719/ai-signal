@@ -42,9 +42,11 @@ test('Auth method options are visible before email form', async ({ page }) => {
   await expect(
     page.getByRole('button', { name: 'Continue with GitHub' }),
   ).toBeVisible()
+  // Facebook is deliberately commented out in SocialLoginButtons — assert
+  // it stays gone so re-enabling it is a conscious test change.
   await expect(
     page.getByRole('button', { name: 'Continue with Facebook' }),
-  ).toBeVisible()
+  ).toBeHidden()
   await expect(
     page.getByRole('button', { name: 'Continue with email' }),
   ).toBeVisible()
@@ -107,7 +109,11 @@ test('Successful log out', async ({ page }) => {
   await page.getByRole('button', { name: 'Open profile menu' }).click()
   await page.getByRole('menuitem', { name: 'Log out' }).click()
   await page.waitForURL('/')
-  await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
+  // Scoped to the header: the logged-out landing page carries more than
+  // one "Sign In" button, and it's the header one that proves the logout.
+  await expect(
+    page.getByRole('banner').getByRole('button', { name: 'Sign In' }),
+  ).toBeVisible()
 })
 
 test('Logged-out user cannot access protected routes', async ({ page }) => {

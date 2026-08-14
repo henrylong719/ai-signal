@@ -2,7 +2,11 @@
 // for local environments
 import { OpenAPI, PrivateService } from '../../src/client'
 
-OpenAPI.BASE = `${process.env.VITE_API_URL}`
+// Node-side base URL, not the browser's. The browser talks to the API on
+// its own origin (vite proxies /api) so that cookie-based auth works; this
+// module runs in the test process, has no cookie jar to protect, and so
+// addresses the backend container directly.
+OpenAPI.BASE = process.env.PLAYWRIGHT_API_URL ?? process.env.VITE_API_URL ?? ''
 
 export const createUser = async ({
   email,

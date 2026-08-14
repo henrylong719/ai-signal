@@ -75,9 +75,15 @@ function Dashboard() {
     () => ALL_TABS.filter((tab) => !tab.authOnly || isAuthed),
     [isAuthed],
   )
-  const [activeTab, setActiveTab] = useState<Tab>(() =>
-    isAuthed ? 'for-you' : 'latest',
-  )
+  // null = the visitor hasn't picked a tab yet, so fall back to the
+  // auth-dependent default. The previous version seeded useState from
+  // `isAuthed`, which read it on the very first render — before the
+  // /users/me query resolved, while `user` was still undefined. Every
+  // signed-in visitor arriving by full page load therefore landed on
+  // Latest instead of For you, and stayed there. Deriving the default
+  // keeps it right once auth resolves; an explicit click still wins.
+  const [selectedTab, setSelectedTab] = useState<Tab | null>(null)
+  const activeTab: Tab = selectedTab ?? (isAuthed ? 'for-you' : 'latest')
   // Guests should never see auth-only tabs — if a previously-authed
   // session left activeTab on 'for-you' or 'following' (e.g. after
   // logout in another tab), normalize back to 'latest' instead of
@@ -152,7 +158,7 @@ function Dashboard() {
       return
     }
 
-    setActiveTab(tab)
+    setSelectedTab(tab)
     // The JS scroll-behavior option overrides CSS, so the global
     // prefers-reduced-motion rule in index.css can't catch this path —
     // check the user pref directly and fall back to instant scroll.

@@ -35,11 +35,29 @@ async function stubDashboardApis(page: Page, candidatePoolCap: number) {
         full_name: 'Test User',
         has_password: true,
         created_at: '2026-05-07T12:00:00Z',
+        // Load-bearing. A null onboarded_at mounts the first-run
+        // onboarding modal, which fetches /users/me/interests — not
+        // stubbed here, so it 401s and the auth interceptor redirects to
+        // /login before the feed messages are ever asserted.
+        onboarded_at: '2026-05-07T12:00:00Z',
       },
     })
   })
   await page.route('**/api/v1/articles/saved/ids', async (route) => {
     await route.fulfill({ json: { article_ids: [] } })
+  })
+  // The `/` route itself calls useInterests(), which is gated on the
+  // marker cookie this helper sets. Leaving it unstubbed means a real
+  // 401 and the auth interceptor navigating away to /login.
+  await page.route('**/api/v1/users/me/interests', async (route) => {
+    await route.fulfill({
+      json: {
+        categories: [],
+        tags: [],
+        preferred_sources: [],
+        updated_at: null,
+      },
+    })
   })
   await page.route('**/api/v1/articles/for-you?*', async (route) => {
     await route.fulfill({
@@ -53,6 +71,12 @@ async function stubDashboardApis(page: Page, candidatePoolCap: number) {
   await page.route('**/api/v1/articles/?*', async (route) => {
     await route.fulfill({ json: { data: [], count: 0 } })
   })
+  // Sibling of the For You tab, and not covered by the `/articles/?*`
+  // pattern above. Unstubbed it 401s under this fake session and the
+  // auth interceptor redirects to /login.
+  await page.route('**/api/v1/articles/following?*', async (route) => {
+    await route.fulfill({ json: { data: [], count: 0 } })
+  })
 }
 
 test('For You feed shows capped-pool message at the candidate cap', async ({
@@ -61,6 +85,7 @@ test('For You feed shows capped-pool message at the candidate cap', async ({
   await stubDashboardApis(page, 1)
 
   await page.goto('/')
+  await expect(page.getByRole('button', { name: 'For you' })).toBeVisible()
 
   await expect(
     page.getByText("That's all your top picks for now."),
@@ -74,6 +99,7 @@ test('For You feed keeps all-caught-up message below the candidate cap', async (
   await stubDashboardApis(page, 200)
 
   await page.goto('/')
+  await expect(page.getByRole('button', { name: 'For you' })).toBeVisible()
 
   await expect(page.getByText("You're all caught up.")).toBeVisible()
   await expect(

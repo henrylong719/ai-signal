@@ -52,9 +52,11 @@ test('Signup method options are visible before email form', async ({
   await expect(
     page.getByRole('button', { name: 'Continue with GitHub' }),
   ).toBeVisible()
+  // Facebook is deliberately commented out in SocialLoginButtons — assert
+  // it stays gone so re-enabling it is a conscious test change.
   await expect(
     page.getByRole('button', { name: 'Continue with Facebook' }),
-  ).toBeVisible()
+  ).toBeHidden()
   await expect(
     page.getByRole('button', { name: 'Continue with email' }),
   ).toBeVisible()

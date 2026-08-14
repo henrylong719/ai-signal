@@ -1,23 +1,50 @@
-import { expect, test } from '@playwright/test'
+import { expect, type Page, test } from '@playwright/test'
 import { firstSuperuser, firstSuperuserPassword } from './config.ts'
 import { createUser } from './utils/privateApi.ts'
 import { randomEmail, randomPassword } from './utils/random'
 import { logInUser, logOutUser } from './utils/user'
 
-const tabs = ['My profile', 'Password', 'Danger zone']
+// The settings page dropped its tab bar for a single scrolling page of
+// titled sections. These are those section headings, in render order.
+const sections = [
+  'Profile Information',
+  'Password & Security',
+  'Sign-in Methods',
+  'Daily Digest',
+  'Danger Zone',
+]
 
-test('My profile tab is active by default', async ({ page }) => {
+/**
+ * Pick a theme from the profile menu's Appearance submenu.
+ *
+ * The theme control used to be a `theme-button` in the sidebar. It now
+ * lives behind the header avatar, so every theme assertion has to open
+ * two levels of menu first.
+ */
+async function selectTheme(
+  page: Page,
+  label: 'Light' | 'Dark' | 'System Default',
+) {
+  await page.getByRole('button', { name: 'Open profile menu' }).click()
+  await page.getByRole('menuitem', { name: 'Appearance' }).click()
+  await page.getByRole('menuitem', { name: label, exact: true }).click()
+}
+
+test('Settings page opens on the profile section', async ({ page }) => {
   await page.goto('/settings')
-  await expect(page.getByRole('tab', { name: 'My profile' })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  )
+
+  await expect(
+    page.getByRole('heading', { name: 'Account Settings' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Profile Information' }),
+  ).toBeVisible()
 })
 
-test('All tabs are visible', async ({ page }) => {
+test('All settings sections are visible', async ({ page }) => {
   await page.goto('/settings')
-  for (const tab of tabs) {
-    await expect(page.getByRole('tab', { name: tab })).toBeVisible()
+  for (const section of sections) {
+    await expect(page.getByRole('heading', { name: section })).toBeVisible()
   }
 })
 
@@ -35,27 +62,22 @@ test.describe('Edit user profile', () => {
   test.beforeEach(async ({ page }) => {
     await logInUser(page, email, password)
     await page.goto('/settings')
-    await page.getByRole('tab', { name: 'My profile' }).click()
   })
 
   test('Edit user name with a valid name', async ({ page }) => {
     const updatedName = 'Test User 2'
 
-    await page.getByRole('button', { name: 'Edit' }).click()
     await page.getByLabel('Full name').fill(updatedName)
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByRole('button', { name: 'Save profile' }).click()
 
-    await expect(page.getByText('User updated successfully')).toBeVisible()
-    await expect(
-      page.locator('form').getByText(updatedName, { exact: true }),
-    ).toBeVisible()
+    await expect(page.getByText('Account details updated.')).toBeVisible()
+    await expect(page.getByLabel('Full name')).toHaveValue(updatedName)
   })
 
   test('Edit user email with an invalid email shows error', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: 'Edit' }).click()
-    await page.getByLabel('Email').fill('')
+    await page.getByLabel('Email address').fill('')
     await page.locator('body').click()
 
     await expect(page.getByText('Invalid email address')).toBeVisible()
@@ -73,54 +95,55 @@ test.describe('Edit user email', () => {
     await createUser({ email, password })
     await logInUser(page, email, password)
     await page.goto('/settings')
-    await page.getByRole('tab', { name: 'My profile' }).click()
 
-    await page.getByRole('button', { name: 'Edit' }).click()
-    await page.getByLabel('Email').fill(updatedEmail)
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByLabel('Email address').fill(updatedEmail)
+    await page.getByRole('button', { name: 'Save profile' }).click()
 
-    await expect(page.getByText('User updated successfully')).toBeVisible()
-    await expect(
-      page.locator('form').getByText(updatedEmail, { exact: true }),
-    ).toBeVisible()
+    await expect(page.getByText('Account details updated.')).toBeVisible()
+    await expect(page.getByLabel('Email address')).toHaveValue(updatedEmail)
   })
 })
 
-test.describe('Cancel edit actions', () => {
+// The profile form no longer has an Edit/Cancel pair — it is always
+// editable and guards against accidental writes by keeping Save disabled
+// until something changes. These cover that guard, and that an
+// unsaved edit is genuinely unsaved.
+test.describe('Discarding unsaved profile edits', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
-  test('Cancel edit action restores original name', async ({ page }) => {
-    const email = randomEmail()
-    const password = randomPassword()
-    const user = await createUser({ email, password })
-
-    await logInUser(page, email, password)
-    await page.goto('/settings')
-    await page.getByRole('tab', { name: 'My profile' }).click()
-    await page.getByRole('button', { name: 'Edit' }).click()
-    await page.getByLabel('Full name').fill('Test User')
-    await page.getByRole('button', { name: 'Cancel' }).first().click()
-
-    await expect(
-      page.locator('form').getByText(user.full_name as string, { exact: true }),
-    ).toBeVisible()
-  })
-
-  test('Cancel edit action restores original email', async ({ page }) => {
+  test('Save profile is disabled until a field changes', async ({ page }) => {
     const email = randomEmail()
     const password = randomPassword()
     await createUser({ email, password })
 
     await logInUser(page, email, password)
     await page.goto('/settings')
-    await page.getByRole('tab', { name: 'My profile' }).click()
-    await page.getByRole('button', { name: 'Edit' }).click()
-    await page.getByLabel('Email').fill(randomEmail())
-    await page.getByRole('button', { name: 'Cancel' }).first().click()
 
-    await expect(
-      page.locator('form').getByText(email, { exact: true }),
-    ).toBeVisible()
+    const save = page.getByRole('button', { name: 'Save profile' })
+    await expect(save).toBeDisabled()
+
+    // Not 'Test User' — that's the name createUser seeds, so the form
+    // would still be pristine and Save would stay disabled.
+    await page.getByLabel('Full name').fill('A Different Name')
+    await expect(save).toBeEnabled()
+  })
+
+  test('Reloading restores the saved name and email', async ({ page }) => {
+    const email = randomEmail()
+    const password = randomPassword()
+    const user = await createUser({ email, password })
+
+    await logInUser(page, email, password)
+    await page.goto('/settings')
+
+    await page.getByLabel('Full name').fill('Some Other Name')
+    await page.getByLabel('Email address').fill(randomEmail())
+    await page.reload()
+
+    await expect(page.getByLabel('Full name')).toHaveValue(
+      user.full_name as string,
+    )
+    await expect(page.getByLabel('Email address')).toHaveValue(email)
   })
 })
 
@@ -136,13 +159,12 @@ test.describe('Change password', () => {
     await logInUser(page, email, password)
 
     await page.goto('/settings')
-    await page.getByRole('tab', { name: 'Password' }).click()
     await page.getByTestId('current-password-input').fill(password)
     await page.getByTestId('new-password-input').fill(newPassword)
     await page.getByTestId('confirm-password-input').fill(newPassword)
-    await page.getByRole('button', { name: 'Update Password' }).click()
+    await page.getByRole('button', { name: 'Update password' }).click()
 
-    await expect(page.getByText('Password updated successfully')).toBeVisible()
+    await expect(page.getByText('Password updated.')).toBeVisible()
 
     await logOutUser(page)
     await logInUser(page, email, newPassword)
@@ -163,7 +185,6 @@ test.describe('Change password validation', () => {
   test.beforeEach(async ({ page }) => {
     await logInUser(page, email, password)
     await page.goto('/settings')
-    await page.getByRole('tab', { name: 'Password' }).click()
   })
 
   test('Update password with weak passwords', async ({ page }) => {
@@ -172,10 +193,10 @@ test.describe('Change password validation', () => {
     await page.getByTestId('current-password-input').fill(password)
     await page.getByTestId('new-password-input').fill(weakPassword)
     await page.getByTestId('confirm-password-input').fill(weakPassword)
-    await page.getByRole('button', { name: 'Update Password' }).click()
+    await page.getByRole('button', { name: 'Update password' }).click()
 
     await expect(
-      page.getByText('Password must be at least 8 characters'),
+      page.getByText('Password must be at least 8 characters').first(),
     ).toBeVisible()
   })
 
@@ -185,7 +206,7 @@ test.describe('Change password validation', () => {
     await page.getByTestId('current-password-input').fill(password)
     await page.getByTestId('new-password-input').fill(randomPassword())
     await page.getByTestId('confirm-password-input').fill(randomPassword())
-    await page.getByRole('button', { name: 'Update Password' }).click()
+    await page.getByRole('button', { name: 'Update password' }).click()
 
     await expect(page.getByText("The passwords don't match")).toBeVisible()
   })
@@ -194,7 +215,7 @@ test.describe('Change password validation', () => {
     await page.getByTestId('current-password-input').fill(password)
     await page.getByTestId('new-password-input').fill(password)
     await page.getByTestId('confirm-password-input').fill(password)
-    await page.getByRole('button', { name: 'Update Password' }).click()
+    await page.getByRole('button', { name: 'Update password' }).click()
 
     await expect(
       page.getByText('New password cannot be the same as the current one'),
@@ -202,55 +223,42 @@ test.describe('Change password validation', () => {
   })
 })
 
-test('Appearance button is visible in sidebar', async ({ page }) => {
+test('Appearance options are reachable from the profile menu', async ({
+  page,
+}) => {
   await page.goto('/settings')
-  await expect(page.getByTestId('theme-button')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Open profile menu' }).click()
+  await page.getByRole('menuitem', { name: 'Appearance' }).click()
+
+  for (const label of ['System Default', 'Light', 'Dark']) {
+    await expect(
+      page.getByRole('menuitem', { name: label, exact: true }),
+    ).toBeVisible()
+  }
 })
 
 test('User can switch between theme modes', async ({ page }) => {
   await page.goto('/settings')
 
-  await page.getByTestId('theme-button').click()
-  await page.getByTestId('dark-mode').click()
+  await selectTheme(page, 'Dark')
   await expect(page.locator('html')).toHaveClass(/dark/)
 
-  await expect(page.getByTestId('dark-mode')).not.toBeVisible()
-
-  await page.getByTestId('theme-button').click()
-  await page.getByTestId('light-mode').click()
+  await selectTheme(page, 'Light')
   await expect(page.locator('html')).toHaveClass(/light/)
 })
 
 test('Selected mode is preserved across sessions', async ({ page }) => {
   await page.goto('/settings')
 
-  await page.getByTestId('theme-button').click()
-  if (
-    await page.evaluate(() =>
-      document.documentElement.classList.contains('dark'),
-    )
-  ) {
-    await page.getByTestId('light-mode').click()
-    await page.getByTestId('theme-button').click()
-  }
+  await selectTheme(page, 'Light')
+  await expect(page.locator('html')).toHaveClass(/light/)
 
-  const isLightMode = await page.evaluate(() =>
-    document.documentElement.classList.contains('light'),
-  )
-  expect(isLightMode).toBe(true)
-
-  await page.getByTestId('theme-button').click()
-  await page.getByTestId('dark-mode').click()
-  let isDarkMode = await page.evaluate(() =>
-    document.documentElement.classList.contains('dark'),
-  )
-  expect(isDarkMode).toBe(true)
+  await selectTheme(page, 'Dark')
+  await expect(page.locator('html')).toHaveClass(/dark/)
 
   await logOutUser(page)
   await logInUser(page, firstSuperuser, firstSuperuserPassword)
 
-  isDarkMode = await page.evaluate(() =>
-    document.documentElement.classList.contains('dark'),
-  )
-  expect(isDarkMode).toBe(true)
+  await expect(page.locator('html')).toHaveClass(/dark/)
 })

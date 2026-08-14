@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -12,6 +13,7 @@ from app.core.config import settings
 from app.models import Article, User
 from app.models.article import EMBEDDING_DIM
 from app.schemas import ArticleCreate, UserCreate
+from app.schemas import interest as interest_schema
 from app.schemas.source import SOURCES, Category
 from app.services import article_redirects, article_search
 from tests.utils.article import create_random_article
@@ -55,6 +57,30 @@ def _create_article(
             published_at=datetime.now(timezone.utc),
         ),
     )
+
+
+@pytest.fixture
+def register_live_sources(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Callable[..., None]:
+    """Treat extra names as live SOURCES for the duration of one test.
+
+    The follow paths filter stored names against SOURCES, but the `db`
+    fixture is session-scoped, so these tests need source names unique
+    per test to stay isolated from each other's articles — and a unique
+    name can never be in the real SOURCES tuple. Registering the name
+    instead of switching the tests to real sources keeps both properties:
+    the production filter still runs, and the test owns its own data.
+    """
+
+    def _register(*names: str) -> None:
+        monkeypatch.setattr(
+            interest_schema,
+            "_VALID_SOURCE_NAMES",
+            interest_schema._VALID_SOURCE_NAMES | frozenset(names),
+        )
+
+    return _register
 
 
 def _embedding(axis: int) -> list[float]:
@@ -290,13 +316,54 @@ def test_read_following_returns_empty_when_no_preferred_sources(
     assert body["data"] == []
 
 
+def test_read_following_ignores_retired_sources(
+    client: TestClient,
+    db: Session,
+    register_live_sources: Callable[..., None],
+) -> None:
+    """A retired source must not keep feeding the Following list.
+
+    Retiring a source from SOURCES does not delete the articles it
+    already produced, and stored preferred_sources kept naming it. The
+    Sources UI stops showing it as followed (the interests read path
+    filters), so Following would list articles from a source the user
+    cannot see they follow, with no way to unfollow it.
+    """
+    user, headers = _create_authenticated_user(client, db)
+    live_source = f"Live {uuid.uuid4()}"
+    register_live_sources(live_source)
+    # "3Blue1Brown" is deliberately not registered — it is a real name that
+    # shipped in SOURCES and was retired, which is the case being covered.
+    _create_article(db, source="3Blue1Brown", title="From a retired source")
+    matching = _create_article(db, source=live_source, title="From a live source")
+    crud.set_interests(
+        session=db,
+        user_id=user.id,
+        categories=[],
+        tags=[],
+        preferred_sources=["3Blue1Brown", live_source],
+    )
+
+    response = client.get(
+        f"{settings.API_V1_STR}/articles/following",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["count"] == 1
+    assert [item["id"] for item in body["data"]] == [str(matching.id)]
+
+
 def test_read_following_filters_to_preferred_sources(
     client: TestClient,
     db: Session,
+    register_live_sources: Callable[..., None],
 ) -> None:
     user, headers = _create_authenticated_user(client, db)
     followed_source = f"Followed {uuid.uuid4()}"
     other_source = f"Other {uuid.uuid4()}"
+    register_live_sources(followed_source, other_source)
     matching = _create_article(db, source=followed_source, title="Match")
     _create_article(db, source=other_source, title="Skip")
     crud.set_interests(
@@ -322,9 +389,11 @@ def test_read_following_filters_to_preferred_sources(
 def test_read_following_is_ordered_by_published_desc_and_paginates(
     client: TestClient,
     db: Session,
+    register_live_sources: Callable[..., None],
 ) -> None:
     user, headers = _create_authenticated_user(client, db)
     source = f"Followed {uuid.uuid4()}"
+    register_live_sources(source)
     # Create three articles with explicit published_at so order is
     # deterministic regardless of insertion timing.
     older = crud.create_article(

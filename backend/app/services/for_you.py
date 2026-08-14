@@ -28,6 +28,7 @@ from sqlmodel import Session
 from app import crud
 from app.models import Article
 from app.schemas.article import ForYouArticleDebugPublic, ScoreBreakdownPublic
+from app.schemas.interest import known_source_names
 from app.services.diversity import (
     DEFAULT_LAMBDA_FOR_YOU,
     RerankItem,
@@ -100,8 +101,13 @@ def build_user_profile(*, session: Session, user_id: uuid.UUID) -> UserProfile:
             interests_row.categories if interests_row else []
         ),
         interest_tags=frozenset(interests_row.tags if interests_row else []),
+        # Filtered against live SOURCES for the same reason the Following
+        # feed is: a retired source's articles outlive its removal, and an
+        # unfiltered name here would keep boosting them and emit a
+        # "Because you follow X" reason for a source the user is no longer
+        # shown as following.
         preferred_sources=frozenset(
-            interests_row.preferred_sources if interests_row else []
+            known_source_names(interests_row.preferred_sources if interests_row else [])
         ),
         saved_tags=saved_tags,
         saved_sources=saved_sources,

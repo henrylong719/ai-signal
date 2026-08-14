@@ -17,6 +17,7 @@ from app.schemas import (
     ForYouArticlesPublic,
     ScoringWeightsPublic,
 )
+from app.schemas.interest import known_source_names
 from app.schemas.source import (
     SOURCES,
     Category,
@@ -170,9 +171,17 @@ def read_following(
     your trusted AI reading list" empty state instead of a generic
     error. The crud helpers short-circuit on an empty `sources` list,
     so this is a constant-time response.
+
+    Stored names are filtered against the live SOURCES list. Retiring a
+    source does not delete the articles it already produced, so without
+    this a retired source keeps feeding this list while the Sources UI
+    (which filters on read) shows it as unfollowed — visible articles
+    from a source the user has no way to unfollow.
     """
     interests = crud.get_interests(session=session, user_id=current_user.id)
-    preferred_sources = list(interests.preferred_sources) if interests else []
+    preferred_sources = known_source_names(
+        interests.preferred_sources if interests else []
+    )
     count = crud.count_articles(session=session, sources=preferred_sources)
     articles = crud.get_articles(
         session=session,

@@ -103,6 +103,12 @@ class UserInterestUpdate(SQLModel):
         if not isinstance(value, list) or not all(
             isinstance(item, str) for item in value
         ):
+            # Intentional: hand malformed input straight back to Pydantic so
+            # it reports the real type error against the declared
+            # list[str]. Do not "fix" this into a raise or a coercion — a
+            # client sending {"preferred_sources": "OpenAI"} should be told
+            # it sent a string where a list belongs, not get a bespoke
+            # message from here or a silently wrapped value.
             return value
         return known_source_names(value)
 

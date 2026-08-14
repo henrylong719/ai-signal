@@ -9,6 +9,15 @@ from app.schemas.source import SOURCES
 from tests.utils.user import user_authentication_headers
 from tests.utils.utils import random_email, random_lower_string
 
+# Names that shipped in SOURCES and were later retired. RETIRED_SOURCE is the
+# one from the original incident; the rest are only needed where a test wants
+# several. Defined once here so the fixtures below cannot drift apart, and
+# guarded by test_retired_fixture_names_are_not_live_sources — re-adding one of
+# these to SOURCES would otherwise turn these regression tests into silent
+# no-ops that still pass.
+RETIRED_SOURCE = "3Blue1Brown"
+MORE_RETIRED_SOURCES = ("sentdex", "Unite.AI")
+
 
 def _create_authenticated_user(
     client: TestClient,
@@ -23,6 +32,19 @@ def _create_authenticated_user(
     return user, user_authentication_headers(
         client=client, email=email, password=password
     )
+
+
+def test_retired_fixture_names_are_not_live_sources() -> None:
+    """Guards the fixtures above against SOURCES changing under them.
+
+    Every retired-source test asserts that a name gets dropped. If one of
+    these names were ever re-added to SOURCES, those tests would keep
+    passing while quietly testing nothing. Fail here instead, with an
+    obvious reason.
+    """
+    live_names = {source.name for source in SOURCES}
+
+    assert not live_names & {RETIRED_SOURCE, *MORE_RETIRED_SOURCES}
 
 
 def test_read_interests_requires_auth(client: TestClient) -> None:
@@ -139,7 +161,7 @@ def test_update_interests_keeps_valid_sources_alongside_retired_one(
 ) -> None:
     """Regression: a retired name must not block the whole save.
 
-    "3Blue1Brown" shipped in SOURCES and was later removed. Users who had
+    RETIRED_SOURCE shipped in SOURCES and was later removed. Users who had
     followed it kept it in their stored list, the frontend echoed the full
     list back on every follow/unfollow, and the strict validator 422'd the
     entire payload — locking those users out of changing any source.
@@ -153,7 +175,7 @@ def test_update_interests_keeps_valid_sources_alongside_retired_one(
             "categories": [],
             "tags": [],
             "preferred_sources": [
-                "3Blue1Brown",
+                RETIRED_SOURCE,
                 "OpenAI",
                 "GitHub Trending (Daily)",
             ],
@@ -188,7 +210,7 @@ def test_update_interests_retired_names_do_not_breach_the_count_cap(
             "categories": [],
             "tags": [],
             "preferred_sources": every_live_source
-            + ["3Blue1Brown", "sentdex", "Unite.AI"],
+            + [RETIRED_SOURCE, *MORE_RETIRED_SOURCES],
         },
     )
 
@@ -223,6 +245,30 @@ def test_update_interests_bounds_storage_regardless_of_payload_size(
     assert response.json()["preferred_sources"] == []
 
 
+def test_update_interests_reports_a_type_error_for_non_list_sources(
+    client: TestClient,
+    db: Session,
+) -> None:
+    """Malformed input still gets Pydantic's own type error.
+
+    The before-mode validator passes non-list values straight through so
+    the error names the declared list[str], rather than the validator
+    inventing its own message or silently wrapping the value.
+    """
+    _, headers = _create_authenticated_user(client, db)
+
+    response = client.put(
+        f"{settings.API_V1_STR}/users/me/interests",
+        headers=headers,
+        json={"categories": [], "tags": [], "preferred_sources": "OpenAI"},
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail[0]["type"] == "list_type"
+    assert detail[0]["loc"] == ["body", "preferred_sources"]
+
+
 def test_read_interests_filters_retired_sources(
     client: TestClient,
     db: Session,
@@ -241,7 +287,7 @@ def test_read_interests_filters_retired_sources(
         user_id=user.id,
         categories=[],
         tags=[],
-        preferred_sources=["3Blue1Brown", "OpenAI"],
+        preferred_sources=[RETIRED_SOURCE, "OpenAI"],
     )
 
     response = client.get(

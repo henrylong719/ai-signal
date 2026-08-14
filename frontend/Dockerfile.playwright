@@ -1,4 +1,8 @@
-FROM mcr.microsoft.com/playwright:v1.59.1-noble
+# Must match the @playwright/test version pinned in frontend/package.json.
+# The image ships only the browser builds its own version expects, so a drift
+# between the two fails at launch with "Executable doesn't exist at
+# /ms-playwright/chromium_headless_shell-<build>". Bump both together.
+FROM mcr.microsoft.com/playwright:v1.58.2-noble
 
 WORKDIR /app
 

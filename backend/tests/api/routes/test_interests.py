@@ -5,6 +5,7 @@ from app import crud
 from app.core.config import settings
 from app.models import User
 from app.schemas import UserCreate
+from app.schemas.source import SOURCES
 from tests.utils.user import user_authentication_headers
 from tests.utils.utils import random_email, random_lower_string
 
@@ -106,11 +107,16 @@ def test_update_interests_rejects_unknown_category(
     assert response.status_code == 422
 
 
-def test_update_interests_rejects_unknown_source(
+def test_update_interests_drops_unknown_source(
     client: TestClient,
     db: Session,
 ) -> None:
-    """Source names must match the canonical SOURCES list exactly."""
+    """Unknown source names are dropped, not rejected.
+
+    Sources get retired from SOURCES over time. A client echoing back a
+    name the server handed it earlier must not be punished for server-side
+    curation — see `test_update_interests_keeps_valid_sources_alongside_retired_one`.
+    """
     _, headers = _create_authenticated_user(client, db)
 
     response = client.put(
@@ -123,7 +129,128 @@ def test_update_interests_rejects_unknown_source(
         },
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 200
+    assert response.json()["preferred_sources"] == []
+
+
+def test_update_interests_keeps_valid_sources_alongside_retired_one(
+    client: TestClient,
+    db: Session,
+) -> None:
+    """Regression: a retired name must not block the whole save.
+
+    "3Blue1Brown" shipped in SOURCES and was later removed. Users who had
+    followed it kept it in their stored list, the frontend echoed the full
+    list back on every follow/unfollow, and the strict validator 422'd the
+    entire payload — locking those users out of changing any source.
+    """
+    _, headers = _create_authenticated_user(client, db)
+
+    response = client.put(
+        f"{settings.API_V1_STR}/users/me/interests",
+        headers=headers,
+        json={
+            "categories": [],
+            "tags": [],
+            "preferred_sources": [
+                "3Blue1Brown",
+                "OpenAI",
+                "GitHub Trending (Daily)",
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["preferred_sources"] == [
+        "GitHub Trending (Daily)",
+        "OpenAI",
+    ]
+
+
+def test_update_interests_retired_names_do_not_breach_the_count_cap(
+    client: TestClient,
+    db: Session,
+) -> None:
+    """The cap bounds what we store, so it must apply after filtering.
+
+    `preferred_sources` is capped at len(SOURCES). A user who follows
+    (nearly) everything and also carries retired names would otherwise
+    exceed the cap on the raw payload and get 422'd before the filter
+    could drop the dead names — the same lockout by a different route.
+    """
+    _, headers = _create_authenticated_user(client, db)
+    every_live_source = [source.name for source in SOURCES]
+
+    response = client.put(
+        f"{settings.API_V1_STR}/users/me/interests",
+        headers=headers,
+        json={
+            "categories": [],
+            "tags": [],
+            "preferred_sources": every_live_source
+            + ["3Blue1Brown", "sentdex", "Unite.AI"],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["preferred_sources"] == sorted(every_live_source)
+
+
+def test_update_interests_bounds_storage_regardless_of_payload_size(
+    client: TestClient,
+    db: Session,
+) -> None:
+    """Filtering is what bounds the column, so junk volume can't DOS it.
+
+    The cap moved behind the filter, so a huge payload no longer 422s —
+    it collapses to whatever the server actually recognizes. That keeps
+    the original guarantee (storage can never exceed len(SOURCES)) while
+    removing the failure mode that locked users out.
+    """
+    _, headers = _create_authenticated_user(client, db)
+
+    response = client.put(
+        f"{settings.API_V1_STR}/users/me/interests",
+        headers=headers,
+        json={
+            "categories": [],
+            "tags": [],
+            "preferred_sources": [f"Junk Source {i}" for i in range(10_000)],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["preferred_sources"] == []
+
+
+def test_read_interests_filters_retired_sources(
+    client: TestClient,
+    db: Session,
+) -> None:
+    """Stored names no longer in SOURCES are hidden from the read path.
+
+    Belt-and-braces with the write-path filter: the frontend never sees a
+    name it would only echo back, so stale rows stop propagating even
+    before the pruning migration runs.
+    """
+    user, headers = _create_authenticated_user(client, db)
+    # Write through CRUD to bypass the API-layer validator — this is the
+    # shape a pre-existing production row has.
+    crud.set_interests(
+        session=db,
+        user_id=user.id,
+        categories=[],
+        tags=[],
+        preferred_sources=["3Blue1Brown", "OpenAI"],
+    )
+
+    response = client.get(
+        f"{settings.API_V1_STR}/users/me/interests",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["preferred_sources"] == ["OpenAI"]
 
 
 def test_update_interests_dedupes_preferred_sources(
@@ -147,7 +274,7 @@ def test_update_interests_dedupes_preferred_sources(
     assert response.json()["preferred_sources"] == ["Anthropic", "OpenAI"]
 
 
-def test_update_interests_rejects_source_with_wrong_case(
+def test_update_interests_drops_source_with_wrong_case(
     client: TestClient,
     db: Session,
 ) -> None:
@@ -164,4 +291,5 @@ def test_update_interests_rejects_source_with_wrong_case(
         },
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 200
+    assert response.json()["preferred_sources"] == []

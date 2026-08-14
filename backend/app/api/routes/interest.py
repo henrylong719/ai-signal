@@ -11,6 +11,7 @@ from sqlmodel import Session
 from app import crud
 from app.api.deps import CurrentUser, SessionDep
 from app.schemas import UserInterestPublic, UserInterestUpdate
+from app.schemas.interest import known_source_names
 from app.schemas.source import Category
 from app.services.embeddings import compute_and_save_user_vector
 
@@ -58,11 +59,18 @@ def _to_public(
 
     Centralized so empty/missing rows and existing rows produce identical
     shapes — the frontend should never need to special-case "no row yet".
+
+    `preferred_sources` is filtered against the live SOURCES list on the
+    way out. Stored rows can name sources that have since been retired,
+    and the frontend echoes whatever it reads back on the next save; not
+    filtering here would keep handing clients names the server no longer
+    recognizes. On the PUT path the validator has already filtered, so
+    this is a cheap no-op.
     """
     return UserInterestPublic(
         categories=list(categories or []),
         tags=list(tags or []),
-        preferred_sources=list(preferred_sources or []),
+        preferred_sources=known_source_names(preferred_sources or []),
         updated_at=updated_at,
     )
 
@@ -95,8 +103,10 @@ def update_interests(
     """Replace the current user's interests with the provided lists.
 
     Pydantic enforces that `body.categories` is a subset of the Category
-    Literal and that `body.preferred_sources` is a subset of SOURCES.
-    Tag normalization (lowercase, trim, dedupe, length cap) happens in
+    Literal. `body.preferred_sources` is filtered down to a subset of
+    SOURCES rather than rejected, so a client echoing back a since-retired
+    source name still saves the rest of its selection. Tag normalization
+    (lowercase, trim, dedupe, length cap) happens in
     `body.normalized_tags()` before reaching the DB layer.
     """
     previous = crud.get_interests(session=session, user_id=current_user.id)

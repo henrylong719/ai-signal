@@ -100,17 +100,27 @@ class UserInterestUpdate(SQLModel):
         Non-list input is passed through untouched so Pydantic's own type
         error surfaces instead of a confusing one from here.
         """
-        if not isinstance(value, list) or not all(
-            isinstance(item, str) for item in value
-        ):
-            # Intentional: hand malformed input straight back to Pydantic so
-            # it reports the real type error against the declared
-            # list[str]. Do not "fix" this into a raise or a coercion — a
-            # client sending {"preferred_sources": "OpenAI"} should be told
-            # it sent a string where a list belongs, not get a bespoke
-            # message from here or a silently wrapped value.
+        # Intentional, in both early returns below: hand malformed input
+        # straight back to Pydantic so it reports the real type error
+        # against the declared list[str]. Do not "fix" this into a raise or
+        # a coercion — a client sending {"preferred_sources": "OpenAI"}
+        # should be told it sent a string where a list belongs, not get a
+        # bespoke message from here or a silently wrapped value.
+        if not isinstance(value, list):
             return value
-        return known_source_names(value)
+
+        # Accumulate into an annotated list rather than testing with
+        # all(isinstance(...) for ...). The generator form asserts the
+        # element type without establishing it: `value` stays list[object]
+        # to a type checker, so passing it to known_source_names(Iterable[str])
+        # is an error rather than something narrowing can discharge. Building
+        # the list makes the guarantee real at the point of use.
+        names: list[str] = []
+        for item in value:
+            if not isinstance(item, str):
+                return value
+            names.append(item)
+        return known_source_names(names)
 
     def normalized_tags(self) -> list[str]:
         """Lowercase, strip, drop empties, drop duplicates, enforce length."""

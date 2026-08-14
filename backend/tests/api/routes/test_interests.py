@@ -269,6 +269,32 @@ def test_update_interests_reports_a_type_error_for_non_list_sources(
     assert detail[0]["loc"] == ["body", "preferred_sources"]
 
 
+def test_update_interests_reports_a_type_error_for_non_string_source(
+    client: TestClient,
+    db: Session,
+) -> None:
+    """A list holding a non-string is passed through the same way.
+
+    This is the other half of the before-mode passthrough, and the half
+    with teeth: the validator must hand the whole list back untouched so
+    Pydantic can name the offending element. Dropping the bad item and
+    filtering the rest would silently save a shorter list than the client
+    sent, which is the one outcome the passthrough exists to prevent.
+    """
+    _, headers = _create_authenticated_user(client, db)
+
+    response = client.put(
+        f"{settings.API_V1_STR}/users/me/interests",
+        headers=headers,
+        json={"categories": [], "tags": [], "preferred_sources": ["OpenAI", 42]},
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail[0]["type"] == "string_type"
+    assert detail[0]["loc"] == ["body", "preferred_sources", 1]
+
+
 def test_read_interests_filters_retired_sources(
     client: TestClient,
     db: Session,

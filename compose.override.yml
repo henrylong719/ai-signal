@@ -106,8 +106,14 @@ services:
         - NODE_ENV=production
     ipc: host
     depends_on:
-      - backend
-      - mailcatcher
+      # service_healthy, not a bare dependency: a plain depends_on only waits
+      # for the container to start, so the suite raced backend startup and
+      # auth.setup timed out filling the login form against a backend that was
+      # not serving yet.
+      backend:
+        condition: service_healthy
+      mailcatcher:
+        condition: service_started
     env_file:
       - .env
     environment:

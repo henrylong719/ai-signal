@@ -110,7 +110,15 @@ services:
       - SENTRY_DSN=${SENTRY_DSN}
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
+      # python, not curl: the backend image is python:3.12-slim and installs
+      # only libgomp1, so curl does not exist in it. The old check could never
+      # pass — compose reported the container unhealthy even while the app was
+      # serving normally, which is what broke `up --wait` in CI.
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen("http://localhost:8000/api/v1/utils/health-check/")
       interval: 10s
       timeout: 5s
       retries: 5

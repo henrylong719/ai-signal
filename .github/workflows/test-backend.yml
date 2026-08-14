@@ -37,18 +37,21 @@ jobs:
       # `database "app_test" does not exist`. conftest runs the migrations, so
       # an empty database is all that is needed here. Derived from .env rather
       # than hardcoded so it tracks whatever POSTGRES_DB is set to.
+      # Runs inside the db container, which already has POSTGRES_USER and
+      # POSTGRES_DB from its env_file. Do not source .env from the runner
+      # shell: it holds unquoted values with spaces (PROJECT_NAME=AI Signal),
+      # so `.` treats the second word as a command.
       - name: Create the test database
         run: |
-          set -a; . ./.env; set +a
-          test_db="${POSTGRES_DB}_test"
-          exists=$(docker compose exec -T db \
-            psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
-            "SELECT 1 FROM pg_database WHERE datname='${test_db}'")
-          if [ "$exists" != "1" ]; then
-            docker compose exec -T db \
-              psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-              -c "CREATE DATABASE ${test_db}"
-          fi
+          docker compose exec -T db sh -eu -c '
+            test_db="${POSTGRES_DB}_test"
+            if psql -U "$POSTGRES_USER" -lqt | cut -d"|" -f1 | tr -d " " \
+                | grep -qx "$test_db"; then
+              echo "$test_db already exists"
+            else
+              createdb -U "$POSTGRES_USER" "$test_db"
+            fi
+          '
       - name: Migrate DB
         run: uv run bash scripts/prestart.sh
         working-directory: backend

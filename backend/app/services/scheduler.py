@@ -128,10 +128,13 @@ def start_scheduler() -> None:
         seconds=settings.INGEST_INITIAL_DELAY_SECONDS
     )
 
+    # cron at minute=0 (not interval) so ingest shares the hourly digest
+    # tick: one DB wake-up per hour instead of two on scale-to-zero Postgres.
     _scheduler.add_job(
         run_tracked_ingest,
-        trigger="interval",
-        minutes=settings.INGEST_INTERVAL_MINUTES,
+        trigger="cron",
+        hour=f"*/{max(1, settings.INGEST_INTERVAL_MINUTES // 60)}",
+        minute=0,
         id=_INGEST_JOB_ID,
         next_run_time=next_run_time,
         coalesce=True,

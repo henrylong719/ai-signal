@@ -61,6 +61,20 @@ _REFRESH_SESSION_CLEANUP_JOB_ID = "refresh_session_cleanup"
 _REFRESH_SESSION_CLEANUP_HOUR_UTC = 4
 
 
+def _next_ingest_start(now: datetime) -> datetime:
+    """First ingest run: the next HH:55 at least the startup delay away.
+
+    Landing a few minutes before the top-of-hour digest tick lets both
+    share one wake-up of scale-to-zero Postgres (Neon keeps compute up
+    ~5 min after the last query), and the digest then sees fresh rows.
+    """
+    earliest = now + timedelta(seconds=settings.INGEST_INITIAL_DELAY_SECONDS)
+    start = earliest.replace(minute=55, second=0, microsecond=0)
+    if start < earliest:
+        start += timedelta(hours=1)
+    return start
+
+
 def _run_refresh_session_cleanup_job() -> None:
     """Scheduler entry point for pruning dead refresh sessions.
 
@@ -123,20 +137,16 @@ def start_scheduler() -> None:
     _scheduler = AsyncIOScheduler(timezone=timezone.utc)
 
     # First run is delayed so the DB pool and any other startup work
-    # settle before the configured RSS feeds get hit.
-    next_run_time = datetime.now(timezone.utc) + timedelta(
-        seconds=settings.INGEST_INITIAL_DELAY_SECONDS
-    )
+    # settle before the configured RSS feeds get hit, and anchored to
+    # HH:55 so whole-hour intervals keep sharing the digest's wake-up.
+    next_run_time = _next_ingest_start(datetime.now(timezone.utc))
 
-    # cron at minute=0 (not interval) so ingest shares the hourly digest
-    # tick: one DB wake-up per hour instead of two on scale-to-zero Postgres.
     _scheduler.add_job(
         run_tracked_ingest,
-        trigger="cron",
-        hour=f"*/{max(1, settings.INGEST_INTERVAL_MINUTES // 60)}",
-        minute=0,
+        trigger="interval",
+        minutes=settings.INGEST_INTERVAL_MINUTES,
+        start_date=next_run_time,
         id=_INGEST_JOB_ID,
-        next_run_time=next_run_time,
         coalesce=True,
         max_instances=1,
         # Misfire grace: if a tick fires more than 5 minutes late

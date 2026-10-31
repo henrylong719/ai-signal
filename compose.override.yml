@@ -2,7 +2,7 @@ services:
 
   # Local services are exposed on localhost ports for development.
   proxy:
-    image: traefik:3.6
+    image: traefik:v3.7
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
